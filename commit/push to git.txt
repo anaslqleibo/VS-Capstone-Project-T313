@@ -1,4 +1,15 @@
 Via terminal on VsCode enter:
 
-git commit -m "commit"
+1. #Stage all files:
+
+git add .
+
+
+2. Commit your changes with a note
+
+git commit -m " your note"
+
+
+3. Push changes
+
 git push origin main
