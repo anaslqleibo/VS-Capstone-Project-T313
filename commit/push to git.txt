@@ -1,0 +1,4 @@
+Via terminal on VsCode enter:
+
+git commit -m "commit"
+git push origin main
