@@ -1,0 +1,33 @@
+.fc-event {
+    position: relative;
+    transition: all 0.2s ease-in-out;
+    z-index: 1;
+  }
+  
+  .fc-event:hover {
+    z-index: 1000;
+    transform: scale(1.05);
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  
+  /* Tooltip-style expansion */
+  .event-hover-details {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #fff;
+    color: #333;
+    border: 1px solid #ccc;
+    font-size: 12px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    white-space: nowrap;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+  
+  .fc-event:hover .event-hover-details {
+    display: block;
+  }
+  

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Office Dashboard - 2 Bent Rods</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f2f2f2;
+    }
+    header {
+      background: #004466;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+    nav a {
+      color: white;
+      margin: 0 10px;
+      text-decoration: none;
+      font-size: 16px;
+    }
+    main {
+      padding: 1rem;
+    }
+    #calendar {
+      max-width: 900px;
+      margin: 20px auto;
+      background: #fff;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .fc-event {
+      position: relative;
+      transition: all 0.2s ease-in-out;
+      z-index: 1;
+    }
+    .fc-event:hover {
+      z-index: 1000;
+      transform: scale(1.05);
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .event-hover-details {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: #fff;
+      color: #333;
+      border: 1px solid #ccc;
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 4px;
+      white-space: nowrap;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .fc-event:hover .event-hover-details {
+      display: block;
+    }
+    @media (max-width: 600px) {
+      nav a {
+        display: block;
+        margin-bottom: 10px;
+      }
+      .fc-toolbar-title {
+        font-size: 1rem;
+      }
+      .fc-event {
+        font-size: 12px;
+        padding: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>Office Dashboard</h2>
+    <nav>
+      <a href="#">Create Shift</a>
+      <a href="#">Staff Calendar</a>
+      <a href="#">Notifications</a>
+    </nav>
+  </header>
+
+  <main>
+    <h3>Shift Calendar</h3>
+    <div id="calendar"></div>
+    <div style="margin-top: 20px;">
+      <strong>Legend:</strong>
+      <span style="background:#4CAF50; padding:5px 10px; color:white; border-radius:4px;">Accepted</span>
+      <span style="background:#FF9800; padding:5px 10px; color:white; border-radius:4px;">Pending</span>
+      <span style="background:#F44336; padding:5px 10px; color:white; border-radius:4px;">Rejected</span>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek'
+        },
+        editable: true,
+        events: [
+          {
+            title: 'Emily T. - Gold Coast',
+            start: '2025-05-05',
+            color: '#4CAF50',
+            extendedProps: {
+              staff: 'Emily T.',
+              location: 'Gold Coast',
+              status: 'Accepted'
+            }
+          },
+          {
+            title: 'Unassigned Shift',
+            start: '2025-05-06',
+            color: '#FF9800',
+            extendedProps: {
+              staff: 'Unassigned',
+              location: 'Sunshine Coast',
+              status: 'Pending'
+            }
+          },
+          {
+            title: 'Declined - Brisbane',
+            start: '2025-05-07',
+            color: '#F44336',
+            extendedProps: {
+              staff: 'John D.',
+              location: 'Brisbane',
+              status: 'Rejected'
+            }
+          }
+        ],
+        eventClick: function(info) {
+          alert('Shift Details:\n' + info.event.title);
+        },
+        eventDidMount: function(info) {
+          const details = document.createElement('div');
+          details.className = 'event-hover-details';
+          details.innerHTML = `
+            <strong>Staff:</strong> ${info.event.extendedProps.staff}<br>
+            <strong>Location:</strong> ${info.event.extendedProps.location}<br>
+            <strong>Status:</strong> ${info.event.extendedProps.status}
+          `;
+          info.el.appendChild(details);
+        }
+      });
+      calendar.render();
+    });
+  </script>
+</body>
+</html>

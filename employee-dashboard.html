@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Employee Dashboard - 2 Bent Rods</title>
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f2f2f2;
+    }
+    header {
+      background: #004466;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+    }
+    nav a {
+      color: white;
+      margin: 0 10px;
+      text-decoration: none;
+      font-size: 16px;
+    }
+    main {
+      padding: 1rem;
+    }
+    #calendar {
+      max-width: 900px;
+      margin: 20px auto;
+      background: #fff;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .fc-event {
+      position: relative;
+      transition: all 0.2s ease-in-out;
+      z-index: 1;
+    }
+    .fc-event:hover {
+      z-index: 1000;
+      transform: scale(1.05);
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .event-hover-details {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: #fff;
+      color: #333;
+      border: 1px solid #ccc;
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 4px;
+      white-space: nowrap;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .fc-event:hover .event-hover-details {
+      display: block;
+    }
+    @media (max-width: 600px) {
+      nav a {
+        display: block;
+        margin-bottom: 10px;
+      }
+      .fc-toolbar-title {
+        font-size: 1rem;
+      }
+      .fc-event {
+        font-size: 12px;
+        padding: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h2>Welcome, [Employee Name]</h2>
+    <nav>
+      <a href="#">My Shifts</a>
+      <a href="#">My Availability</a>
+      <a href="#">Notifications</a>
+    </nav>
+  </header>
+
+  <main>
+    <h3>My Shift Calendar</h3>
+    <div id="calendar"></div>
+    <div style="margin-top: 20px;">
+      <strong>Legend:</strong>
+      <span style="background:#4CAF50; padding:5px 10px; color:white; border-radius:4px;">Accepted</span>
+      <span style="background:#FF9800; padding:5px 10px; color:white; border-radius:4px;">Pending</span>
+      <span style="background:#F44336; padding:5px 10px; color:white; border-radius:4px;">Rejected</span>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek'
+        },
+        editable: false,
+        events: [
+          {
+            title: 'Gold Coast Shift',
+            start: '2025-05-05T09:00:00',
+            end: '2025-05-05T12:00:00',
+            color: '#4CAF50',
+            extendedProps: {
+              location: 'Gold Coast',
+              status: 'Accepted',
+              staff: '[Employee Name]'
+            }
+          },
+          {
+            title: 'Pending Shift',
+            start: '2025-05-07T13:00:00',
+            end: '2025-05-07T16:00:00',
+            color: '#FF9800',
+            extendedProps: {
+              location: 'Sunshine Coast',
+              status: 'Pending',
+              staff: '[Employee Name]'
+            }
+          }
+        ],
+        eventClick: function(info) {
+          const accept = confirm(`Would you like to accept this shift?\n\n${info.event.title}`);
+          if (accept) {
+            alert('Shift accepted.');
+          } else {
+            alert('Shift rejected.');
+          }
+        },
+        eventDidMount: function(info) {
+          const details = document.createElement('div');
+          details.className = 'event-hover-details';
+          details.innerHTML = `
+            <strong>Staff:</strong> ${info.event.extendedProps.staff}<br>
+            <strong>Location:</strong> ${info.event.extendedProps.location}<br>
+            <strong>Status:</strong> ${info.event.extendedProps.status}
+          `;
+          info.el.appendChild(details);
+        }
+      });
+      calendar.render();
+    });
+  </script>
+</body>
+</html>
