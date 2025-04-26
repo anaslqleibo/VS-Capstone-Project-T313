@@ -1,5 +1,5 @@
-/* :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+:root {
+  /* font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
@@ -10,8 +10,10 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-} */
+  -moz-osx-font-smoothing: grayscale; */
+
+  overflow: hidden;
+}
 
 /* === GENERAL STYLES === */
 body {
@@ -90,6 +92,7 @@ main {
   justify-content: center;
   align-items: center;
   height: 100vh;
+  width: 100%;
 }
 
 .login-container {
@@ -116,6 +119,7 @@ main {
 
 .login-container input[type="email"],
 .login-container input[type="password"] {
+  box-sizing:border-box;
   width: 100%;
   padding: 10px;
   margin-bottom: 1rem;
