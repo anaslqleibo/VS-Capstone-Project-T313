@@ -1,7 +1,7 @@
 function EmployeeDashbordPage() {
     return (
         <>
-        <p>Hello from naomi</p>
+        <p>Hello from naomi and sonny</p>
         </>
     );
   }
