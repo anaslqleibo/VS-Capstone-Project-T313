@@ -1,0 +1,264 @@
+button {
+    display: flex;
+    width: fit-content;
+    padding: 1em 1.8em;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+    color: white;
+    text-align: center;
+    font-family: Inter;
+    font-size: medium;
+    font-style: normal;
+    line-height: normal;
+    border: none;
+    outline: none;
+}
+
+/*  Enable for Keyboard Navigation Accessibility */
+/* button:focus {
+    outline: 2px solid #005f99; 
+} */
+
+/* Call-to-Action */
+.cta{
+    border-radius: 12px;
+    background: var(--primary-color);
+    font-weight: 700;
+}
+.cta:hover{
+    background: var(--hover-color);
+}
+.cta:active{
+    background: var(--active-color);
+}
+
+/* Text Button */
+.text{
+    border-radius: 75px;
+    background: #3259AD;
+}
+.text:hover{
+    background: var(--hover-color);
+}
+.text:active{
+    background: #274689;
+}
+
+/* Outline Button */
+.outline{
+    border-radius: 12px;
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color)
+}
+.outline:hover{
+    background: var(--primary-color);
+    color: white;
+}
+.outline:active{
+    background: transparent;
+    color: var(--primary-color)
+}
+
+/* Toggle Button */
+ .toggle {
+  width: 48px;
+  height: 24px;
+  border-radius: 999px;
+  background-color: var(--light-grey);
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.toggle:hover {
+  background-color: var(--dark-grey);
+}
+
+.toggle.active {
+  background-color: var(--primary-color); 
+}
+
+.toggle.active:hover {
+  background-color: var(--hover-color);
+}
+.toggle.active:hover svg *{
+  fill: var(--hover-color);
+  stroke: var(--hover-color);
+}
+
+
+.toggle div {
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.toggle.active div {
+  transform: translateX(24px);
+}
+
+.toggle div svg *{
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.toggle.active div svg *{
+    opacity: 1;
+}
+
+/* Dropdown Button */
+.dropdown-container {
+  position: relative;
+  display: block;
+}
+
+.dropdown-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.dropdown-button:hover {
+  background-color: var(--hover-color);
+}
+
+.dropdown-button.active {
+  background-color: var(--active-color);
+}
+
+.dropdown-icon {
+  display: flex;
+  align-items: center;
+  transition: transform 0.2s ease;
+}
+
+.dropdown-icon.rotate {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  overflow: hidden;
+  z-index: 1000;
+  min-width: 220px;
+}
+
+.dropdown-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: var(--active-light-color); 
+}
+
+/* Icon Button */
+.icon{
+    border-radius: 12px;
+    background: var(--primary-color);
+    font-size: xx-small;
+}
+
+.icon:hover{
+    background: var(--hover-color);
+}
+
+.icon:active{
+    background: var(--active-color);
+}
+
+
+/* Icon Outline Button */
+.icon.outline{
+    background: white;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    font-size: xx-small;
+}
+.icon.outline:hover{
+    border: 2px solid var(--hover-color);
+    color: var(--hover-color);
+}
+.icon.outline:active{
+    border: 2px solid var(--active-color);
+    color: var(--active-color);
+}
+/* .icon.outline svg *{
+    fill: var(--primary-color);
+    stroke: var(--primary-color);
+}
+.icon.outline:hover svg *{
+    fill: var(--hover-color);
+    stroke: var(--hover-color);
+}
+.icon.outline:active svg *{
+    fill: var(--active-color);
+    stroke: var(--active-color);
+} */
+
+/* Floating Action Button */
+.fab{
+    border-radius: 45.5px;
+    border: 4px solid var(--primary-color);
+    background: #FFF;
+    box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+    padding: 20px;
+    height: auto;
+    color: var(--primary-color);
+    font-size: xx-small;
+}
+.fab:hover{
+    background: var(--hover-color);
+    border: 4px solid var(--hover-color);
+    color: white;
+}
+.fab:active{
+    background: var(--active-color);
+    border: 4px solid var(--active-color);
+    color: white;
+}
+
+/* .fab svg *{
+    fill: var(--primary-color);
+    stroke: var(--primary-color);
+}
+.fab:hover svg *{
+    fill: white;
+    stroke: white;
+}
+.fab:active svg *{
+    fill: white;
+    stroke: white;
+} */
+
+/* Disabled */
+button:disabled, button:disabled:hover{
+    border-radius: 12px;
+    background: var(--light-grey);
+    color: var(--dark-grey);
+}
