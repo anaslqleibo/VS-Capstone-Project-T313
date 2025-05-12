@@ -6,18 +6,35 @@ function ButtonDemo() {
     function testClick(){
         alert("test!");
     }
+
+    const handleItemClicks = [function(){
+        alert("Task 1")
+    }, function(){
+        alert("Task 2")
+    },function(){
+        alert("Task 3")
+    },];
+
+    const onToggleClick = {
+        true: function(){alert("True!")},
+        false: function(){alert("False!")},
+    };
+
     return (
         <div>
             <Button type='cta' onClick={testClick}>Start Shift</Button>
             <Button type='text'>Location 1</Button>
+            <Button type='selectable' onClick={onToggleClick}>Location 2</Button>
+            
             <Button type='outline'>Delete Shift</Button>
-            <Button type='toggle'/>
-            <Button type='dropdown' items={tasks}/>
+            <Button type='toggle' onClick={onToggleClick}/>
+            <Button type='dropdown' items={tasks} onItemClicks={handleItemClicks}/>
             <Button type='icon'><Icon id="settings" /></Button>
             <Button type='icon outline'><Icon id="list" /></Button>
 
-            <Button type='fab'><Icon id="plus"/></Button>
+            <Button type='fab'><Icon id="plus" width='15' height='15'/></Button>
             <Button type='cta' onClick={testClick} disabled>Comment</Button>
+            
         </div>
     );
   }

@@ -1,6 +1,7 @@
 button {
     display: flex;
     width: fit-content;
+    height: fit-content;
     padding: 1em 1.8em;
     justify-content: center;
     align-items: center;
@@ -9,7 +10,6 @@ button {
     color: white;
     text-align: center;
     font-family: Inter;
-    font-size: medium;
     font-style: normal;
     line-height: normal;
     border: none;
@@ -25,7 +25,7 @@ button {
 .cta{
     border-radius: 12px;
     background: var(--primary-color);
-    font-weight: 700;
+    font-weight: 600;
 }
 .cta:hover{
     background: var(--hover-color);
@@ -48,6 +48,7 @@ button {
 
 /* Outline Button */
 .outline{
+    padding: 0.8em 1.3em;
     border-radius: 12px;
     background: transparent;
     border: 2px solid var(--primary-color);
@@ -62,10 +63,31 @@ button {
     color: var(--primary-color)
 }
 
+/* Selectable Button */
+.selectable{
+    padding: 0.8em 1.3em;
+    border-radius: 12px;
+    background: transparent;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color)
+}
+.selectable:hover{
+    border-color: var(--hover-color);
+    color: var(--hover-color);
+}
+.selectable:active{
+    border-color: var(--active-color);
+    color: var(--active-color);
+}
+.selectable.active{
+    background: var(--primary-color);
+    color: white;
+}
+
 /* Toggle Button */
  .toggle {
-  width: 48px;
-  height: 24px;
+  width: 4.8em;
+  height: 2.4em;
   border-radius: 999px;
   background-color: var(--light-grey);
   position: relative;
@@ -88,16 +110,14 @@ button {
   fill: var(--hover-color);
   stroke: var(--hover-color);
 }
-
-
 .toggle div {
-  width: 20px;
-  height: 20px;
+  width: 2em;
+  height: 2em;
   background-color: white;
   border-radius: 50%;
   position: absolute;
-  top: 2px;
-  left: 2px;
+  top: 0.2em;
+  left: 0.2em;
   transition: transform 0.2s ease;
   display: flex;
   justify-content: center;
@@ -105,7 +125,7 @@ button {
 }
 
 .toggle.active div {
-  transform: translateX(24px);
+  transform: translateX(2.4em);
 }
 
 .toggle div svg *{
@@ -129,10 +149,9 @@ button {
   gap: 8px;
   background-color: var(--primary-color);
   color: white;
-  padding: 12px 20px;
+  padding: 1em 1.6em;
   border: none;
   border-radius: 6px;
-  font-size: 14px;
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
@@ -201,11 +220,11 @@ button {
     font-size: xx-small;
 }
 .icon.outline:hover{
-    border: 2px solid var(--hover-color);
+    border-color: var(--hover-color);
     color: var(--hover-color);
 }
 .icon.outline:active{
-    border: 2px solid var(--active-color);
+    border-color: var(--active-color);
     color: var(--active-color);
 }
 /* .icon.outline svg *{
@@ -224,22 +243,22 @@ button {
 /* Floating Action Button */
 .fab{
     border-radius: 45.5px;
-    border: 4px solid var(--primary-color);
+    border: 0.2rem solid var(--primary-color);
     background: #FFF;
     box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
-    padding: 20px;
+    padding: 0.5rem;
     height: auto;
     color: var(--primary-color);
     font-size: xx-small;
 }
 .fab:hover{
     background: var(--hover-color);
-    border: 4px solid var(--hover-color);
+    border-color: var(--hover-color);
     color: white;
 }
 .fab:active{
     background: var(--active-color);
-    border: 4px solid var(--active-color);
+    border-color: var(--active-color);
     color: white;
 }
 
@@ -261,4 +280,10 @@ button:disabled, button:disabled:hover{
     border-radius: 12px;
     background: var(--light-grey);
     color: var(--dark-grey);
+    cursor:default;
+}
+.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
 }

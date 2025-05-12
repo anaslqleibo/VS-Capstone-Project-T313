@@ -4,6 +4,7 @@ import viteLogo from '/vite.svg'
 import './App.css'
 import LoginPage from './LoginPage'
 import ButtonDemo from './ButtonDemo'
+import IconDemo from './IconDemo'
 
 function App() {
   const [count, setCount] = useState(0)
