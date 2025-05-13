@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LoginPage.css';
+import logo from './assets/LOGO.png';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
@@ -19,7 +20,8 @@ function LoginPage() {
   return (
     <div className="login-body">
       <div className="login-container">
-        <h2>2 Bent Rods - Login</h2>
+        <img src={logo} alt="2 Bent Rods logo" className="login-logo" />
+        <h2>Employee login</h2>
         <form onSubmit={handleLogin}>
           <label htmlFor="email">Email</label>
           <input
