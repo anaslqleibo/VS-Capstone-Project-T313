@@ -1,5 +1,5 @@
-import Button from './components/Button/Button';
-import Icon from './assets/icons/Icons';
+import Button from '../components/Button';
+import Icon from '../assets/icons/Icons';
 
 function ButtonDemo() {
     const tasks = ["Task 1", "Task 2", "Task 3"];
@@ -33,6 +33,10 @@ function ButtonDemo() {
             <Button type='icon outline'><Icon id="list" /></Button>
 
             <Button type='fab'><Icon id="plus" width='15' height='15'/></Button>
+
+            <Button type='cta' fontSize='20px'><Icon id='trash'/> Delete</Button>
+            {/* TODO: Sort out icons buttons layout */}
+
             <Button type='cta' onClick={testClick} disabled>Comment</Button>
             
         </div>

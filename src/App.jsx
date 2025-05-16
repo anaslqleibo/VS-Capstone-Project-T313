@@ -3,38 +3,18 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import LoginPage from './LoginPage'
-import ButtonDemo from './ButtonDemo'
-import IconDemo from './IconDemo'
+import ButtonDemo from './demo//ButtonDemo'
+import IconDemo from './demo/IconDemo'
+import InputDemo from './demo/InputDemo'
+import Button from './components/Button'
+import FormDemo from './demo/FormDemo'
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
     <>
-      {/* <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p> */}
-
       {/* <LoginPage /> */}
 
-      <ButtonDemo/>
+        <FormDemo/>
     </>
   )
 }

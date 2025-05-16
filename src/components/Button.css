@@ -9,7 +9,7 @@ button {
     flex-shrink: 0;
     color: white;
     text-align: center;
-    font-family: Inter;
+    font-family: var(--font-family);
     font-style: normal;
     line-height: normal;
     border: none;

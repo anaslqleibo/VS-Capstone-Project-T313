@@ -23,13 +23,15 @@
   --dark-grey: #676767;
   --light-grey: #c0c0c0;
   --active-light-color: #e2e9f5;
+  --danger-color: #A02D2F;
+  --font-family: Inter;
 
   overflow: hidden;
 }
 
 /* === GENERAL STYLES === */
 body {
-  font-family: Arial, sans-serif;
+  font-family: Inter, sans-serif;
   margin: 0;
   background: #f2f2f2;
 }
