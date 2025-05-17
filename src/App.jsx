@@ -14,7 +14,7 @@ function App() {
     <>
       {/* <LoginPage /> */}
 
-        <FormDemo/>
+        <InputDemo/>
     </>
   )
 }

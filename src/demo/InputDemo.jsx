@@ -1,23 +1,27 @@
-import Icon from '../assets/icons/Icons';
 import Input from '../components/Input';
-import Button from '../components/Button';
+import { InputIcon } from '../components/Input';
+import Dropdown from '../components/Dropdown';
 
 function InputDemo() {
-function validateLength(str) {
-  return str.length >= 5; // Example: input must be at least 5 characters
-}
     return (
         <div>
             <form>
 
                 <Input placeholder="Name"/>
                 <Input placeholder="Name" required/>
-                <Input placeholder="Search" type="search"/>
-                <Input placeholder="Pay" type="icon left filled" icon="$"/>
-                <Input placeholder="Pay" type="icon right filled" icon="$"/>
-                <Input placeholder="Pay" type="icon right" icon="$"/>
+                <InputIcon placeholder="Search" type="search"/>
+                <InputIcon placeholder="Pay" type="icon left filled" icon="$"/>
+                <InputIcon placeholder="Pay" type="icon right filled" icon="$"/>
+                <InputIcon placeholder="Pay" type="icon right" icon="$"/>
                 <Input placeholder="Write a comment" type="textarea"/>
-                <input type="submit"/>
+                
+                <Dropdown
+                  items={['John', 'Kevin', 'Jane', "Tommy", "Sonny", "Smith", "Naomi", "Evan"]}
+                  multiple={true}
+                  showCheckbox={true}
+                  placeholder="Select employees"
+                />
+
             </form>
 
             

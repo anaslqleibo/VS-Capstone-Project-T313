@@ -1,6 +1,7 @@
 import './Input.css';
 import { useRef, useState, useEffect } from "react";
 import Icon from '../assets/icons/Icons';
+import { validateInput } from './utils/validateInput';
 
 export function InputIcon({ type = "search", placeholder, size = "base", icon = "?", validate, showErrors, error, ...props }) {
   const [isFocused, setIsFocused] = useState(false);
@@ -48,35 +49,7 @@ export function InputIcon({ type = "search", placeholder, size = "base", icon = 
   );
 }
 
-export function validateInput({
-  value,
-  required,
-  minLength,
-  maxLength,
-  pattern,
-  type,
-  customValidate,
-}) {
-  if (required && !value) {
-    return "This field is required.";
-  }
-  if (minLength && value.length < minLength) {
-    return `Minimum length is ${minLength} characters.`;
-  }
-  if (maxLength && value.length > maxLength) {
-    return `Maximum length is ${maxLength} characters.`;
-  }
-  if (pattern && !new RegExp(pattern).test(value)) {
-    return "Invalid format.";
-  }
-  if (type === "email" && value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-    return "Please enter a valid email address.";
-  }
-  if (typeof customValidate === "function") {
-    return customValidate(value) || null;
-  }
-  return null;
-}
+
 
 function Input({
   id,
@@ -92,8 +65,8 @@ function Input({
   maxLength,
   pattern,
   customValidate,   // additional custom validation by passing a function
-  validateMode = "onBlur",
-  externalTrigger = false,  // checks onSubmit trigger 
+  validateMode = "onSubmit",
+  externalTrigger,  // checks onSubmit trigger 
   ...props
 }) {
   const [error, setError] = useState("");
@@ -123,10 +96,11 @@ function Input({
 
   // Run validation on external trigger (e.g. submit)
   useEffect(() => {
-    if (validateMode === "onSubmit" && externalTrigger) {
+    if (externalTrigger>0){
       setTouched(true);
       runValidation();
     }
+      
   }, [externalTrigger]);
 
   return (
@@ -159,7 +133,9 @@ function Input({
         `}
         {...props}
       />
-      {error && touched && <p className="text-left text-xs text-red-500">{error}</p>}
+      {error && touched  && (
+        <p className="text-left text-xs text-red-500">{error}</p>
+      )}
     </div>
   );
 }

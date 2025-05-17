@@ -1,22 +1,31 @@
 import { useState, cloneElement } from "react";
-import { validateInput } from "./Input";
+import { validateInput } from "./utils/validateInput";
 
 function Form({ children, onSubmit, scrollToError = true }) {
   const [errors, setErrors] = useState({});
-  const [externalTrigger, setExternalTrigger] = useState(false);
+  const [externalTrigger, setExternalTrigger] = useState(0);
   const childArray = Array.isArray(children) ? children : [children];
 
   // Validate one child, returns error string or null
   const validateChild = (child) => {
+    let errorMsg = "";
+
     if (typeof child.props.customValidate === "function") {
-      return child.props.customValidate(child.props.value ?? "") || null;
+      errorMsg+= child.props.customValidate(child.props.value ?? "") || "";
     }
-    return validateInput(child.props) || null;
+
+    if (typeof child.props.validate === "function") {
+      errorMsg += child.props.validate(child.props.value) || "";
+    } else{
+      errorMsg += validateInput(child.props) || "";
+    }
+
+    return errorMsg===""?null:errorMsg;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setExternalTrigger(true); // Tell Inputs to validate now
+    setExternalTrigger(prev => prev + 1);
 
     // Validate all children with validate function
     const newErrors = {};
@@ -29,7 +38,7 @@ function Form({ children, onSubmit, scrollToError = true }) {
 
     if (Object.keys(newErrors).length === 0) {
       // No errors - submit allowed
-      setExternalTrigger(false); // reset trigger after submit
+      setExternalTrigger(0); // reset trigger after submit
       onSubmit?.();
     } else if (scrollToError) {
       // Scroll to first error input
@@ -49,8 +58,6 @@ function Form({ children, onSubmit, scrollToError = true }) {
     return cloneElement(child, {
       key: index,
       error,
-      showErrors: true,
-      externalTrigger,
       "data-error-index": error ? index : undefined,
       externalTrigger: externalTrigger
     });
