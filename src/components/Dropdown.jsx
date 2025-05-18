@@ -7,6 +7,7 @@ const Dropdown = ({
   showCheckbox,
   placeholder = 'Select an option',
   maxVisibleItems = 3,
+  className, ...props
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -55,8 +56,8 @@ const Dropdown = ({
   }, []);
 
   return (
-    <div className="relative w-72" ref={containerRef}>
-      <div className="border-2 border-[color:var(--primary-color)] rounded-md px-3 py-2 flex items-center justify-between cursor-pointer text-[color:var(--primary-color)]" onClick={toggleDropdown}>
+    <div className={`relative w-72 text-sm ${className}`} ref={containerRef}>
+      <div className="border-[1.5px] border-[color:var(--primary-color)] rounded-md px-3 py-2 flex items-center justify-between cursor-pointer text-[color:var(--primary-color)]" onClick={toggleDropdown}>
         <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
           {/* {selected.length === 0 && <span className="text-gray-500">{placeholder}</span>} */}
 
@@ -72,8 +73,6 @@ const Dropdown = ({
                 handleRemove(item)}} />
             </span>
           ))}
-
-     
           
           <input
             type="text"

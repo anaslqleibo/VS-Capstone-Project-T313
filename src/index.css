@@ -23,10 +23,12 @@
   --dark-grey: #676767;
   --light-grey: #c0c0c0;
   --active-light-color: #e2e9f5;
-  --danger-color: #A02D2F;
+  --danger-color: #FF4545;
   --font-family: Inter;
+  --warning-color: #FF7A45;
 
-  overflow: hidden;
+  /* overflow: hidden; */
+
 }
 
 /* === GENERAL STYLES === */

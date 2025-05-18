@@ -1,10 +1,8 @@
-import './Input.css';
 import { useRef, useState, useEffect } from "react";
 import Icon from '../assets/icons/Icons';
 import { validateInput } from './utils/validateInput';
 
-export function InputIcon({ type = "search", placeholder, size = "base", icon = "?", validate, showErrors, error, ...props }) {
-  const [isFocused, setIsFocused] = useState(false);
+export function InputIcon({ type = "search", placeholder, size = "base", icon = "?", validate, showErrors, error, className, ...props }) {
   const inputRef = useRef(null);
 
   const fontSize = "text-" + size;
@@ -16,18 +14,15 @@ export function InputIcon({ type = "search", placeholder, size = "base", icon = 
   const iconColor = filled ? "text-white" : "text-[color:var(--dark-grey)]";
 
   return (
-    <div className="w-fit">
+    <div className="w-fit group">
       <div
         onClick={() => inputRef.current?.focus()}
-        className={`flex flex-row${right ? "-reverse" : ""} items-stretch w-50 gap-3 ${filled && right ? "pl-5" : filled ? "pr-5" : "px-5"} rounded-xl border-2 border-solid transition-colors cursor-text overflow-hidden ${fontSize}
-          ${isFocused ? "border-[color:var(--primary-color)]" : error ? "border-red-500" : "border-[color:var(--dark-grey)]"}
-        `}>
+        className={`flex ${right ? "flex-row-reverse" : "flex-row"} items-stretch w-50 gap-3 ${filled && right ? "pl-5" : filled ? "pr-5" : "px-5"} rounded-md border-[1.5px] text-sm !outline-none focus:ring-1 border-[color:var(--dark-grey)] transition-colors cursor-text overflow-hidden group-hover:border-[color:var(--hover-color)] has-focus:border-[color:var(--primary-color)] invalid:border-red-500 ${fontSize} ${className}`}>
 
-        <div className={`${filled ? "bg-[color:var(--primary-color)] px-4" : "bg-transparent"} flex items-center justify-center`}>
+        <div className={`${filled ? "bg-[color:var(--dark-grey)] px-4 group-hover:bg-[color:var(--hover-color)] group-has-focus:bg-[color:var(--primary-color)]" : "bg-transparent group-hover:text-[color:var(--hover-color)] group-has-focus:text-[color:var(--primary-color)]"} flex items-center justify-center transition-colors ${iconColor} group-hover:${iconColorActive} `}>
           <Icon
             id={type === "search" ? type : icon}
-            className={`transition-colors 
-              ${isFocused ? iconColorActive : iconColor}
+            className={`transition-colors }
               text-[1.3em]
             `}
             width="1em"
@@ -37,8 +32,6 @@ export function InputIcon({ type = "search", placeholder, size = "base", icon = 
         <input
           ref={inputRef}
           placeholder={placeholder}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
           className={`p-0 outline-none w-full ${fontSize} my-4`}
           {...props}
         />
@@ -51,24 +44,37 @@ export function InputIcon({ type = "search", placeholder, size = "base", icon = 
 
 
 
-function Input({
-  id,
-  name,
-  label,
-  type = "text",
-  required = false,
-  value,
-  onChange,
-  placeholder,
-  validate = true,
-  minLength,
-  maxLength,
-  pattern,
+function Input({id,name,label,type = "text",required = false,value,onChange,placeholder,validate = true,minLength,maxLength,pattern,textarea,
   customValidate,   // additional custom validation by passing a function
-  validateMode = "onSubmit",
+  validateMode = "onSubmit", // onSubmit/onBlur/onChange
   externalTrigger,  // checks onSubmit trigger 
+  className,
   ...props
 }) {
+  function TextArea(){
+    return (
+      <textarea id={id || name} name={name} type={type} required={required} value={value}
+          onChange={(e) => {
+            onChange?.(e);
+            if (validateMode === "onChange" && !touched) setTouched(true);
+          }}
+          onBlur={() => {
+            if (validateMode === "onBlur") {
+              setTouched(true);
+              runValidation();
+            }
+          }}
+          placeholder={placeholder}
+          className={`w-full rounded-md border-[1.5px] px-3 py-2 text-sm !outline-none border-[color:var(--dark-grey)] transition-colors min-h-fit
+
+            ${error && touched? "border-red-500 ring-red-200" : 
+              " hover:border-[color:var(--hover-color)] hover:border-[1.5px] focus:border-[color:var(--primary-color)] "}  
+          `}
+          {...props}
+        ></textarea>
+    );
+  }
+
   const [error, setError] = useState("");
   const [touched, setTouched] = useState(false);
 
@@ -104,40 +110,43 @@ function Input({
   }, [externalTrigger]);
 
   return (
-    <div className="flex flex-col gap-1">
+    <div class={`flex flex-col gap-1 ${className} group`}>
       {label && (
-        <label htmlFor={id || name} className="text-sm font-medium text-left">
+        <label htmlFor={id || name} className={`text-sm font-medium text-left group-has-focus:text-[color:var(--primary-color)] ${required && "after:ml-0.5 after:text-red-500 after:content-['*']"}`}>
           {label}
         </label>
       )}
-      <input
-        id={id || name}
-        name={name}
-        type={type}
-        required={required}
-        value={value}
-        onChange={(e) => {
-          onChange?.(e);
-          if (validateMode === "onChange" && !touched) setTouched(true);
-        }}
-        onBlur={() => {
-          if (validateMode === "onBlur") {
-            setTouched(true);
-            runValidation();
-          }
-        }}
-        placeholder={placeholder}
-        className={`
-          "w-full rounded-md border px-3 py-2 text-sm !outline-none focus:ring-1 border-[color:var(--primary-color)]",
-          ${error && touched? "border-red-500 ring-red-200" : "border-gray-300 hover:border-[color:var(--hover-color)] hover:border-1 focus:border-[color:var(--active-color)] "}  
-        `}
-        {...props}
-      />
+
+      {textarea ? <TextArea/> :
+        <input id={id || name} name={name} type={type} required={required} value={value}
+          onChange={(e) => {
+            onChange?.(e);
+            if (validateMode === "onChange" && !touched) setTouched(true);
+          }}
+          onBlur={() => {
+            if (validateMode === "onBlur") {
+              setTouched(true);
+              runValidation();
+            }
+          }}
+          placeholder={placeholder}
+          className={`w-full rounded-md border-[1.5px] px-3 py-2 text-sm !outline-none border-[color:var(--dark-grey)] transition-colors
+
+            ${error && touched? "border-red-500 ring-red-200" : 
+              " hover:border-[color:var(--hover-color)] hover:border-[1.5px] focus:border-[color:var(--primary-color)] "}  
+          `}
+          {...props}
+        />
+      }
+
       {error && touched  && (
-        <p className="text-left text-xs text-red-500">{error}</p>
-      )}
+          <p className="text-left text-xs text-red-500">{error}</p>
+        )}
+      
     </div>
   );
 }
+
+
 
 export default Input;

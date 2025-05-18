@@ -8,13 +8,14 @@ import IconDemo from './demo/IconDemo'
 import InputDemo from './demo/InputDemo'
 import Button from './components/Button'
 import FormDemo from './demo/FormDemo'
+import ComponentDemo from './demo/ComponentDemo'
 
 function App() {
   return (
     <>
       {/* <LoginPage /> */}
 
-        <InputDemo/>
+        <ComponentDemo/>
     </>
   )
 }

@@ -1,7 +1,7 @@
 import Icon from '../assets/icons/Icons';
 
 function IconDemo() {
-    const icons = ["calendar-empty", "calendar-filled", "calendar-add","calendar-tick","calendar-remove","calendar-cancel","warning","forbidden","history","search","arrow-up","arrow-down","arrow-left","arrow-right","list","preferences","more","plus","image","location","chat","trash","chart","settings","refresh","","$","checkmark"];
+    const icons = ["calendar-empty", "calendar-filled", "calendar-add","calendar-tick","calendar-remove","calendar-cancel","warning","forbidden","history","search","arrow-up","arrow-down","arrow-left","arrow-right","list","preferences","more","plus","image","location","chat","trash","chart","settings","refresh","","$","checkmark","x"];
 
      return (
     <div className="p-4">
