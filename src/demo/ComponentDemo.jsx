@@ -8,6 +8,7 @@ function ComponentDemo(){
         return <Icon id="circle" width="0.5em" className={`text-[color:${getStatusColor(status)}] mr-2`}/>
     };
 
+    // TODO: Add this to utils (optional)
     return (
     <ListView title="Notifications">
         <p class="flex items-center" onClick={()=>alert("Redirecting...")}>
