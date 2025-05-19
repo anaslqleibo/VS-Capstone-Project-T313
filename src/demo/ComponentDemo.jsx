@@ -1,22 +1,15 @@
-import ListView from "../components/LIstView";
+import ListView from "../components/ListView";
 import Icon from "../assets/icons/Icons";
-import getStatusColor from "../components/utils/getStatusColor";
+import { createNotification } from "../components/utils/createNotification";
 
 function ComponentDemo(){
-
-    const circle = (status)=>{
-        return <Icon id="circle" width="0.5em" className={`text-[color:${getStatusColor(status)}] mr-2`}/>
-    };
-
-    // TODO: Add this to utils (optional)
     return (
     <ListView title="Notifications">
-        <p class="flex items-center" onClick={()=>alert("Redirecting...")}>
-        {circle("unaccepted")}New shift assigned on <span class="text-[color:var(--secondary-color)]">&nbsp;17-02-2024</span>
-        </p>
-        <p class="flex items-center">{circle("warning")}<span class="text-[color:var(--secondary-color)]">2 days</span> &nbsp;left to Accept/Deny shift on <span class="text-[color:var(--secondary-color)]">&nbsp;01-02-2024</span></p>
-        <p class="flex items-center">{circle("accepted")}New shift accepted on <span class="text-[color:var(--secondary-color)]">&nbsp;16-02-2024</span></p>
-        <p class="flex items-center ">{circle("danger")}Shift declined on <span class="text-[color:var(--secondary-color)]">&nbsp;15-02-2024</span></p>
+        {createNotification({type:"request"})}
+        {createNotification({type:"accepted", date:"17-02-2025", onClick: ()=>alert("Redirecting...")})}
+        {createNotification({type:"unassigned", date:"01-02-2025", daysLeft: 5, onClick: ()=>alert("Redirecting...")})}
+        {createNotification({type:"declined", date:"15-02-2025"})}
+
     </ListView>);
 }
 

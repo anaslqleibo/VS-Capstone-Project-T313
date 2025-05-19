@@ -8,6 +8,8 @@ function getStatusColor(status="open-shift"){
         case "unaccepted":
         case "warning":
             return "var(--warning-color)";
+        case "request":
+            return "var(--secondary-color)";
         case "accepted":
             return "var(--primary-color)";
         case "leave":
