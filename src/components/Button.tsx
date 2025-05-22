@@ -1,8 +1,20 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, isValidElement } from 'react';
 import './Button.css';
 import Icon from '../assets/icons/Icons';
 
-function Toggle({size = '0.6em', onClick, ...props}){
+
+interface ToggleProps {
+    size?:string;
+    onClick?: { true: () => void; false: () => void }; 
+    disabled?: boolean; 
+    children ?: React.ReactNode;
+}
+
+export function Toggle({size = '0.6em', onClick, ...props} : ToggleProps){
+    let validSize = size;
+    if (validSize && !validSize.endsWith('em'))
+        validSize += 'em';
+    
     const [active, setActive] = useState(false);
 
     function onToggleClick(){
@@ -17,18 +29,24 @@ function Toggle({size = '0.6em', onClick, ...props}){
     }       
 
     return (
-    <div className={`toggle ${active ? 'active' : ''} ${props.disabled && 'disabled'}`}
-         onClick={onToggleClick}
-         aria-disabled={props.disabled}
-         style={{ fontSize: size }}>
-        <div>
-            <Icon id="checkmark"/>
-        </div>
-    </div>
-);
+            <div className={`toggle ${active ? 'active' : ''} ${props.disabled && 'disabled'}`}
+                onClick={onToggleClick}
+                aria-disabled={props.disabled}
+                style={{ fontSize: validSize }}>
+                <div>
+                    <Icon id="checkmark"/>
+                </div>
+            </div>
+        );
 }
 
-function Selectable({onClick, fontSize, ...props}){
+interface SelectableProps{
+    onClick ?:{ true: () => void; false: () => void };  
+    fontSize ?: string;
+    disabled?:boolean;
+    children?: React.ReactNode;
+}
+export function Selectable({onClick, fontSize, ...props} : SelectableProps){
     const [active, setActive] = useState(false);
 
     function onToggleClick(){
@@ -41,19 +59,28 @@ function Selectable({onClick, fontSize, ...props}){
             }
         }
     }     
+
     return (<button onClick={onToggleClick} className={`selectable ${active ? 'active' : ''}`} disabled={props.disabled}
-        style = {{fontSize}}>
-            {props.children}
-    </button>);
+            style = {{fontSize}}>
+                {props.children}
+        </button>);
+    
 }
 
-function Dropdown({fontSize, onItemClicks, ...props}){
+interface DropdownProps{
+    fontSize ?: string;
+    onItemClicks?: ((e: any) => void)[];
+    items?: string[];
+    disabled ?: boolean;
+    children?: React.ReactNode; 
+}
+export function ButtonDropdown({fontSize, onItemClicks, items, ...props} : DropdownProps){
     const [open, setOpen] = useState(false);
-    const dropdownRef = useRef(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const handleClickOutside = (event) => {
-        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        const handleClickOutside = (event : MouseEvent) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
             setOpen(false);
         }
         };
@@ -80,9 +107,9 @@ function Dropdown({fontSize, onItemClicks, ...props}){
         {open && (
             <div className="dropdown-menu">
                 {
-                props.items ? props.items.map((item, index) =>
+                    items ? items.map((item, index) =>
                     <div className="dropdown-item" 
-                    onClick={(onItemClicks && onItemClicks[index]) ? onItemClicks[index] : {}}>
+                    onClick={onItemClicks?.[index]}>
                         {item}
                     </div>) : 
                     <><div className="dropdown-item">Item 1</div>
@@ -94,50 +121,56 @@ function Dropdown({fontSize, onItemClicks, ...props}){
         )}
         </div>
     );
+    
 }
 
-
-function Button({ type = 'cta', fontSize = '1em', onClick, items, onItemClicks, size, htmlType, ...props }){
+interface ButtonProps{
+    type?:string;
+    fontSize?:string;
+    onClick?: (e:any) => (void);
+    onToggleClick?: { true: () => void; false: () => void }
+    items?: string[];
+    onItemClicks ?: ((e: any) => void)[];
+    size?:string;
+    htmlType?:"button" | "submit" | "reset" | undefined;
+    disabled?: boolean;
+    children?:React.ReactNode;
+}
+export default function Button({ type = 'cta', fontSize = '1em', onClick, items, onItemClicks, size, htmlType, disabled, children, ...props } : ButtonProps){
 
     // Toggle Button Setup
     if (type==="toggle"){
-        let toggle;
-        if (size && size.includes('em'))
-            toggle = <Toggle onClick={onClick} size={size} disabled={props.disabled}/>;
-        else
-            toggle = <Toggle onClick={onClick} disabled={props.disabled}/>;
-        return toggle;
+        return <Toggle onClick={props.onToggleClick} size={size} disabled={disabled}/>;
+        
     }
 
     // Selectable Button Setup
     if (type==="selectable"){
-        return <Selectable onClick={onClick} fontSize={fontSize} disabled={props.disabled}>
-            {props.children}
+        return <Selectable onClick={props.onToggleClick} fontSize={fontSize} disabled={disabled}>
+            {children}
         </Selectable>;
     }
 
     // Dropdown Button Setup
     if (type === "dropdown") {
-        return <Dropdown onItemClicks={onItemClicks} fontSize={fontSize} items={items} disabled={props.disabled}>{props.children}</Dropdown>;
+        return <ButtonDropdown onItemClicks={onItemClicks} fontSize={fontSize} items={items} disabled={disabled}>{children}</ButtonDropdown>;
     }
 
     // Icon Button Setup --> Size automatically fit the icon's size
     if (type.includes("icon"))
         return (
-        <button onClick={onClick} className={type} disabled={props.disabled} type={props.htmlType || "button"} >
-            {props.children}
+        <button onClick={onClick} className={type} disabled={disabled} type={htmlType || "button"} >
+            {children}
         </button>);
 
     // General Button Setup
     return (
-        <button onClick={onClick} className={type} disabled={props.disabled}
+        <button onClick={onClick} className={type} disabled={disabled}
         style = {{fontSize}} type={htmlType || "button"} >
             <div className='gap-[0.5em] flex items-center'>
-                {props.children}
+                {children}
             </div>
             
         </button>
     );
 }
-
-export default Button;

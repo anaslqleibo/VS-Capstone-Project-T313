@@ -1,6 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
 import Icon from '../assets/icons/Icons';
 
+interface DropdownProps{
+  items?:string[];
+  multiple?:boolean;
+  showCheckbox?:boolean;
+  placeholder?:string;
+  maxVisibleItems?:number;
+  className?:string;
+  props?:{[key:string] : any};
+}
+
 const Dropdown = ({
   items = [],
   multiple = false,
@@ -8,11 +18,11 @@ const Dropdown = ({
   placeholder = 'Select an option',
   maxVisibleItems = 3,
   className, ...props
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const [selected, setSelected] = useState([]);
-  const containerRef = useRef(null);
+} : DropdownProps) => {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [search, setSearch] = useState<string>('');
+  const [selected, setSelected] = useState<string[]>([]);
+  const containerRef = useRef<HTMLDivElement>(null);
   const itemHeight = 40; // px per item
   const maxHeight = maxVisibleItems * itemHeight;
 
@@ -22,7 +32,7 @@ const Dropdown = ({
 
   const toggleDropdown = () => setIsOpen(!isOpen);
 
-  const handleSelect = (item) => {
+  const handleSelect = (item : string) => {
     if (multiple) {
       if (selected.includes(item)) {
         setSelected(selected.filter(i => i !== item));
@@ -35,19 +45,19 @@ const Dropdown = ({
     }
   };
 
-  const handleRemove = (item) => {
+  const handleRemove = (item : string) => {
     setSelected(selected.filter(i => i !== item));
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e : React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace' && search === '' && selected.length > 0) {
       setSelected(selected.slice(0, -1));
     }
   };
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+    const handleClickOutside = (event : MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
     };

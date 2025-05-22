@@ -1,5 +1,4 @@
-import Input from '../components/Input';
-import { InputIcon } from '../components/Input';
+import Input, {InputIcon} from '../components/Input';
 import Dropdown from '../components/Dropdown';
 
 function InputDemo() {
@@ -11,7 +10,7 @@ function InputDemo() {
                   <Input placeholder="Name" label="Name" required className="mb-5 w-32"/>
                   <Input placeholder="abd@gmail.com" label="Email" className="mb-5 w-fit"/>
                   <Input placeholder="No Label" className="mb-5 w-fit"/>
-                  <InputIcon placeholder="Search" type="search"/>
+                  <InputIcon placeholder="Search" type="search" icon="search"/>
                   <InputIcon placeholder="Pay" type="icon left filled" icon="$"/>
                   <InputIcon placeholder="Pay" type="icon right filled" icon="$"/>
                   <InputIcon placeholder="Pay" type="icon right" icon="$"/>
