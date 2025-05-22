@@ -9,7 +9,7 @@ function FormDemo() {
 
 
   // Utilize useState if you want to access the value directly
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     alert(`Email: ${email}\nPassword: ${password}`);
   };
 
@@ -22,7 +22,7 @@ function FormDemo() {
       <Input name="email" label="Email" type="email" value={email}
         onChange={(e) => setEmail(e.target.value)} validateMode="onSubmit" required/>
 
-      <Input type="password" name="password" label="Password" required minLength={6} maxLength={20} value={password} onChange={(e) => setPassword(e.target.value)} customValidate={(val) =>
+      <Input type="password" name="password" label="Password" required minLength={6} maxLength={20} value={password} onChange={(e) => setPassword(e.target.value)} customValidate={(val : string) =>
           !/[A-Z]/.test(val)
             ? "Password must contain at least one uppercase letter."
             : ""

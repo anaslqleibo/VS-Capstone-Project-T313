@@ -1,12 +1,14 @@
-export function validateInput({
-  value,
-  required,
-  minLength,
-  maxLength,
-  pattern,
-  type,
-  customValidate,
-}) {
+interface ParamTypes {
+  value?: string;
+  required?: boolean | undefined;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+  type?: string;
+  customValidate?: Function;
+}
+
+export function validateInput({ value="", required, minLength, maxLength, pattern, type, customValidate } : ParamTypes) {
   if (required && !value) {
     return "This field is required.";
   }
@@ -19,8 +21,7 @@ export function validateInput({
   if (pattern && !new RegExp(pattern).test(value)) {
     return "Invalid format.";
   }
-  if (type === "email" && (value || required)) {
-    if (!value) return "This field is required.";
+  if (type === "email" && value && value!="") {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
       return "Please enter a valid email address.";
     }

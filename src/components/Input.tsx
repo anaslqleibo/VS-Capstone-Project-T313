@@ -2,8 +2,19 @@ import { useRef, useState, useEffect } from "react";
 import Icon from '../assets/icons/Icons';
 import { validateInput } from './utils/validateInput';
 
-export function InputIcon({ type = "search", placeholder, size = "base", icon = "?", validate, showErrors, error, className, ...props }) {
-  const inputRef = useRef(null);
+interface InputIconProps{
+  type: string;
+  placeholder?: string;
+  size?: string;
+  icon: string;
+  validate?: boolean;
+  showErrors?: boolean;
+  error?: string;
+  className?: string;
+}
+
+export function InputIcon({ type = "search", placeholder, size = "base", icon = "?", validate, showErrors, error, className, ...props } : InputIconProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const fontSize = "text-" + size;
   const typeProps = type.split(' ');
@@ -39,17 +50,37 @@ export function InputIcon({ type = "search", placeholder, size = "base", icon = 
   );
 }
 
+interface InputProps {
+  id ?: string;
+  name ?: string;
+  label ?: string;
+  type ?: string;
+  required ?: boolean;
+  value ?: string;
+  onChange ?: (e : any) => void;
+  placeholder ?: string;
+  validate ?: boolean;
+  minLength ?: number;
+  maxLength ?: number;
+  pattern ?: string;
+  textarea ?: boolean;
+  customValidate ?: Function;
+  validateMode ?: "onSubmit" | "onBlur" | "onChange";
+  externalTrigger ?: number;
+  className ?: string;
+}
+
 function Input({
   id, name, label, type = "text", required = false, value, onChange, placeholder, validate = true, minLength, maxLength, pattern, textarea,
-  customValidate, validateMode = "onSubmit", externalTrigger, className, ...props
-}) {
+  customValidate, validateMode = "onSubmit", externalTrigger=0, className, ...props
+} : InputProps) {
 
   const internalRef = useRef(null);
   const [internalValue, setInternalValue] = useState("");
   const controlled = typeof value !== "undefined" && typeof onChange === "function";
   const isControlled = value !== undefined;
 
-  const handleChange = (e) => {
+  const handleChange = (e : React.ChangeEvent<HTMLTextAreaElement> | React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
 
     if (!isControlled) {
@@ -75,7 +106,7 @@ function Input({
   const [error, setError] = useState("");
   const [touched, setTouched] = useState(false);
 
-  const runValidation = (newValue) => {
+  const runValidation = (newValue?: string) => {
     if (!validate) return;
     const val = newValue ?? getCurrentValue();
     const err = validateInput({ value: val, required, minLength, maxLength, pattern, type, customValidate });
@@ -134,7 +165,7 @@ function Input({
         />);
 
   return (
-    <div class={`flex flex-col gap-1 ${className} group`}>
+    <div className={`flex flex-col gap-1 ${className} group`}>
       {label && (
         <label htmlFor={id || name} className={`text-sm font-medium text-left group-has-focus:text-[color:var(--primary-color)] ${required && "after:ml-0.5 after:text-red-500 after:content-['*']"}`}>
           {label}

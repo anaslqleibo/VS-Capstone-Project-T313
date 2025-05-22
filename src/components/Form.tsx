@@ -1,34 +1,51 @@
-import { useState, cloneElement } from "react";
+import { useState, cloneElement, isValidElement } from "react";
 import { validateInput } from "./utils/validateInput";
 
-function Form({ children, onSubmit, scrollToError = true }) {
-  const [errors, setErrors] = useState({});
+interface FormProps {
+  children: React.ReactNode;
+  onSubmit: Function;
+  scrollToError?: boolean;
+}
+interface ValidatableProps {
+  value?: string;
+  validate?: (value?: string) => string | null;
+  customValidate?: (value: string) => string | null;
+  [key: string]: any;
+}
+
+
+function Form({ children, onSubmit, scrollToError = true } : FormProps) {
+  const [errors, setErrors] = useState<{ [key: number]: string }>({});
   const [externalTrigger, setExternalTrigger] = useState(0);
   const childArray = Array.isArray(children) ? children : [children];
 
   // Validate one child, returns error string or null
-  const validateChild = (child) => {
+  const validateChild = (child : React.ReactNode) => {
     let errorMsg = "";
 
-    if (typeof child.props.customValidate === "function") {
-      errorMsg+= child.props.customValidate(child.props.value ?? "") || "";
-    }
+    if (isValidElement<ValidatableProps>(child)) {
+      const props = child.props;
 
-    if (typeof child.props.validate === "function") {
-      errorMsg += child.props.validate(child.props.value) || "";
-    } else{
-      errorMsg += validateInput(child.props) || "";
-    }
+      if (typeof props.customValidate === "function") {
+        errorMsg+= props.customValidate(child.props.value ?? "") || "";
+      }
 
-    return errorMsg===""?null:errorMsg;
-  };
+      if (typeof props.validate === "function") {
+        errorMsg += props.validate(child.props.value ?? "") || "";
+      } else{
+        errorMsg += validateInput(props) || "";
+      }
 
-  const handleSubmit = (e) => {
+      return errorMsg===""?null:errorMsg;
+    };
+  }
+
+  const handleSubmit = (e : React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setExternalTrigger(prev => prev + 1);
 
     // Validate all children with validate function
-    const newErrors = {};
+    const newErrors: { [key: number]: string } = {};
     childArray.forEach((child, index) => {
       const error = validateChild(child);
       if (error) newErrors[index] = error;
@@ -45,7 +62,7 @@ function Form({ children, onSubmit, scrollToError = true }) {
       const firstInvalid = document.querySelector("[data-error-index]");
       if (firstInvalid) {
         firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
-        firstInvalid.focus?.();
+        if (firstInvalid instanceof HTMLElement) firstInvalid.focus();
       }
     }
   };
