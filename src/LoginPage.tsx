@@ -8,7 +8,7 @@ function LoginPage() {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = (e : React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (email && password) {
       navigate('/dashboard');
