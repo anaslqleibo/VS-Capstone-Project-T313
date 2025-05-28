@@ -1,0 +1,41 @@
+Layout and Structure
+	•	Created Layout.jsx to apply consistent spacing and structure across all pages.
+	•	Ensured all pages (Dashboard, Messaging, Unavailability, Account) use the shared layout with proper margin beside the sidebar.
+Navigation and Sidebar
+	•	Updated Sidebar.jsx to use NavLink with active route highlighting.
+	•	Replaced text label with logo image (logo.png) stored in the public/ folder.
+	•	Styled the sidebar using Sidebar.css for consistent navigation appearance.
+Routing
+	•	Updated App.jsx to define and handle all major routes:
+	◦	/home for Dashboard
+	◦	/unavailability, /messaging, /account
+	◦	/ now redirects to /home
+Dashboard (Home)
+	•	Implemented CalendarView.jsx using FullCalendar.
+	•	Added styled event blocks for:
+	◦	Accepted shifts
+	◦	Unaccepted shifts
+	◦	Leave entries
+	◦	Open shifts
+	•	Added dropdown controls above the calendar:
+	◦	User selector (e.g. Naomi)
+	◦	Shift type filter
+	◦	Month selector
+Unavailability Page
+	•	Rebuilt UnavailabilityPage.jsx to use FullCalendar’s week (time grid) view.
+	•	Displayed grey blocks for unavailable time ranges.
+	•	Added "Add Unavailability" button with styling.
+	•	Created UnavailabilityPage.css for layout and button design.
+Messaging Page
+	•	Updated MessagingPage.jsx to include a message input area with styled textarea and send button.
+	•	Layout matches the design with a clean, focused user input section.
+Styling and Cleanup
+	•	Applied Poppins font globally via index.css.
+	•	Ensured margin-left: 220px spacing is consistently applied to main content.
+	•	Fixed broken imports and ensured default exports for key components like CalendarView.
+Dependencies Installed
+	•	Installed FullCalendar packages:
+	◦	@fullcalendar/react
+	◦	@fullcalendar/daygrid
+	◦	@fullcalendar/timegrid
+	◦	@fullcalendar/interaction
