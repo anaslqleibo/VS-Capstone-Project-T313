@@ -1,11 +1,17 @@
 import React from 'react';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
 import logo from './assets/LOGO.png';
 import './EmployeeDashboardPage.css';
+import { Calendar, EventProps } from './components/Calendar';
+import getStatusColor, { Status } from './components/utils/getStatusColor';
 
 function EmployeeDashboardPage() {
+  const events: EventProps[] = [
+            { status: 'Accepted shift', time: '12:00–16:00', employee: 'Noosa', date: '2025-07-13', color: getStatusColor(Status.Accepted) },
+            { status: 'Unaccepted shift', time: '12:00–16:00', employee: 'Noosa', date: '2025-07-13', color: getStatusColor(Status.Unaccepted) },
+            { status: 'Leave', time: '00:00–23:59', employee: 'Noosa', date: '2025-07-13', color: getStatusColor(Status.Leave) },
+            { status: 'Open shift', time: '12:00–16:00', employee: 'Noosa', date: '2025-07-13', color: getStatusColor(Status.OpenShift) }
+          ];
+
   return (
     <div className="dashboard-container">
       <aside className="sidebar">
@@ -28,17 +34,9 @@ function EmployeeDashboardPage() {
           <button className="add-leave">Add Leave</button>
         </div>
 
-        <FullCalendar
-          plugins={[dayGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
-          selectable={true}
-          events={[
-            { title: 'Accepted shift\n12:00–16:00\nNoosa', date: '2024-04-02', color: '#2a2e87' },
-            { title: 'Unaccepted shift\n12:00–16:00\nNoosa', date: '2024-04-03', color: '#f97316' },
-            { title: 'Leave\n00:00–23:59', date: '2024-04-04', color: '#6b7280' },
-            { title: 'Open shift\n12:00–16:00\nNoosa', date: '2024-04-06', color: '#60a5fa' }
-          ]}
-        />
+
+        <Calendar events = {events}></Calendar>;
+        
       </div>
     </div>
   );

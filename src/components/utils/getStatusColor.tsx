@@ -8,8 +8,6 @@ export enum Status {
     DeclinedShift
 }
 
-
-
 function getStatusColor(status:Status){
     switch(status){
         case Status.Unaccepted:

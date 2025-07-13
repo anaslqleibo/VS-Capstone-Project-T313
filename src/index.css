@@ -11,9 +11,13 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale; */
+  -moz-osx-font-smoothing: grayscale; */ 
 
+  /* overflow: hidden; */
 
+}
+
+@theme {
   --primary-color: #2D3AA0;
   --secondary-color: #3259AD;
   --active-color: #26307F;
@@ -25,12 +29,9 @@
   --active-light-color: #e2e9f5;
   --warning-color: #FF7A45;
   --danger-color: #FF4545;
-  --font-family: Inter;
- 
-
-  /* overflow: hidden; */
-
+  --font-display: "Inter", "sans-serif";
 }
+
 
 /* === GENERAL STYLES === */
 body {
