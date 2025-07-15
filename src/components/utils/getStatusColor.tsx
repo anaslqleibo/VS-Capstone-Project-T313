@@ -1,11 +1,11 @@
 export enum Status {
-    Unaccepted,
-    Unassigned,
-    Accepted,
-    Leave,
-    OpenShift,
-    Request,
-    DeclinedShift
+    Unaccepted = 'Unaccepted',
+    Unassigned = 'Unassigned',
+    Accepted = 'Accepted',
+    Leave = 'Leave',
+    OpenShift = 'Open',
+    Request = 'Request',
+    DeclinedShift = 'Declined'
 }
 
 function getStatusColor(status:Status){

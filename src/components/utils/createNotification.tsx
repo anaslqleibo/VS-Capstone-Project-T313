@@ -11,7 +11,7 @@ interface ParamTypes {
     onClick?: Function
 }
 
-export function createNotification({type=Status.Accepted, date, daysLeft=1, onClick} : ParamTypes){
+export function createNotification({type=Status.Accepted, date = new Date(), daysLeft=1, onClick} : ParamTypes){
     const circle = (status : Status)=>{
         return <Icon id="circle" width="0.5em" className={`text-[color:${getStatusColor(status)}] mr-2`}/>
     };

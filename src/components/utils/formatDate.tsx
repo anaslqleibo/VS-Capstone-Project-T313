@@ -1,25 +1,27 @@
-export default function formatDate(date ?: Date | string) {
-    if (typeof date === 'string' || date===undefined){
-        if (/^\d{2}-\d{2}-\d{4}$/.test(date??"")) return date;
-        let d;
-        if (date)
-            d = new Date(date);
-        else 
-            d = new Date();  // If date argument not passed take today's date
 
-        let month = '' + (d.getMonth() + 1);
-        let day = '' + d.getDate();
-        let year = d.getFullYear();
-
-        if (month.length < 2) 
-            month = '0' + month;
-        if (day.length < 2) 
-            day = '0' + day;
-
-        return [day,month,year].join('-');
-    
+export default function formatDate(date : Date | string = new Date(), sqlDateFormat : boolean = false) : string {
+    let dateToFormat;
+    if (typeof date === 'string'){
+        if (/^\d{2}-\d{2}-\d{4}$/.test(date)) return date;
+ 
+        // should do checking if date string format is correct
+        dateToFormat = new Date(date);
     }
     else{
-        // TODO: Add parsing for Date type object
+        dateToFormat = date;
     }
+
+    let month = '' + (dateToFormat.getMonth() + 1);
+    let day = '' + dateToFormat.getDate();
+    const year = dateToFormat.getFullYear();
+
+    if (month.length < 2) 
+        month = '0' + month;
+    if (day.length < 2) 
+        day = '0' + day;
+
+    if (sqlDateFormat)
+        return [year,month,day].join('-');
+    else
+        return [day,month,year].join('-');
 }

@@ -1,36 +1,43 @@
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import getStatusColor, { Status } from "./utils/getStatusColor";
+// import listPlugin from '@fullcalendar/list';
 
 export interface EventProps{
-    status: string;
+    status: Status;
     time: string;
     employee: string;
     date: string;
-    color: string;
 }
 
 interface CalendarProps{
     initialView ?: string; // TODO: should specify enum
     selectable ?: boolean;
     events: EventProps[];
+    showStatus?: string;
 }
 
 function constructEventsArray(events: EventProps[]){
     const newEvents:any = [];
     events.forEach(e => {
-        const event = {title: e.status+"\n"+e.time+"\n"+e.employee, date: e.date, color: e.color};
+        const event = {title: e.status+" shift"+"\n"+e.time+"\n"+e.employee, date: e.date, color: getStatusColor(e.status)};
         newEvents.push(event);
     });
    return newEvents;
 }
 
-export function Calendar({initialView = "dayGridMonth", selectable = true, events} : CalendarProps){
-    const newEvents = constructEventsArray(events);
+function filterEventsArray(events: EventProps[], showStatus : string){
+    if (showStatus === "All") return events;
+    else return events.filter(e => e.status === showStatus);
+}
+
+export function Calendar({initialView = "dayGridMonth", selectable = true, events, showStatus, ...props} : CalendarProps){
+    const newEvents = constructEventsArray(showStatus ? filterEventsArray(events, showStatus) : events);
     return (
     <FullCalendar
           plugins={[dayGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
+          initialView={initialView}
           selectable={true}
           events={newEvents}
           eventContent={(arg) => {

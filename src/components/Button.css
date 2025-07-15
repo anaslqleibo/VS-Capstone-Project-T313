@@ -147,7 +147,7 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  background-color: var(--primary-color);
+  background-color: var(--secondary-color);
   color: white;
   padding: 1em 1.6em;
   border: none;

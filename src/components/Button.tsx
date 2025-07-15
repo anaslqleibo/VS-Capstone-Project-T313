@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, isValidElement } from 'react';
+import { useState, useRef, useEffect, isValidElement, Dispatch, SetStateAction } from 'react';
 import './Button.css';
 import Icon from '../assets/icons/Icons';
 
@@ -71,11 +71,14 @@ interface DropdownProps{
     fontSize ?: string;
     onItemClicks?: ((e: any) => void)[];
     items?: string[];
+    actAsFilter ?: boolean;
+    setFilter ?: Dispatch<SetStateAction<string>>;
     disabled ?: boolean;
     children?: React.ReactNode; 
 }
-export function ButtonDropdown({fontSize, onItemClicks, items, ...props} : DropdownProps){
+export function ButtonDropdown({fontSize, onItemClicks, items, actAsFilter = false, ...props} : DropdownProps){
     const [open, setOpen] = useState(false);
+    const [text, setText] = useState(props.children || "Add Task")
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -95,7 +98,7 @@ export function ButtonDropdown({fontSize, onItemClicks, items, ...props} : Dropd
             onClick={() => setOpen((prev) => !prev)}
             style={{fontSize}}
             disabled={props.disabled}>
-            {props.children || <>Add task</>}
+            {text}
 
             <span className={`dropdown-icon ${open ? 'rotate' : ''}`}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="0.5em" viewBox="0 0 16 8" fill="none" style={{ verticalAlign: 'middle' }}>
@@ -109,7 +112,12 @@ export function ButtonDropdown({fontSize, onItemClicks, items, ...props} : Dropd
                 {
                     items ? items.map((item, index) =>
                     <div className="dropdown-item" 
-                    onClick={onItemClicks?.[index]}>
+                    onClick={ () =>
+                        {   onItemClicks?.[index]
+                            if (actAsFilter) setText(item);
+                            setOpen(false);
+                            if (props.setFilter) props.setFilter(item);
+                        }}>
                         {item}
                     </div>) : 
                     <><div className="dropdown-item">Item 1</div>
