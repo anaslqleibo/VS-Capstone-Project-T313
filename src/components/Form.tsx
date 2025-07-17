@@ -56,7 +56,7 @@ function Form({ children, onSubmit, scrollToError = true } : FormProps) {
     if (Object.keys(newErrors).length === 0) {
       // No errors - submit allowed
       setExternalTrigger(0); // reset trigger after submit
-      onSubmit?.();
+      onSubmit?.(e);
     } else if (scrollToError) {
       // Scroll to first error input
       const firstInvalid = document.querySelector("[data-error-index]");

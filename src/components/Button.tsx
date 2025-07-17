@@ -116,7 +116,7 @@ export function ButtonDropdown({fontSize, onItemClicks, items, actAsFilter = fal
                         {   onItemClicks?.[index]
                             if (actAsFilter) setText(item);
                             setOpen(false);
-                            if (props.setFilter) props.setFilter(item);
+                            props.setFilter?.(item);
                         }}>
                         {item}
                     </div>) : 
@@ -133,7 +133,7 @@ export function ButtonDropdown({fontSize, onItemClicks, items, actAsFilter = fal
 }
 
 interface ButtonProps{
-    type?:string;
+    type?: 'cta' | 'toggle' | 'selectable' | 'dropdown' | 'icon';
     fontSize?:string;
     onClick?: (e:any) => (void);
     onToggleClick?: { true: () => void; false: () => void }

@@ -1,5 +1,6 @@
 import Icon from "../assets/icons/Icons";
 import React, { useEffect, useRef, useState } from "react";
+import { useClickOutside } from "./utils/useClickOutside";
 
 interface ListViewProps {
   title: string;
@@ -38,18 +39,7 @@ function ListView({ title, closeButton = true, ...props }: ListViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const notificationItems = useRef<NotificationItems>({});
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setShown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  useClickOutside(containerRef, ()=>setShown(false));
 
   const handlePermanentRemove = (id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));

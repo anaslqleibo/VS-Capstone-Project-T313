@@ -99,7 +99,6 @@ function Input({
   };
 
   const getCurrentValue = () => {
-    if (textarea) return (controlled ? value : internalValue);
     return (controlled ? value : internalValue);
   };
 
@@ -128,9 +127,9 @@ function Input({
 
   const TextArea = (<textarea id={id || name} name={name} required={required}
         value={controlled ? value : internalValue}
-        onChange={(e) => {
-          controlled ? onChange?.(e) : handleChange(e)
-        }}
+          onChange={(e) => {
+            handleChange(e)
+          }}
         onBlur={() => {
           if (validateMode === "onBlur") {
             setTouched(true);
@@ -148,7 +147,7 @@ function Input({
   const Text = (<input id={id || name} name={name} type={type} required={required} ref={internalRef}
           value={controlled ? value : internalValue}
           onChange={(e) => {
-            controlled ? onChange?.(e) : handleChange(e)
+            handleChange(e)
           }}
           onBlur={() => {
             if (validateMode === "onBlur") {
