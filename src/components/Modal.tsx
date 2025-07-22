@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Icon from "../assets/icons/Icons";
 import Button from "./Button";
-import { useClickOutside } from "./utils/useClickOutside";
+import { overlayAnimation, useClickOutside } from "./utils/useClickOutside";
+import { Status } from "./utils/getStatusColor";
 
 
 // TODO: Still missing some code, please go through everything and finish what's still missing
@@ -9,24 +10,48 @@ import { useClickOutside } from "./utils/useClickOutside";
 export enum ModalTypes{
     ShiftDetails = "Shift details",
     OpenShiftDetails = "Open shift details",
+    UnacceptedDetails = "Unaccepted shift details",
     LeaveDetails = "Leave details",
-    UnavailabilityDetails = "Unavailability Details",
+    UnavailabilityDetails = "Unavailability details",
+    DeclinedDetails = "Declined shift details",
     AddShift = "Add shift",
     AddLeave = "Add leave",
-    AddUnavailability = "Add Unavailability",
+    AddUnavailability = "Add unavailability",
 }
 
-interface ModalUnavailDetailsProps{
+export function getModalTypesByStatus(status:Status){
+    switch(status){
+        case Status.Unaccepted:
+        case Status.Unassigned:
+            return null;
+        case Status.Request:
+            return null;
+        case Status.Accepted:
+            return ModalTypes.ShiftDetails;
+        case Status.Unaccepted:
+            return ModalTypes.UnacceptedDetails;
+        case Status.Leave:
+            return ModalTypes.LeaveDetails;
+        case Status.OpenShift:
+            return ModalTypes.OpenShiftDetails;
+        case Status.DeclinedShift:
+            return ModalTypes.DeclinedDetails;
+        default:
+            return null;
+    }
+}
+
+export interface ModalUnavailDetailsProps{
     Day: string;
     Time: string;
 }
 
-interface ModalLeaveDetailsProps{
+export interface ModalLeaveDetailsProps{
     Date: string;
     Time: string;
 }
 
-interface ModalDetailsProps{
+export interface ModalDetailsProps{
     Date: string;
     Time: string;
     Location: string;
@@ -35,22 +60,28 @@ interface ModalDetailsProps{
 }
 
 interface ModalProps{
-    type?: ModalTypes;
-    shown: boolean;
-    setShown: (arg0: boolean) => void;
-    details?: ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps; 
+    type?: ModalTypes|null;
+    startOpen ?: boolean;
+    shown?: boolean;
+    setShown?: (arg0: boolean) => void;
+    details?: ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps|null; 
     title?:string;
+    modalContainer?: HTMLDivElement;
     children?: React.ReactNode;
     customButtons?: React.ReactNode;
 }
 
-function createDetail(label: string, detail: string){
-    return (<p className="text-sm font-semibold text-gray-600 mt-1">{label}
+function createDetail(label: string, detail: string, type:string=""){
+    if (type === "textarea")
+        return (<><p className="text-sm font-semibold text-gray-600 mt-1 mb-1">{label}</p>
+    <textarea readOnly className="text-gray-500 font-normal text-sm border-2 border-gray-500 bg-gray-100 rounded-md min-w-full p-2 min-h-[72px] resize-none focus:outline-0" value={detail}></textarea></>);
+    else
+        return (<p className="text-sm font-semibold text-gray-600 mt-1">{label}
     <span className="text-[color:var(--secondary-color)] font-normal">{detail}</span></p>);
 }
 
-function createDetails(type: string, details?: ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps){
-    if (details === undefined) return;
+function createDetails(type: string|null, details?: ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps|null){
+    if (details === undefined || details === null || type==null) return;
 
     if (type === ModalTypes.UnavailabilityDetails)
     {
@@ -76,6 +107,19 @@ function createDetails(type: string, details?: ModalUnavailDetailsProps|ModalLea
         return;
     else if (type === ModalTypes.AddLeave)
         return;
+    else if (type === ModalTypes.DeclinedDetails)
+    {
+        const newDetails = details as ModalDetailsProps;
+        return (
+            <>
+            {createDetail("Date: ", newDetails.Date)}
+            {createDetail("Time: ", newDetails.Time)}
+            {createDetail("Location: ", newDetails.Location)}
+            {createDetail("Address: ", newDetails.Address)}
+            {createDetail("Reason: ", newDetails.Notes, "textarea")}
+            </>
+        );
+    }
     else{
         const newDetails = details as ModalDetailsProps;
         return (
@@ -84,14 +128,14 @@ function createDetails(type: string, details?: ModalUnavailDetailsProps|ModalLea
             {createDetail("Time: ", newDetails.Time)}
             {createDetail("Location: ", newDetails.Location)}
             {createDetail("Address: ", newDetails.Address)}
-            {createDetail("Notes: ", newDetails.Notes)}
+            {createDetail("Notes: ", newDetails.Notes, "textarea")}
             </>
         );
     }
 }
 
-function createButtons(type: string){
-    let buttons;
+function createButtons(type: string|null){
+    let buttons = null;
     if (type === ModalTypes.LeaveDetails)
         buttons = <Button type="cta" fontSize="0.8em">Delete leave</Button>;
     else if (type === ModalTypes.UnavailabilityDetails)
@@ -103,44 +147,46 @@ function createButtons(type: string){
     else if (type === ModalTypes.OpenShiftDetails)
     {
         buttons = (<>
+        <Button type="cta" fontSize="0.8em">Pick-up Shift</Button>
+        </>);
+    }
+    else if (type === ModalTypes.UnacceptedDetails)
+    {
+        buttons = (<>
         <Button type="cta" fontSize="0.8em">Accept</Button>
         <Button type="cta" fontSize="0.8em">Decline</Button>
         </>);
     }
-    else return;
     
     return buttons;
 }
 
-export default function Modal({type, shown = false, setShown, details, title, ...props} : ModalProps){
+export function createModal(type:ModalTypes|null, startOpen: boolean, modalContainer: HTMLDivElement, details?:ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps|null){
+    return (<Modal key={crypto.randomUUID()} type={type} details={details} startOpen={startOpen} modalContainer={modalContainer}/>);
+}
+
+export default function Modal({type, details, startOpen, title, modalContainer, ...props} : ModalProps){
+    const [shown, setShown] = useState(startOpen ?? false);
+
     const containerRef = useRef<HTMLDivElement>(null);
-    useClickOutside(containerRef, ()=>setShown(false));
+    useClickOutside(containerRef, ()=> props.setShown ? props.setShown(false) : setShown(false));
     
     const [rendered, setRendered] = useState(false);
     const [visible, setVisible] = useState(false);
-    useEffect(() => {
-    if (shown) {
-        setRendered(true);
-        const timeout = setTimeout(() => setVisible(true), 10); // delay to set to 0 opacity
-        return () => clearTimeout(timeout);
-    } else {
-        setVisible(false);
-        const timeout = setTimeout(() => setRendered(false), 200);
-        return () => clearTimeout(timeout);
-    }
-    }, [shown]);
+
+    overlayAnimation(props.shown ? props.shown : shown, setRendered, setVisible, modalContainer);
 
     return (
         <>
-            {rendered && <div role="dialog" aria-modal="true" aria-labelledby="dialog-title" className={`relative z-10 transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} >
+            {rendered && <div role="dialog" aria-modal="true" aria-labelledby="dialog-title" className={`relative z-10 h-full transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} >
             
-            <div aria-hidden="true" className={`fixed inset-0 bg-gray-200/75 backdrop-blur-sm transition-all duration-200 ${visible ? 'backdrop-opacity-100' : 'backdrop-opacity-0'}`}></div>
+            <div aria-hidden="true" className={`absolute inset-0 bg-gray-200/75 backdrop-blur-sm transition-all duration-200 ${visible ? 'backdrop-opacity-100' : 'backdrop-opacity-0'}`}></div>
 
-            <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
-            <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+            <div className="relative z-10 w-full overflow-y-auto h-full">
+            <div className="flex min-h-full justify-center p-4 text-center items-center sm:p-0">
             
-                <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg" ref={containerRef}>
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 ">
+                <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all my-auto sm:w-full sm:max-w-lg" ref={containerRef}>
+                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div className="sm:flex sm:items-start">
                     
                         <div className="mt-3 w-full sm:mt-0 sm:text-left">
@@ -151,7 +197,7 @@ export default function Modal({type, shown = false, setShown, details, title, ..
                                     width="1.5em"
                                     height="1.5em"
                                     className="text-black-700 hover:text-[color:var(--danger-color)]"
-                                    onClick={() => setShown(false)}
+                                    onClick={() => props.setShown ? props.setShown(false) : setShown(false)}
                                 />
                             </div>
                             
@@ -161,9 +207,9 @@ export default function Modal({type, shown = false, setShown, details, title, ..
                         </div>
                     </div>
                 </div>
-                <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row sm:px-6 gap-3">
+                {((type!==undefined && createButtons(type)!=null) || props.customButtons) && <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row sm:px-6 gap-3">
                     {type!==undefined ? createButtons(type) : props.customButtons}
-                </div>
+                </div>}
                 </div>
             </div>
             </div>

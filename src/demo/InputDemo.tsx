@@ -18,7 +18,7 @@ function InputDemo() {
                   
                   <Dropdown
                     items={['John', 'Kevin', 'Jane', "Tommy", "Sonny", "Smith", "Naomi", "Evan"]}
-                    multiple={true}
+                    multiple={false}
                     showCheckbox={true}
                     placeholder="Select employees"
                   />

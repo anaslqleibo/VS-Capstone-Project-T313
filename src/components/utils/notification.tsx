@@ -4,14 +4,27 @@ import formatDate from "./formatDate";
 import { Status } from "./getStatusColor";
 
 
-interface ParamTypes {
+
+export interface NotificationProps {
+    id?:string;
     type?: Status,
     date?: Date | string,
     daysLeft?: number,
     onClick?: Function
 }
 
-export function createNotification({type=Status.Accepted, date = new Date(), daysLeft=1, onClick} : ParamTypes){
+
+export function createNotifications(notifications: NotificationProps[]){
+    return (
+    <>
+        {notifications.map(item => (
+            createNotification(item)
+        ))}
+    </>
+    );
+}
+
+export function createNotification({type=Status.Accepted, date = new Date(), daysLeft=1, onClick} : NotificationProps){
     const circle = (status : Status)=>{
         return <Icon id="circle" width="0.5em" className={`text-[color:${getStatusColor(status)}] mr-2`}/>
     };

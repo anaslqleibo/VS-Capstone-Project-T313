@@ -135,7 +135,7 @@ export function ButtonDropdown({fontSize, onItemClicks, items, actAsFilter = fal
 interface ButtonProps{
     type?: 'cta' | 'toggle' | 'selectable' | 'dropdown' | 'icon';
     fontSize?:string;
-    onClick?: (e:any) => (void);
+    onClick?: (e:any) => (void) | void;
     onToggleClick?: { true: () => void; false: () => void }
     items?: string[];
     onItemClicks ?: ((e: any) => void)[];

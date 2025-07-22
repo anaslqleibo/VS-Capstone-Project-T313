@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Dispatch, SetStateAction } from 'react';
 import Icon from '../assets/icons/Icons';
 
 interface DropdownProps{
@@ -7,7 +7,10 @@ interface DropdownProps{
   showCheckbox?:boolean;
   placeholder?:string;
   maxVisibleItems?:number;
+  actAsFilter ?: boolean;
+  setFilter ?: Dispatch<SetStateAction<string>>;
   className?:string;
+  initialSelectedItem ?: string;
   props?:{[key:string] : any};
 }
 
@@ -21,8 +24,14 @@ const Dropdown = ({
 } : DropdownProps) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [search, setSearch] = useState<string>('');
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>(props.initialSelectedItem?[props.initialSelectedItem]:[]);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // if (props.initialSelectedItem){
+  //   setSelected([props.initialSelectedItem]);
+  // }
+
   const itemHeight = 40; // px per item
   const maxHeight = maxVisibleItems * itemHeight;
 
@@ -30,7 +39,11 @@ const Dropdown = ({
     item.toLowerCase().includes(search.toLowerCase())
   );
 
-  const toggleDropdown = () => setIsOpen(!isOpen);
+  const toggleDropdown = () => {
+    setIsOpen(!isOpen)
+    inputRef.current?.focus();
+    
+  };
 
   const handleSelect = (item : string) => {
     if (multiple) {
@@ -40,6 +53,7 @@ const Dropdown = ({
         setSelected([...selected, item]);
       }
     } else {
+      if (props.actAsFilter) props.setFilter?.(item);
       setSelected([item]);
       setIsOpen(false);
     }
@@ -59,6 +73,7 @@ const Dropdown = ({
     const handleClickOutside = (event : MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        if (!multiple) setSearch("");
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -66,12 +81,11 @@ const Dropdown = ({
   }, []);
 
   return (
-    <div className={`relative w-72 text-sm ${className}`} ref={containerRef}>
-      <div className="border-[1.5px] border-[color:var(--primary-color)] rounded-md px-3 py-2 flex items-center justify-between cursor-pointer text-[color:var(--primary-color)]" onClick={toggleDropdown}>
+    <div className={`relative w-fit min-w-32 text-sm ${className}`} ref={containerRef}>
+      <div className={`border-[1.5px] ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : "border-[color:var(--primary-color)] text-[color:var(--primary-color)]"} rounded-md ${className} px-3 py-2 flex items-center justify-between cursor-pointer`} onClick={toggleDropdown}>
         <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
           {/* {selected.length === 0 && <span className="text-gray-500">{placeholder}</span>} */}
-
-          {(!multiple && selected.length>0) ? <span className="text-[color:var(--primary-color)]">{selected.at(0)}</span> : selected.map((item, index) => (
+          {(!multiple && selected.length>0) ? <span>{(!multiple && !isOpen) && selected.at(0)}</span> : selected.map((item, index) => (
             <span
               key={index}
               className="flex items-center gap-1 bg-gray-100 border border-[color:var(--primary-color)] text-[color:var(--primary-color)] px-2 py-1 rounded whitespace-nowrap"
@@ -83,16 +97,16 @@ const Dropdown = ({
                 handleRemove(item)}} />
             </span>
           ))}
-          
           <input
             type="text"
             value={search}
+            ref={inputRef}
             onChange={(e) => {
                 setSearch(e.target.value)
                 if (filteredItems.length>0) setIsOpen(true);
             }}
             onKeyDown={handleKeyDown}
-            className="outline-none min-w-[20px] grow px-1"
+            className="outline-none w-0.5 grow px-1"
             placeholder={selected.length === 0 ? placeholder : ''}
           />
         </div>

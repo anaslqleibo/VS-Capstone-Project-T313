@@ -83,17 +83,17 @@ const icons : IconMap = {
   ),
     viewBox: "0 0 41 40"
     },
-  'arrow-up': {path: <path fill-rule="evenodd" clip-rule="evenodd" d="M20.7528 15.7981L8.59799 27.649L6.24097 25.351L20.7528 11.2019L35.2647 25.351L32.9076 27.649L20.7528 15.7981Z" fill="currentColor"/>,
+  'arrow-up': {path: <path fillRule="evenodd" clipRule="evenodd" d="M20.7528 15.7981L8.59799 27.649L6.24097 25.351L20.7528 11.2019L35.2647 25.351L32.9076 27.649L20.7528 15.7981Z" fill="currentColor"/>,
     viewBox: "0 0 41 40"
     },
-  'arrow-down': {path: <path fill-rule="evenodd" clip-rule="evenodd" d="M32.9076 12.3511L35.2647 14.6492L20.7528 28.7982L6.24097 14.6492L8.59799 12.3511L20.7528 24.202L32.9076 12.3511Z" fill="currentColor"/>,
+  'arrow-down': {path: <path fillRule="evenodd" clipRule="evenodd" d="M32.9076 12.3511L35.2647 14.6492L20.7528 28.7982L6.24097 14.6492L8.59799 12.3511L20.7528 24.202L32.9076 12.3511Z" fill="currentColor"/>,
     viewBox: "0 0 41 40"
     },
-  'arrow-left': {path: <path fill-rule="evenodd" clip-rule="evenodd" d="M15.9534 19.9999L27.8043 32.1547L25.5062 34.5117L11.3572 19.9999L25.5062 5.48804L27.8043 7.84506L15.9534 19.9999Z" fill="currentColor"/>,
+  'arrow-left': {path: <path fillRule="evenodd" clipRule="evenodd" d="M15.9534 19.9999L27.8043 32.1547L25.5062 34.5117L11.3572 19.9999L25.5062 5.48804L27.8043 7.84506L15.9534 19.9999Z" fill="currentColor"/>,
 
     viewBox: "0 0 41 40"
     },
-  'arrow-right': {path: <path fill-rule="evenodd" clip-rule="evenodd" d="M24.9649 19.9999L12.8101 8.14893L15.1671 5.85083L29.679 19.9999L15.1671 34.1489L12.8101 31.8508L24.9649 19.9999Z" fill="currentColor"/>,
+  'arrow-right': {path: <path fillRule="evenodd" clipRule="evenodd" d="M24.9649 19.9999L12.8101 8.14893L15.1671 5.85083L29.679 19.9999L15.1671 34.1489L12.8101 31.8508L24.9649 19.9999Z" fill="currentColor"/>,
     viewBox: "0 0 41 40"
     },
   'list': {
@@ -107,15 +107,15 @@ const icons : IconMap = {
   'preferences': {
     path: (
     <>
-      <path d="M22.1443 26.8145L22.1443 33.8659" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-  <path d="M2.75281 30.3401L22.1443 30.3401" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-  <path d="M27.4329 30.3401L36.2472 30.3401" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-  <path d="M2.75281 5.65991L27.4329 5.65991" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-  <path d="M27.4329 2.13428L27.4329 9.18573" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-  <path d="M32.7214 5.65991L36.2472 5.65991" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-  <path d="M13.33 14.4744L13.33 21.5258" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-  <path d="M2.75281 17.9998L13.33 17.9998" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
-  <path d="M18.6185 17.9998L36.2471 17.9998" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+      <path d="M22.1443 26.8145L22.1443 33.8659" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+  <path d="M2.75281 30.3401L22.1443 30.3401" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+  <path d="M27.4329 30.3401L36.2472 30.3401" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+  <path d="M2.75281 5.65991L27.4329 5.65991" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+  <path d="M27.4329 2.13428L27.4329 9.18573" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+  <path d="M32.7214 5.65991L36.2472 5.65991" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+  <path d="M13.33 14.4744L13.33 21.5258" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+  <path d="M2.75281 17.9998L13.33 17.9998" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+  <path d="M18.6185 17.9998L36.2471 17.9998" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
     </>
   ),
     viewBox: "0 0 39 36"
@@ -192,17 +192,17 @@ const icons : IconMap = {
     viewBox: "0 0 41 40"
     },
   '?':{
-        path:<path fill="currentColor" fill-opacity="1" stroke-width="0.006" stroke-linejoin="round" d="M1.116 1.472a0.119 0.119 0 1 1 0 0.238 0.119 0.119 0 0 1 0 -0.238M1.14 0.523c0.21 0 0.38 0.136 0.38 0.332 0 0.071 -0.048 0.19 -0.142 0.238s-0.142 0.111 -0.142 0.19v0.095H0.997v-0.071c0 -0.162 0.142 -0.261 0.19 -0.309 0.095 -0.095 0.095 -0.108 0.095 -0.142a0.142 0.142 0 0 0 -0.285 0v0.071h-0.238v-0.047c0 -0.197 0.17 -0.356 0.38 -0.356"/>,
+        path:<path fill="currentColor" fillOpacity="1" strokeWidth="0.006" strokeLinejoin="round" d="M1.116 1.472a0.119 0.119 0 1 1 0 0.238 0.119 0.119 0 0 1 0 -0.238M1.14 0.523c0.21 0 0.38 0.136 0.38 0.332 0 0.071 -0.048 0.19 -0.142 0.238s-0.142 0.111 -0.142 0.19v0.095H0.997v-0.071c0 -0.162 0.142 -0.261 0.19 -0.309 0.095 -0.095 0.095 -0.108 0.095 -0.142a0.142 0.142 0 0 0 -0.285 0v0.071h-0.238v-0.047c0 -0.197 0.17 -0.356 0.38 -0.356"/>,
         viewBox: "0 0 2.28 2.28"
     },
   '$':{
-    path:<path fill-rule="evenodd" d="M7,8.5 C7,6.29584229 8.73751171,4.50141712 11.0052145,4.08920503 L11.0011675,4.04546297 L11.0011675,4.04546297 L11,3 C11,2.44771525 11.4477153,2 12,2 C12.5522847,2 13,2.44771525 13,3 L13,4 L12.9957846,4.08938673 C15.2629986,4.5019442 17,6.29616601 17,8.5 C17,9.05228475 16.5522847,9.5 16,9.5 C15.4871642,9.5 15.0644928,9.11395981 15.0067277,8.61662113 L15,8.5 C15,7.15119434 13.6843493,6 12,6 C10.3156507,6 9,7.15119434 9,8.5 C9,9.79884989 10.2199998,10.9144553 11.8144155,10.995311 L12,11 C14.7339287,11 17,12.9828124 17,15.5 C17,17.7022154 15.2655491,19.4954201 13.0007791,19.909702 L13,21 C13,21.5522847 12.5522847,22 12,22 C11.4477153,22 11,21.5522847 11,21 L11.0002197,19.9098846 C8.73496086,19.4959473 7,17.7025391 7,15.5 C7,14.9477153 7.44771525,14.5 8,14.5 C8.55228475,14.5 9,14.9477153 9,15.5 C9,16.8488057 10.3156507,18 12,18 C13.6843493,18 15,16.8488057 15,15.5 C15,14.2011501 13.7800002,13.0855447 12.1855845,13.004689 L12,13 C9.26607132,13 7,11.0171876 7,8.5 Z"/>,
+    path:<path fillRule="evenodd" d="M7,8.5 C7,6.29584229 8.73751171,4.50141712 11.0052145,4.08920503 L11.0011675,4.04546297 L11.0011675,4.04546297 L11,3 C11,2.44771525 11.4477153,2 12,2 C12.5522847,2 13,2.44771525 13,3 L13,4 L12.9957846,4.08938673 C15.2629986,4.5019442 17,6.29616601 17,8.5 C17,9.05228475 16.5522847,9.5 16,9.5 C15.4871642,9.5 15.0644928,9.11395981 15.0067277,8.61662113 L15,8.5 C15,7.15119434 13.6843493,6 12,6 C10.3156507,6 9,7.15119434 9,8.5 C9,9.79884989 10.2199998,10.9144553 11.8144155,10.995311 L12,11 C14.7339287,11 17,12.9828124 17,15.5 C17,17.7022154 15.2655491,19.4954201 13.0007791,19.909702 L13,21 C13,21.5522847 12.5522847,22 12,22 C11.4477153,22 11,21.5522847 11,21 L11.0002197,19.9098846 C8.73496086,19.4959473 7,17.7025391 7,15.5 C7,14.9477153 7.44771525,14.5 8,14.5 C8.55228475,14.5 9,14.9477153 9,15.5 C9,16.8488057 10.3156507,18 12,18 C13.6843493,18 15,16.8488057 15,15.5 C15,14.2011501 13.7800002,13.0855447 12.1855845,13.004689 L12,13 C9.26607132,13 7,11.0171876 7,8.5 Z"/>,
     viewBox:"0 0 24 24",
     width: "1.2em",
     height: "1.2em"
   },
   "checkmark":{
-    path:<path fill-rule="evenodd" clip-rule="evenodd" d="M21.1403 5.20693C21.2445 5.287 21.3319 5.38682 21.3975 5.50068C21.463 5.61454 21.5056 5.74021 21.5226 5.87051C21.5395 6.0008 21.5307 6.13318 21.4965 6.26005C21.4623 6.38693 21.4035 6.50582 21.3233 6.60993L11.3233 19.6099C11.2365 19.7227 11.1267 19.8156 11.0012 19.8826C10.8756 19.9495 10.7372 19.9889 10.5952 19.9981C10.4533 20.0072 10.311 19.986 10.1778 19.9358C10.0447 19.8856 9.92384 19.8076 9.82328 19.7069L4.82328 14.7069C4.64113 14.5183 4.54033 14.2657 4.54261 14.0035C4.54489 13.7413 4.65006 13.4905 4.83547 13.3051C5.02087 13.1197 5.27169 13.0145 5.53388 13.0123C5.79608 13.01 6.04868 13.1108 6.23728 13.2929L10.4323 17.4879L19.7373 5.38993C19.8174 5.28574 19.9172 5.19835 20.031 5.13276C20.1449 5.06717 20.2706 5.02466 20.4009 5.00767C20.5312 4.99067 20.6635 4.99952 20.7904 5.03371C20.9173 5.06791 21.0362 5.12677 21.1403 5.20693Z" fill="currentColor"/>,
+    path:<path fillRule="evenodd" clipRule="evenodd" d="M21.1403 5.20693C21.2445 5.287 21.3319 5.38682 21.3975 5.50068C21.463 5.61454 21.5056 5.74021 21.5226 5.87051C21.5395 6.0008 21.5307 6.13318 21.4965 6.26005C21.4623 6.38693 21.4035 6.50582 21.3233 6.60993L11.3233 19.6099C11.2365 19.7227 11.1267 19.8156 11.0012 19.8826C10.8756 19.9495 10.7372 19.9889 10.5952 19.9981C10.4533 20.0072 10.311 19.986 10.1778 19.9358C10.0447 19.8856 9.92384 19.8076 9.82328 19.7069L4.82328 14.7069C4.64113 14.5183 4.54033 14.2657 4.54261 14.0035C4.54489 13.7413 4.65006 13.4905 4.83547 13.3051C5.02087 13.1197 5.27169 13.0145 5.53388 13.0123C5.79608 13.01 6.04868 13.1108 6.23728 13.2929L10.4323 17.4879L19.7373 5.38993C19.8174 5.28574 19.9172 5.19835 20.031 5.13276C20.1449 5.06717 20.2706 5.02466 20.4009 5.00767C20.5312 4.99067 20.6635 4.99952 20.7904 5.03371C20.9173 5.06791 21.0362 5.12677 21.1403 5.20693Z" fill="currentColor"/>,
     viewBox: "0 0 25 25"
   },
   "chevron":{
@@ -221,20 +221,22 @@ const icons : IconMap = {
   },
   "read":{
     path:(<g>
-        <polyline points="4 9 12 14 20 9" fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-        <polyline points="3 8.5 12 3.5 21 8.5" fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
-        <path d="M21,8.5v10a2,2,0,0,1-2,2H5a2,2,0,0,1-2-2V8.5" fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+        <polyline points="4 9 12 14 20 9" fill="none" stroke="#000000" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"/>
+        <polyline points="3 8.5 12 3.5 21 8.5" fill="none" stroke="#000000" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"/>
+        <path d="M21,8.5v10a2,2,0,0,1-2,2H5a2,2,0,0,1-2-2V8.5" fill="none" stroke="#000000" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"/>
       </g>),
     viewBox: "0 0 24 24"
   }
 };
 
+
+// TODO: Add suggestion for icons list 
 interface IconProps {
   id?: string;
   width?: string;
   height?: string;
   className?: string;
-  onClick?: (e:any) => (void);
+  onClick?: (e:React.MouseEvent) => (void);
   props?: {[key:string] : any}; 
 }
 
@@ -258,6 +260,7 @@ function Icon({ id="?", width='1em', height='1em', className="", ...props } : Ic
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
         className={`${className} text-[1.1em]`}
+        onClick={props.onClick}
         {...props}
         >
         {path}
