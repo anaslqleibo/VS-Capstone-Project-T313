@@ -1,63 +1,63 @@
-.login-body {
+.login-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: #e5e5e5;
-  font-family: Arial, sans-serif;
-  margin: 0;
+  background: #f3f4f8;
 }
 
-.login-container {
-  background-color: white;
+.login-form {
+  background: white;
+  padding: 30px;
   border-radius: 12px;
-  padding: 30px 40px;
-  box-shadow: 0 0 25px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  width: 300px;
   text-align: center;
-  width: 350px;
 }
 
-.login-logo {
-  width: 100px;
+.logo-img {
+  width: 80px;
   margin-bottom: 20px;
 }
 
-.login-container h2 {
-  margin-bottom: 25px;
-  font-size: 24px;
-  font-weight: 600;
-  color: #000;
+h2 {
+  margin-bottom: 20px;
+  color: #273469;
 }
 
-.login-container label {
-  display: block;
-  margin: 10px 0 5px;
+label {
   text-align: left;
-  font-weight: bold;
-  font-size: 14px;
+  width: 100%;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
-.login-container input {
-  width: 100%;
+input {
+  margin: 5px 0 15px;
   padding: 10px;
-  margin-bottom: 15px;
-  border-radius: 6px;
+  width: 100%;
   border: 1px solid #ccc;
-  font-size: 14px;
+  border-radius: 6px;
 }
 
-.login-container button {
-  width: 100%;
-  padding: 12px;
-  background-color: #2a2e87;
+button {
+  background-color: #3B5BDB;
   color: white;
-  font-weight: bold;
-  font-size: 16px;
   border: none;
+  padding: 10px;
   border-radius: 6px;
+  width: 100%;
+  font-weight: bold;
   cursor: pointer;
 }
 
-.login-container button:hover {
-  background-color: #1e2266;
+.error {
+  background: #ffdddd;
+  border-left: 5px solid #ff5e5e;
+  padding: 10px;
+  margin-bottom: 10px;
+  width: 300px;
+  text-align: center;
+  border-radius: 5px;
 }
