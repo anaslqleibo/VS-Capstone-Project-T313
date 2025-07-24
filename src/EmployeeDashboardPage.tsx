@@ -1,28 +1,20 @@
-import React, { useRef, useState } from 'react';
-import logo from './assets/LOGO.png';
-import notification from './assets/icons/notification.png';
-import notification_empty from './assets/icons/no-notification.png';
-import home from './assets/icons/home.png';
-import unavailability from './assets/icons/unavailability.png';
-import messaging from './assets/icons/messaging.png';
-import account from './assets/icons/account.png';
-import './EmployeeDashboardPage.css';
+import { useState } from 'react';
+
 import { Calendar, EventProps } from './components/Calendar';
 import getStatusColor, { Status } from './components/utils/getStatusColor';
 import formatDate from './components/utils/formatDate';
 import Dropdown from './components/Dropdown';
-import { ButtonDropdown } from './components/Button';
 import { createModal, ModalDetailsProps, ModalTypes } from './components/Modal';
 import Icon from './assets/icons/Icons';
 import ListView, { ListViewHandle } from './components/ListView';
 import { createNotifications, NotificationProps } from './components/utils/notification';
 import { createRoot } from 'react-dom/client';
+import { injectModalOverlay, PageProps } from './App';
 
-function EmployeeDashboardPage() {
+
+export default function EmployeeDashboardPage({modalContainer, rootRef}: PageProps) {
+
   const [activeFilter, setActiveFilter] = useState("All");
-  const modalContainer = useRef<HTMLDivElement>(null);
-  
-  const rootRef = useRef<ReturnType<typeof createRoot> | null>(null);
   
   const leaveDetails = {
       Date: "11-04-2024",
@@ -57,49 +49,11 @@ function EmployeeDashboardPage() {
           ];
   
  
-  // Initial notifications read from db
-  const notifications : NotificationProps[] = [{type:Status.Request},{type:Status.Accepted, date:"17-02-2025", onClick: ()=>alert("Redirecting...")},{type:Status.Unassigned, date:"01-02-2025", daysLeft: 5, onClick: ()=>alert("Redirecting...")},{type:Status.DeclinedShift, date:"15-02-2025"}]
 
-  const listViewRef = useRef<ListViewHandle>(null);
-  const toggleButtonRef = useRef<HTMLDivElement>(null);
-
-  const toggleListView = () => {
-    listViewRef.current?.toggleShown(true); 
-  };
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <aside className="bg-[color:var(--primary-color)] text-white w-[220px] px-[15px] py-[20px] flex flex-col items-center">
-        <img src={logo} alt="2 Bent Rods logo" className="w-36 mb-2"/>
-        
-        <div className="w-12 h-12 hover:bg-[#1e2266] rounded-full flex items-center justify-center ml-auto mb-2" ref={toggleButtonRef} onClick={()=>{
-                if (modalContainer.current) {
-                    if (!rootRef.current){
-                      rootRef.current = createRoot(modalContainer.current);
-                    
-                      
-                    }
-                    
-                    rootRef.current.render(<ListView title="Notifications" container={modalContainer.current} ref={listViewRef} toggleButtonRef={toggleButtonRef}>{createNotifications(notifications)}</ListView>);
-                    toggleListView();
-                }
-            }}>
-          <img src={notification} alt="Notifications" className="w-6 object-contain" />
-        </div>
-        
-        <nav className='w-full flex flex-col items-center [&>a]:w-full [&>a]:flex [&>a]:items-center [&>a]:p-[10px] [&>a]:text-white [&>a]:font-bold [&>a]:mb-[15px] [&>a]:rounded-[10px] [&>a]:transition-colors [&>a]:duration-200 [&>a]:hover:bg-[#1e2266] [&>a]:gap-5'>
-          
-          <a href="/dashboard"><img src={home} className='w-4'></img>Home</a>
-          <a href="/unavailability"><img src={unavailability} className='w-4'></img>Unavailability</a>
-          <a href="/messaging"><img src={messaging} className='w-4'></img>Messaging</a>
-          <a href="/account"><img src={account} className='w-4'></img>Account</a>
-        </nav>
-      </aside>
-
-      
-
       <div className="relative flex-[1] bg-[#f4f4f4] overflow-hidden">
-        <div className="absolute z-10 inset-0 pointer-events-none" ref={modalContainer}></div>
+        {injectModalOverlay(modalContainer)}
 
         <div className='p-[40px] overflow-y-auto h-full'>
 
@@ -123,8 +77,6 @@ function EmployeeDashboardPage() {
         
         </div>
       </div>
-    </div>
+    
   );
 }
-
-export default EmployeeDashboardPage;
