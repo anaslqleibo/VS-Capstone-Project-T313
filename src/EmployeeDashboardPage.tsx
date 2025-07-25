@@ -10,6 +10,7 @@ import ListView, { ListViewHandle } from './components/ListView';
 import { createNotifications, NotificationProps } from './components/utils/notification';
 import { createRoot } from 'react-dom/client';
 import { injectModalOverlay, PageProps } from './App';
+import Layout from './components/Layout';
 
 
 export default function EmployeeDashboardPage({modalContainer, rootRef}: PageProps) {
@@ -48,35 +49,33 @@ export default function EmployeeDashboardPage({modalContainer, rootRef}: PagePro
             // { status: Status.Unassigned, time: '12:00–16:00', location: '', date: formatDate(new Date(), true) }
           ];
   
- 
-
-
   return (
-      <div className="relative flex-[1] bg-[#f4f4f4] overflow-hidden">
-        {injectModalOverlay(modalContainer)}
+      <Layout modalContainer={modalContainer} rootRef={rootRef}>
+        <div className="relative flex-[1] bg-[#f4f4f4] overflow-hidden">
+          <div className='p-[40px] overflow-y-auto h-full'>
 
-        <div className='p-[40px] overflow-y-auto h-full'>
+          <h2 className="text-2xl mb-[30px]">Welcome, <span className="text-[color:var(--primary-color)] font-semibold">Anas</span></h2>
 
-        <h2 className="text-2xl mb-[30px]">Welcome, <span className="text-[color:var(--primary-color)] font-semibold">Anas</span></h2>
+          <div className="flex gap-3 -mb-6.5">
+            {/* <select><option>Anas</option></select> */}
+            {/* <select><option>All Shifts</option></select> */}
+          
+            <Dropdown items={['All', ...Object.values(Status)]} showCheckbox={true} placeholder="Select employee" actAsFilter setFilter={setActiveFilter} maxVisibleItems={6} className='rounded-b-none'/>
 
-        <div className="flex gap-3 -mb-6.5">
-          {/* <select><option>Anas</option></select> */}
-          {/* <select><option>All Shifts</option></select> */}
-        
-          <Dropdown items={['All', ...Object.values(Status)]} showCheckbox={true} placeholder="Select employee" actAsFilter setFilter={setActiveFilter} maxVisibleItems={6} className='rounded-b-none'/>
+            <Dropdown items={['All', ...Object.values(Status)]} showCheckbox={true} placeholder="Select shift" actAsFilter setFilter={setActiveFilter} maxVisibleItems={6} className='rounded-b-none' initialSelectedItem='All'/>
 
-          <Dropdown items={['All', ...Object.values(Status)]} showCheckbox={true} placeholder="Select shift" actAsFilter setFilter={setActiveFilter} maxVisibleItems={6} className='rounded-b-none' initialSelectedItem='All'/>
+            <Dropdown items={['All', ...Object.values(Status)]} showCheckbox={true} placeholder="Select month" actAsFilter setFilter={setActiveFilter} maxVisibleItems={6} className='rounded-b-none'/>
 
-          <Dropdown items={['All', ...Object.values(Status)]} showCheckbox={true} placeholder="Select month" actAsFilter setFilter={setActiveFilter} maxVisibleItems={6} className='rounded-b-none'/>
-
-          {/* <select><option>April</option></select> */}
-          <button className="add-leave ml-auto">Add Leave</button>
+            {/* <select><option>April</option></select> */}
+            <button className="add-leave ml-auto">Add Leave</button>
+          </div>
+          
+          <Calendar events = {events} showStatus={activeFilter} modalContainer={modalContainer} rootRef={rootRef}></Calendar>
+          
+          </div>
         </div>
-        
-        <Calendar events = {events} showStatus={activeFilter} modalContainer={modalContainer} rootRef={rootRef}></Calendar>
-        
-        </div>
-      </div>
+      </Layout>
+      
     
   );
 }

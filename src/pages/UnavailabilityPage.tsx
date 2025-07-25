@@ -4,8 +4,9 @@ import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import './UnavailabilityPage.css'; // Optional styling
+import { injectModalOverlay, PageProps } from '../App';
 
-const UnavailabilityPage = () => {
+const UnavailabilityPage = ({modalContainer, rootRef}: PageProps) => {
   const unavailableEvents = [
     { title: 'Unavailable', start: '2025-05-04T00:00:00', end: '2025-05-04T23:59:00', color: '#6C757D' },
     { title: 'Unavailable', start: '2025-05-06T11:00:00', end: '2025-05-06T18:00:00', color: '#6C757D' },
@@ -13,7 +14,7 @@ const UnavailabilityPage = () => {
   ];
 
   return (
-    <Layout>
+    <Layout modalContainer={modalContainer} rootRef={rootRef}>
       <div className="unavailability-header">
         <h1 className="text-3xl font-bold text-blue-900">Unavailability</h1>
         <button className="add-button">Add Unavailability</button>

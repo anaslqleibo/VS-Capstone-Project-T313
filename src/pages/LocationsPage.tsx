@@ -1,8 +1,10 @@
 import React from 'react';
 import Sidebar from '../components/Sidebar';
 import './LocationsPage.css';
+import { PageProps } from '../App';
+import Layout from '../components/Layout';
 
-const LocationsPage = () => {
+const LocationsPage = ({modalContainer, rootRef}:PageProps) => {
   const councils = [
     {
       title: 'Brisbane City Council – BCC',
@@ -19,8 +21,9 @@ const LocationsPage = () => {
   ];
 
   return (
-    <div className="dashboard-container">
-      <Sidebar />
+    <Layout modalContainer={modalContainer} rootRef={rootRef}>
+      <div className="dashboard-container">
+
       <main className="main-content">
         <h1>
           Welcome, <span className="highlight-name">Naomi</span>
@@ -46,6 +49,8 @@ const LocationsPage = () => {
         </div>
       </main>
     </div>
+    </Layout>
+    
   );
 };
 

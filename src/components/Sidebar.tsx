@@ -9,8 +9,11 @@ import home from '../assets/icons/home.png';
 import unavailability from '../assets/icons/unavailability.png';
 import messaging from '../assets/icons/messaging.png';
 import account from '../assets/icons/account.png';
+import { FaHome, FaCalendarAlt, FaEnvelope, FaUser, FaMapMarkerAlt } from 'react-icons/fa';
+
 import { createNotifications, NotificationProps } from "./utils/notification";
 import { Status } from "./utils/getStatusColor";
+import { NavLink } from "react-router-dom";
 
 export default function Sidebar({modalContainer, rootRef} : PageProps){
   // Initial notifications read from db
@@ -43,10 +46,11 @@ export default function Sidebar({modalContainer, rootRef} : PageProps){
         
         <nav className='w-full flex flex-col items-center [&>a]:w-full [&>a]:flex [&>a]:items-center [&>a]:p-[10px] [&>a]:text-white [&>a]:font-bold [&>a]:mb-[15px] [&>a]:rounded-[10px] [&>a]:transition-colors [&>a]:duration-200 [&>a]:hover:bg-[#1e2266] [&>a]:gap-5'>
           
-          <a href="/dashboard"><img src={home} className='w-4'></img>Home</a>
-          <a href="/unavailability"><img src={unavailability} className='w-4'></img>Unavailability</a>
-          <a href="/messaging"><img src={messaging} className='w-4'></img>Messaging</a>
-          <a href="/account"><img src={account} className='w-4'></img>Account</a>
+            <NavLink to="/home"><FaHome /> Home</NavLink>
+            <NavLink to="/unavailability"><FaCalendarAlt /> Unavailability</NavLink>
+            <NavLink to="/locations" ><FaMapMarkerAlt /> Locations</NavLink>
+            <NavLink to="/messaging" ><FaEnvelope /> Messaging</NavLink>
+            <NavLink to="/account"  ><FaUser /> Account</NavLink>
         </nav>
       </aside>
     );
