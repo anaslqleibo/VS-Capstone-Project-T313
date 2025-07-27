@@ -1,8 +1,17 @@
-import { useRef, useState } from "react";
+import { JSX, ReactNode, useEffect, useRef, useState } from "react";
 import Icon from "../assets/icons/Icons";
 import Button from "./Button";
 import { overlayAnimation, useClickOutside } from "./utils/useClickOutside";
 import { Status } from "./utils/getStatusColor";
+import { PageProps } from "../App";
+import { createRoot } from "react-dom/client";
+import React from "react";
+import { createPortal } from "react-dom";
+import ListView from "./ListView";
+import { createNotifications } from "./utils/notification";
+import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from "dayjs";
 
 
 // TODO: Still missing some code, please go through everything and finish what's still missing
@@ -17,6 +26,7 @@ export enum ModalTypes{
     AddShift = "Add shift",
     AddLeave = "Add leave",
     AddUnavailability = "Add unavailability",
+    Notifications="Notifications"
 }
 
 export function getModalTypesByStatus(status:Status){
@@ -59,14 +69,17 @@ export interface ModalDetailsProps{
     Notes: string;
 }
 
+export type DetailsPropsList = ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps|null;
+
 interface ModalProps{
     type?: ModalTypes|null;
     startOpen ?: boolean;
     shown?: boolean;
     setShown?: (arg0: boolean) => void;
-    details?: ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps|null; 
+    details?: DetailsPropsList; 
     title?:string;
-    modalContainer?: HTMLDivElement;
+    modalContainer: HTMLDivElement;
+    setParentOpen?:(e:boolean)=>void;
     children?: React.ReactNode;
     customButtons?: React.ReactNode;
 }
@@ -80,8 +93,8 @@ function createDetail(label: string, detail: string, type:string=""){
     <span className="text-[color:var(--secondary-color)] font-normal">{detail}</span></p>);
 }
 
-function createDetails(type: string|null, details?: ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps|null){
-    if (details === undefined || details === null || type==null) return;
+function createDetails(type: string|null, details?: DetailsPropsList){
+    if (details === undefined || type==null) return;
 
     if (type === ModalTypes.UnavailabilityDetails)
     {
@@ -104,9 +117,31 @@ function createDetails(type: string|null, details?: ModalUnavailDetailsProps|Mod
         );
     }
     else if (type === ModalTypes.AddUnavailability)
-        return;
+        return; 
     else if (type === ModalTypes.AddLeave)
-        return;
+        return (
+            
+            <div className="flex flex-col gap-4 mt-4">
+                <div className="flex items-center gap-2">
+                    <p className="text-md font-semibold text-gray-600 mt-1 mb-1">Date:</p>
+                    
+                    <DatePicker label="From"/>
+                        <span className="text-[color:var(--primary-color)] font-bold">to</span>
+                    <DatePicker label="To"/>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <p className="text-md font-semibold text-gray-600 mt-1 mb-1">Time:</p>
+                    
+                    <TimePicker label="From" />
+                        <span className="text-[color:var(--primary-color)] font-bold">to</span>
+                    <TimePicker label="To"/>
+                </div>
+           
+
+            
+            </div>
+        );
     else if (type === ModalTypes.DeclinedDetails)
     {
         const newDetails = details as ModalDetailsProps;
@@ -161,23 +196,23 @@ function createButtons(type: string|null){
     return buttons;
 }
 
-export function createModal(type:ModalTypes|null, startOpen: boolean, modalContainer: HTMLDivElement, details?:ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps|null){
-    return (<Modal key={crypto.randomUUID()} type={type} details={details} startOpen={startOpen} modalContainer={modalContainer}/>);
+export function createModal(type:ModalTypes|null, startOpen: boolean, modalContainer: HTMLDivElement, details?:ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps|null, setParentOpen?: (e:boolean)=>void){
+    return (<Modal type={type} details={details} startOpen={startOpen} modalContainer={modalContainer} setParentOpen={setParentOpen}/>);
 }
 
-export default function Modal({type, details, startOpen, title, modalContainer, ...props} : ModalProps){
+export default function Modal({type, details, startOpen, title, modalContainer, setParentOpen, ...props} : ModalProps){
     const [shown, setShown] = useState(startOpen ?? false);
-
+    
     const containerRef = useRef<HTMLDivElement>(null);
     useClickOutside(containerRef, ()=> props.setShown ? props.setShown(false) : setShown(false));
     
     const [rendered, setRendered] = useState(false);
     const [visible, setVisible] = useState(false);
 
-    overlayAnimation(props.shown ? props.shown : shown, setRendered, setVisible, modalContainer);
+    overlayAnimation(props.shown ? props.shown : shown, setRendered, setVisible, modalContainer, setParentOpen)
 
     return (
-        <>
+        <ModalPortal container={modalContainer} isModalOpen={rendered}>
             {rendered && <div role="dialog" aria-modal="true" aria-labelledby="dialog-title" className={`relative z-10 h-full transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} >
             
             <div aria-hidden="true" className={`absolute inset-0 bg-gray-200/75 backdrop-blur-sm transition-all duration-200 ${visible ? 'backdrop-opacity-100' : 'backdrop-opacity-0'}`}></div>
@@ -185,6 +220,11 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
             <div className="relative z-10 w-full overflow-y-auto h-full">
             <div className="flex min-h-full justify-center p-4 text-center items-center sm:p-0">
             
+                {type === ModalTypes.Notifications &&
+                    <ListView title="Notifications" containerRef={containerRef} setShown={setShown}>{createNotifications()}</ListView>
+                }
+
+                {type !== ModalTypes.Notifications && 
                 <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all my-auto sm:w-full sm:max-w-lg" ref={containerRef}>
                 <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <div className="sm:flex sm:items-start">
@@ -211,10 +251,75 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                     {type!==undefined ? createButtons(type) : props.customButtons}
                 </div>}
                 </div>
+                }
             </div>
             </div>
         </div>  }
-        </>
+        </ModalPortal>
         
     );
 }
+
+interface ModalPortal{
+    children: ReactNode;
+    container: HTMLDivElement | HTMLElement | undefined;
+    isModalOpen:boolean;
+}
+
+export function ModalPortal({children, container, isModalOpen}: ModalPortal ) {
+  const elRef = useRef<HTMLDivElement | null>(null);
+  if (!elRef.current) {
+    const div = document.createElement("div");
+    div.className = "fixed w-[calc(100%-220px)] h-full z-10";
+    elRef.current = div;
+    }
+
+
+ useEffect(() => {
+    const el = elRef.current!;
+  if (!container) return;
+
+  if (isModalOpen) {
+    if (!container.contains(el)) {
+      container.appendChild(el);
+    }
+  } else {
+    if (container.contains(el)) {
+      container.removeChild(el);
+    }
+  }
+
+  return () => {
+    if (container.contains(el)) {
+      container.removeChild(el);
+    }
+  };
+}, [container, isModalOpen]);
+
+  return container ? createPortal(children, elRef.current) : null;
+}
+
+
+// export function renderModal({modalContainer, rootRef}: PageProps, status: Status, details?:ModalUnavailDetailsProps | ModalLeaveDetailsProps | ModalDetailsProps | null){    
+//     if (modalContainer.current) {
+//         if (rootRef && !rootRef.current)
+//             rootRef.current = createRoot(modalContainer.current);
+        
+//         rootRef?.current?.render(createModal(getModalTypesByStatus(status), true, modalContainer.current, details));
+//     } 
+//     else {
+//         console.warn("Modal container is missing or not mounted.");
+//     }
+// }
+
+// export function renderCustomModal({modalContainer, rootRef}: PageProps, jsx: ReactNode){
+//     if (modalContainer.current) {
+//         if (rootRef && !rootRef.current)
+//             rootRef.current = createRoot(modalContainer.current);
+        
+//         rootRef?.current?.render(jsx);
+//     } 
+//     else {
+//         console.warn("Modal container is missing or not mounted.");
+//     }
+// }

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, isValidElement, Dispatch, SetStateAction } from 'react';
+import { useState, useRef, useEffect, Dispatch, SetStateAction } from 'react';
 import './Button.css';
 import Icon from '../assets/icons/Icons';
 
@@ -142,6 +142,7 @@ interface ButtonProps{
     size?:string;
     htmlType?:"button" | "submit" | "reset" | undefined;
     disabled?: boolean;
+    className?: string;
     children?:React.ReactNode;
 }
 export default function Button({ type = 'cta', fontSize = '1em', onClick, items, onItemClicks, size, htmlType, disabled, children, ...props } : ButtonProps){
@@ -173,7 +174,7 @@ export default function Button({ type = 'cta', fontSize = '1em', onClick, items,
 
     // General Button Setup
     return (
-        <button onClick={onClick} className={type} disabled={disabled}
+        <button onClick={onClick} className={`${props.className} ${type}`} disabled={disabled}
         style = {{fontSize}} type={htmlType || "button"} >
             <div className='gap-[0.5em] flex items-center'>
                 {children}

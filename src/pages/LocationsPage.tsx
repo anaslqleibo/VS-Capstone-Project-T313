@@ -3,8 +3,9 @@ import Sidebar from '../components/Sidebar';
 import './LocationsPage.css';
 import { PageProps } from '../App';
 import Layout from '../components/Layout';
+import { useLocation } from 'react-router-dom';
 
-const LocationsPage = ({modalContainer, rootRef}:PageProps) => {
+const LocationsPage = ({modalContainer}:PageProps) => {
   const councils = [
     {
       title: 'Brisbane City Council – BCC',
@@ -21,7 +22,7 @@ const LocationsPage = ({modalContainer, rootRef}:PageProps) => {
   ];
 
   return (
-    <Layout modalContainer={modalContainer} rootRef={rootRef}>
+    <Layout modalContainer={modalContainer}>
       <div className="dashboard-container">
 
       <main className="main-content">

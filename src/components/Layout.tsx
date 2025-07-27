@@ -1,12 +1,15 @@
-import React, { RefObject } from 'react';
+import React, { RefObject, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import { injectModalOverlay, PageProps } from '../App';
 
-function Layout({modalContainer, rootRef, children}:PageProps){
-  return (<div className="flex h-screen overflow-hidden">
-    <Sidebar modalContainer={modalContainer} rootRef={rootRef}/>
+function Layout({modalContainer, children}:PageProps){
+  
+
+  return (
+  <div className="flex h-screen overflow-hidden">
+      <Sidebar modalContainer={modalContainer} />
       
-      <main className="w-full overflow-y-scroll">
+      <main className="flex-1 overflow-y-scroll relative">
         {injectModalOverlay(modalContainer)}
         {children}
       </main>

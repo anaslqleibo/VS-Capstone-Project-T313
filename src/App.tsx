@@ -8,15 +8,12 @@ import LocationsPage from './pages/LocationsPage';
 
 import EmployeeDashboardPage from './EmployeeDashboardPage';
 import './App.css'
-import Demo from './demo/Demo';
-import Sidebar from './components/Sidebar';
 import { ReactNode, RefObject, useRef } from 'react';
-import { createRoot } from 'react-dom/client';
-import Layout from './components/Layout';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 export interface PageProps{
   modalContainer: RefObject<HTMLDivElement|null>;
-  rootRef: RefObject<ReturnType<typeof createRoot> | null>;
   children?: ReactNode;
 }
 
@@ -28,22 +25,25 @@ export function injectModalOverlay(modalContainer: RefObject<HTMLDivElement|null
 
 function App() {
   const modalContainer = useRef<HTMLDivElement>(null);
-  const rootRef = useRef<ReturnType<typeof createRoot> | null>(null);
-  
+
   return (
-    <Router>
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Router>
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
-        <Route path="/home" element={<EmployeeDashboardPage modalContainer={modalContainer} rootRef={rootRef}/>} />
+        <Route path="/home" element={<EmployeeDashboardPage modalContainer={modalContainer}/>} />
         <Route path="/unavailability" element={
-          <UnavailabilityPage modalContainer={modalContainer} rootRef={rootRef}/>} 
+          <UnavailabilityPage modalContainer={modalContainer}/>} 
         />
         
-        <Route path="/locations" element={<LocationsPage />} />
+        <Route path="/locations" element={<LocationsPage modalContainer={modalContainer}/>} />
         <Route path="/messaging" element={<MessagingPage />} />
         <Route path="/account" element={<AccountPage />} />
       </Routes>
     </Router>
+    </LocalizationProvider>
+
+    
   );
 }
 

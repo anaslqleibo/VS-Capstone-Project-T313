@@ -23,7 +23,7 @@ button {
 
 /* Call-to-Action */
 .cta{
-    border-radius: 12px;
+    /* border-radius: 12px; */
     background: var(--primary-color);
     font-weight: 600;
 }

@@ -6,8 +6,8 @@ import { createRoot } from "react-dom/client";
 interface ListViewProps {
   title: string;
   closeButton?: boolean;
-  container: HTMLDivElement|null;
-  toggleButtonRef?: React.RefObject<HTMLButtonElement|HTMLDivElement|null>;
+  containerRef: React.RefObject<HTMLDivElement|null>;
+  setShown?:(e:boolean)=>void;
   children?: React.ReactNode;
 }
 
@@ -46,13 +46,13 @@ export type ListViewHandle = {
 };
 
 const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
-  { title, closeButton = true, container, toggleButtonRef, ...props },
+  { title, closeButton = true, containerRef, ...props },
   ref
 ) {
-  const [shown, setShown] = useState(true);
-   useImperativeHandle(ref, () => ({
-    toggleShown: () => setShown((prev) => !prev),
-  }));
+  // const [shown, setShown] = useState(true);
+  //  useImperativeHandle(ref, () => ({
+  //   toggleShown: () => setShown((prev) => !prev),
+  // }));  
 
 
   const [items, setItems] = useState<Item[]>(
@@ -63,17 +63,7 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
   );
 
   const [removalQueue, setRemovalQueue] = useState<RemovalQueue>({});
-  
-  const containerRef = useRef<HTMLDivElement>(null);
   const notificationItems = useRef<NotificationItems>({});
-
-  const [rendered, setRendered] = useState(false);
-  const [visible, setVisible] = useState(false);
-
-  
-
-  useClickOutside(containerRef, ()=>setShown(false), toggleButtonRef);
-  if (container) overlayAnimation(shown, setRendered, setVisible, container)
 
   const handlePermanentRemove = (id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
@@ -118,19 +108,7 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
   const isMarkedForRemoval = (id: string) =>
     Object.prototype.hasOwnProperty.call(removalQueue, id);
   
-  const JSXComponent: JSX.Element = <>
-    {rendered && <div className={`relative z-10 h-full transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} >
-            
-        <div aria-hidden="true" className={`absolute inset-0 bg-gray-200/75 backdrop-blur-sm transition-all duration-200 ${visible ? 'backdrop-opacity-100' : 'backdrop-opacity-0'}`}></div>
-
-            <div className="relative z-10 w-full overflow-y-auto h-full">
-              <div className="flex min-h-full justify-center p-4 text-center items-center sm:p-0">
-              
-                  {/* <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all my-auto sm:w-full sm:max-w-lg" ref={containerRef}>
-                  
-                  </div> */}
-
-                  <div className={`w-max text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg overflow-hidden text-left shadow-xl transition-all my-auto ${shown ? "block" : "hidden"}`} ref={containerRef}>
+  return (<div className='w-max text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg overflow-hidden text-left shadow-xl transition-all my-auto block' ref={containerRef}>
                   <div className="w-full px-4 py-2 border-b border-gray-200 text-xl text-[color:var(--secondary-color))] font-semibold flex items-center justify-between gap-5">
                     {title || "Title"}
 
@@ -138,7 +116,7 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
                       <Icon
                         id="x"
                         className="text-gray-700 hover:text-[color:var(--danger-color)]"
-                        onClick={() => setShown(false)}
+                        onClick={() => props.setShown?.(false)}
                       />
                     )}
                   </div>
@@ -192,13 +170,7 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
                     )}
                   </ul>
                 </div>
-              </div>
-            </div>
-        </div>  }
-      </>;
-  
-  
-  return (<>{JSXComponent}</>);
+    );
 });
 
 export default ListView;

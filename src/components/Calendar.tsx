@@ -2,9 +2,9 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import getStatusColor, { Status } from "./utils/getStatusColor";
-import { createModal, getModalTypesByStatus, ModalDetailsProps, ModalLeaveDetailsProps, ModalTypes, ModalUnavailDetailsProps } from "./Modal";
+import Modal, { createModal, DetailsPropsList, getModalTypesByStatus, ModalDetailsProps, ModalLeaveDetailsProps, ModalPortal, ModalTypes, ModalUnavailDetailsProps } from "./Modal";
 import { createRoot } from "react-dom/client";
-import { RefObject } from "react";
+import { RefObject, useState } from "react";
 // import listPlugin from '@fullcalendar/list';
 
 export interface EventProps{
@@ -19,7 +19,7 @@ interface CalendarProps{
     initialView ?: string; // TODO: should specify enum
     selectable ?: boolean;
     events: EventProps[];
-    showStatus?: string;
+    showStatus?: string[];
     modalContainer: React.RefObject<HTMLDivElement|null>;
     rootRef ?: RefObject<ReturnType<typeof createRoot> | null>;
     // onClicks ?: ((...e:any) => void)[];
@@ -34,17 +34,24 @@ function constructEventsArray(events: EventProps[]){
    return newEvents;
 }
 
-function filterEventsArray(events: EventProps[], showStatus : string){
-    if (showStatus === "All") return events;
-    else return events.filter(e => e.status === showStatus);
+function filterEventsArray(events: EventProps[], showStatus : string[]){
+    if (showStatus.includes("All")) return events;
+    else return events.filter(e => showStatus.includes(e.status));
 }
 
 export function Calendar({initialView = "dayGridMonth", selectable = true, events, showStatus, modalContainer, ...props} : CalendarProps){
     const newEvents = constructEventsArray(showStatus ? filterEventsArray(events, showStatus) : events);
+
+    const [activeModal, setActiveModal] = useState<{
+        isOpen: boolean;
+        status: Status;
+        details: DetailsPropsList;
+    }>({ isOpen: false, status: Status.Accepted, details: null });
+
+    const setOpen = (val:boolean) => setActiveModal(prev => ({...prev, isOpen: val}));
+
     return (
     <>
-    
-    
     <FullCalendar
           plugins={[dayGridPlugin, interactionPlugin]}
           initialView={initialView}
@@ -66,14 +73,12 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
                 if (arg.event.extendedProps.details){
                     lineDiv.addEventListener('click', function(){
                         // onClicks?.at(index);
-
-                        if (modalContainer.current) {
-                            if (props.rootRef && !props.rootRef.current)
-                                props.rootRef.current = createRoot(modalContainer.current);
-                            
-                            props.rootRef?.current?.render(createModal(getModalTypesByStatus(arg.event.extendedProps.status), true, modalContainer.current, arg.event.extendedProps.details));
-                        }
-                    
+                        const {status, details} = arg.event.extendedProps;
+                        setActiveModal({
+                            isOpen: true,
+                            status,
+                            details
+                        });
                     });
                 }
 
@@ -89,7 +94,9 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
             info.el.classList.add('mb-2'); // adds gap between events
             }}
         />
+
+        {activeModal.isOpen && modalContainer.current && createModal(getModalTypesByStatus(activeModal.status),true,modalContainer.current,activeModal.details, setOpen)}
+
     </>
-    
     );
 }
