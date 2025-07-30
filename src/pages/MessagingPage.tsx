@@ -4,7 +4,7 @@ const MessagingPage = () => {
   return (
     <Layout>
       <h1 className="text-3xl font-bold mb-6 text-blue-900">Messaging</h1>
-      <div className="bg-white rounded-lg shadow p-6 max-w-3xl">
+      <div className="bg-white rounded-lg shadow p-6 w-full">
         <p className="text-gray-600 mb-4">Send a message to your supervisor or admin:</p>
         <textarea
           placeholder="Type your message..."

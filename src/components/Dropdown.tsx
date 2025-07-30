@@ -16,6 +16,14 @@ interface DropdownProps{
   props?:{[key:string] : any};
 }
 
+export function DayPicker(props: {[key:string] : any}){
+  const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+  return (
+    <Dropdown items={days} placeholder='Select a day' className='border-gray-400 hover:border-black text-[16px] w-full placeholder-shown:text-[#000] text-black' props={props}></Dropdown>
+  );
+}
+
+
 const Dropdown = ({
   items = [],
   multiple = false,
@@ -82,8 +90,8 @@ const Dropdown = ({
   }, []);
 
   return (
-    <div className={`relative w-fit min-w-32 text-sm  ${className}`} ref={containerRef}>
-      <div className={` ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : "border-[color:var(--primary-color)] text-[color:var(--primary-color)]"} rounded-md ${className} px-3 py-2 flex items-center justify-between cursor-pointer`} onClick={toggleDropdown}>
+    <div className={`relative w-fit min-w-32 text-sm ${className}`} ref={containerRef}>
+      <div className={` ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : "border-1 border-[color:var(--primary-color)] text-[color:var(--primary-color)]"} rounded-md ${className} px-3 py-2 flex items-center justify-between cursor-pointer `} onClick={toggleDropdown}>
         <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
           {/* {selected.length === 0 && <span className="text-gray-500">{placeholder}</span>} */}
           {((!multiple && selected.length>0) || (multiple && selected.length == 1)) ? <span>{(!isOpen) && selected.at(0)}</span> : selected.map((item, index) => (
@@ -113,7 +121,7 @@ const Dropdown = ({
       </div>
 
       {isOpen && (
-        <div className={`absolute z-10 mt-1 ${props.custom ? "w-fit" : "w-full"} bg-white border border-gray-300 shadow-md rounded-md max-h-60 overflow-y-auto max-w-[${maxHeight}px]`}>
+        <div className={`absolute z-20 mt-1 ${props.custom ? "w-fit" : "w-full"} bg-white border border-gray-300 shadow-md rounded-md max-h-60 overflow-y-auto max-w-[${maxHeight}px]`}>
 
           {props.custom && props.children}
 

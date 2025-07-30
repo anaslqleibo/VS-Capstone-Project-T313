@@ -26,11 +26,11 @@ export default function Sidebar({modalContainer} : PageProps){
         
         <nav className='w-full flex flex-col items-center [&>a]:w-full [&>a]:flex [&>a]:items-center [&>a]:p-[10px] [&>a]:text-white [&>a]:font-bold [&>a]:mb-[15px] [&>a]:rounded-[10px] [&>a]:transition-colors [&>a]:duration-200 [&>a]:hover:bg-[#1e2266] [&>a]:gap-5'>
           
-            <NavLink to="/home"><FaHome /> Home</NavLink>
-            <NavLink to="/unavailability"><FaCalendarAlt /> Unavailability</NavLink>
-            <NavLink to="/locations" ><FaMapMarkerAlt /> Locations</NavLink>
-            <NavLink to="/messaging" ><FaEnvelope /> Messaging</NavLink>
-            <NavLink to="/account"  ><FaUser /> Account</NavLink>
+            <NavLink to="/home" className="aria-[current]:bg-[color:var(--active-color)]"><FaHome /> Home</NavLink>
+            <NavLink to="/unavailability" className="aria-[current]:bg-[color:var(--active-color)]"><FaCalendarAlt /> Unavailability</NavLink>
+            <NavLink to="/locations" className="aria-[current]:bg-[color:var(--active-color)]"><FaMapMarkerAlt /> Locations</NavLink>
+            <NavLink to="/messaging" className="aria-[current]:bg-[color:var(--active-color)]"><FaEnvelope /> Messaging</NavLink>
+            <NavLink to="/account"  className="aria-[current]:bg-[color:var(--active-color)]" ><FaUser /> Account</NavLink>
         </nav>
       </aside>
     );

@@ -12,6 +12,7 @@ import { createNotifications } from "./utils/notification";
 import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from "dayjs";
+import Dropdown, { DayPicker } from "./Dropdown";
 
 
 // TODO: Still missing some code, please go through everything and finish what's still missing
@@ -117,29 +118,48 @@ function createDetails(type: string|null, details?: DetailsPropsList){
         );
     }
     else if (type === ModalTypes.AddUnavailability)
-        return; 
+        return (
+            <div className="flex flex-col gap-4 mt-4">
+                <div className="flex items-center gap-2">
+                    <p className="text-md font-semibold text-gray-600 mt-1 mb-1 w-12">Day:</p>
+                    {/* TODO: Add checking so that 'to' cant be before 'from' and vice versa */}
+
+                    <DayPicker />
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <p className="text-md font-semibold text-gray-600 mt-1 mb-1 w-12">Time:</p>
+                    
+
+                    {/* TODO: Add checking so that 'to' cant be before 'from' and vice versa */}
+                    <TimePicker label="From" format="hh:mm A"/>
+                        <span className="text-[color:var(--primary-color)] font-bold">–</span>
+                    <TimePicker label="To" format="hh:mm A"/>
+                </div>            
+            </div>
+        );
+    
     else if (type === ModalTypes.AddLeave)
         return (
-            
             <div className="flex flex-col gap-4 mt-4">
                 <div className="flex items-center gap-2">
                     <p className="text-md font-semibold text-gray-600 mt-1 mb-1">Date:</p>
-                    
-                    <DatePicker label="From"/>
-                        <span className="text-[color:var(--primary-color)] font-bold">to</span>
-                    <DatePicker label="To"/>
+                    {/* TODO: Add checking so that 'to' cant be before 'from' and vice versa */}
+
+                    <DatePicker label="From" format="DD-MM-YYYY"/>
+                        <span className="text-[color:var(--primary-color)] font-bold">–</span>
+                    <DatePicker label="To" format="DD-MM-YYYY"/>
                 </div>
 
                 <div className="flex items-center gap-2">
                     <p className="text-md font-semibold text-gray-600 mt-1 mb-1">Time:</p>
                     
-                    <TimePicker label="From" />
-                        <span className="text-[color:var(--primary-color)] font-bold">to</span>
-                    <TimePicker label="To"/>
-                </div>
-           
 
-            
+                    {/* TODO: Add checking so that 'to' cant be before 'from' and vice versa */}
+                    <TimePicker label="From" format="hh:mm A"/>
+                        <span className="text-[color:var(--primary-color)] font-bold">–</span>
+                    <TimePicker label="To" format="hh:mm A"/>
+                </div>            
             </div>
         );
     else if (type === ModalTypes.DeclinedDetails)
@@ -225,8 +245,8 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                 }
 
                 {type !== ModalTypes.Notifications && 
-                <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all my-auto sm:w-full sm:max-w-lg" ref={containerRef}>
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto sm:w-full sm:max-w-lg" ref={containerRef}>
+                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg">
                     <div className="sm:flex sm:items-start">
                     
                         <div className="mt-3 w-full sm:mt-0 sm:text-left">
@@ -247,7 +267,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                         </div>
                     </div>
                 </div>
-                {((type!==undefined && createButtons(type)!=null) || props.customButtons) && <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row sm:px-6 gap-3">
+                {((type!==undefined && createButtons(type)!=null) || props.customButtons) && <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row sm:px-6 gap-3 rounded-lg">
                     {type!==undefined ? createButtons(type) : props.customButtons}
                 </div>}
                 </div>

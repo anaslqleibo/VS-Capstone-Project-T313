@@ -4,6 +4,8 @@ import './LocationsPage.css';
 import { PageProps } from '../App';
 import Layout from '../components/Layout';
 import { useLocation } from 'react-router-dom';
+import Input, { InputIcon } from '../components/Input';
+import Button from '../components/Button';
 
 const LocationsPage = ({modalContainer}:PageProps) => {
   const councils = [
@@ -23,24 +25,23 @@ const LocationsPage = ({modalContainer}:PageProps) => {
 
   return (
     <Layout modalContainer={modalContainer}>
-      <div className="dashboard-container">
+      <div className="flex h-screen">
 
-      <main className="main-content">
+      <main className="w-full bg-[#f9f9fb]">
         <h1>
-          Welcome, <span className="highlight-name">Naomi</span>
+          Welcome, <span className="text-[#273469] underline">Naomi</span>
         </h1>
+       
+        <InputIcon placeholder="Search locations..." type="search" icon="search" className='w-full mt-5'/>
 
-        <div className="location-search-box">
-          <input type="text" placeholder="Search locations..." />
-        </div>
-
-        <div className="location-sections">
+        <div className='p-6'>
           {councils.map((council, index) => (
-            <div key={index} className="council-block">
-              <h3>{council.title}</h3>
-              <div className="location-grid">
+            <div key={index} className="mb-6">
+              <h3 className="font-semibold mb-[10px] text-[#273469]">{council.title}</h3>
+              <div className="flex flex-wrap gap-2.5">
                 {council.locations.map((loc, idx) => (
-                  <button key={idx} className="location-button">
+                  <button key={idx} className="px-2 py-4 text-sm rounded-lg  border-gray-400
+                  bg-gray-300 cursor-pointer ease-in duration-200 text-black hover:bg-[#273469] hover:text-white">
                     {loc}
                   </button>
                 ))}

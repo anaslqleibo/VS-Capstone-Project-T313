@@ -21,14 +21,16 @@ button {
     outline: 2px solid #005f99; 
 } */
 
-/* Call-to-Action */
+/* Call-to-Action */ 
 .cta{
-    /* border-radius: 12px; */
+    border-radius: 12px;
     background: var(--primary-color);
     font-weight: 600;
+    transition: 0.2s;
 }
 .cta:hover{
     background: var(--hover-color);
+    transition: 0.2s;
 }
 .cta:active{
     background: var(--active-color);

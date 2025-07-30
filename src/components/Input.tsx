@@ -25,7 +25,7 @@ export function InputIcon({ type = "search", placeholder, size = "base", icon = 
   const iconColor = filled ? "text-white" : "text-[color:var(--dark-grey)]";
 
   return (
-    <div className="w-fit group">
+    <div className={`w-fit group ${className}`}>
       <div
         onClick={() => inputRef.current?.focus()}
         className={`flex ${right ? "flex-row-reverse" : "flex-row"} items-stretch w-50 gap-3 ${filled && right ? "pl-5" : filled ? "pr-5" : "px-5"} rounded-md border-[1.5px] text-sm !outline-none focus:ring-1 border-[color:var(--dark-grey)] transition-colors cursor-text overflow-hidden group-hover:border-[color:var(--hover-color)] has-focus:border-[color:var(--primary-color)] invalid:border-red-500 ${fontSize} ${className}`}>

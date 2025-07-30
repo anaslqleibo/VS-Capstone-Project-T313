@@ -1,16 +1,15 @@
 import './App.css';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import DashboardPage from './pages/DashboardPage';
 import UnavailabilityPage from './pages/UnavailabilityPage';
 import MessagingPage from './pages/MessagingPage';
 import AccountPage from './pages/AccountPage';
 import LocationsPage from './pages/LocationsPage';
-
-import EmployeeDashboardPage from './EmployeeDashboardPage';
+import EmployeeDashboardPage from './pages/DashboardPage';
 import './App.css'
 import { ReactNode, RefObject, useRef } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import Demo from './demo/Demo';
 
 export interface PageProps{
   modalContainer: RefObject<HTMLDivElement|null>;
@@ -39,6 +38,7 @@ function App() {
         <Route path="/locations" element={<LocationsPage modalContainer={modalContainer}/>} />
         <Route path="/messaging" element={<MessagingPage />} />
         <Route path="/account" element={<AccountPage />} />
+        <Route path="/demo" element={<Demo/>}/>
       </Routes>
     </Router>
     </LocalizationProvider>
