@@ -6,10 +6,10 @@ function Layout({modalContainer, children}:PageProps){
   
 
   return (
-  <div className="flex h-screen overflow-hidden">
+  <div className="flex h-screen overflow-hidden flex-col md:flex-row">
       <Sidebar modalContainer={modalContainer} />
       
-      <main className="flex-1 overflow-y-scroll relative">
+      <main className="flex-1 overflow-y-auto">
         {injectModalOverlay(modalContainer)}
         {children}
       </main>

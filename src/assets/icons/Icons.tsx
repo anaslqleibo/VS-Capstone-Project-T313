@@ -226,6 +226,10 @@ const icons : IconMap = {
         <path d="M21,8.5v10a2,2,0,0,1-2,2H5a2,2,0,0,1-2-2V8.5" fill="none" stroke="#000000" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"/>
       </g>),
     viewBox: "0 0 24 24"
+  },
+  "menu":{
+    path:<path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 1h15M1 7h15M1 13h15"/>,
+    viewBox: "0 0 17 14"
   }
 };
 

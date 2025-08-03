@@ -53,46 +53,46 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
     return (
     <>
     <FullCalendar
-          plugins={[dayGridPlugin, interactionPlugin]}
-          initialView={initialView}
-          selectable={true}
-          events={newEvents}
-          headerToolbar={{
-            left: '',     
-            center: '',
-            right: '' 
+        height="100%"
+        plugins={[dayGridPlugin, interactionPlugin]}
+        initialView={initialView}
+        selectable={true}
+        events={newEvents}
+        headerToolbar={{
+        left: '',     
+        center: '',
+        right: '' 
         }}
-          eventContent={(arg) => {
+        eventContent={(arg) => {
             const lines = arg.event.title.split('\n');
             const parentDiv = document.createElement('div');
-            parentDiv.className = 'p-2 rounded shadow-md/20';
+            parentDiv.className = 'rounded-full w-full h-5 shadow-md/20 md:p-2 md:rounded md:size-full';
 
             lines.forEach(line => {
                 const lineDiv = document.createElement('div');
 
-                if (arg.event.extendedProps.details){
-                    lineDiv.addEventListener('click', function(){
-                        // onClicks?.at(index);
-                        const {status, details} = arg.event.extendedProps;
-                        setActiveModal({
-                            isOpen: true,
-                            status,
-                            details
-                        });
-                    });
-                }
-
                 lineDiv.textContent = line;
-                lineDiv.className = "text-xs font-semibold font-[Inter]" // TODO: Change font to use global font
+                lineDiv.className = "text-xs font-semibold font-[Inter] hidden md:block" // TODO: Change font to use global font
                 parentDiv.appendChild(lineDiv);
             });
+
+    
+            if (arg.event.extendedProps.details){
+                parentDiv.addEventListener('click', function(){
+                    // onClicks?.at(index);
+                    const {status, details} = arg.event.extendedProps;
+                    setActiveModal({
+                        isOpen: true,
+                        status,
+                        details
+                    });
+                });
+            }
             
             return { domNodes: [parentDiv] };
           }}
 
-          eventDidMount={(info) => {
-            info.el.classList.add('mb-2'); // adds gap between events
-            }}
+        eventDidMount={(info) => {info.el.classList.add('mb-2'); }}
         />
 
         {activeModal.isOpen && modalContainer.current && createModal(getModalTypesByStatus(activeModal.status),true,modalContainer.current,activeModal.details, setOpen)}

@@ -90,11 +90,11 @@ const Dropdown = ({
   }, []);
 
   return (
-    <div className={`relative w-fit min-w-32 text-sm ${className}`} ref={containerRef}>
+    <div className={`relative w-fit min-w-fit text-sm ${className}`} ref={containerRef}>
       <div className={` ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : "border-1 border-[color:var(--primary-color)] text-[color:var(--primary-color)]"} rounded-md ${className} px-3 py-2 flex items-center justify-between cursor-pointer `} onClick={toggleDropdown}>
-        <div className="flex flex-wrap items-center gap-1 flex-1 min-w-0">
+        <div className="flex flex-wrap items-center gap-1 flex-1 min-w-fit">
           {/* {selected.length === 0 && <span className="text-gray-500">{placeholder}</span>} */}
-          {((!multiple && selected.length>0) || (multiple && selected.length == 1)) ? <span>{(!isOpen) && selected.at(0)}</span> : selected.map((item, index) => (
+          {((!multiple && selected.length>0 && (!isOpen)) || (multiple && selected.length == 1 && (!isOpen))) ? <span>{selected.at(0)}</span> : selected.map((item, index) => (
             <span key={index} className="flex items-center gap-1 bg-gray-100 border border-[color:var(--primary-color)] text-[color:var(--primary-color)] px-2 py-1 rounded whitespace-nowrap text-sm">
               {item}
               <Icon id="x" className="cursor-pointer" onClick={(e) => {
@@ -112,7 +112,7 @@ const Dropdown = ({
                 if (filteredItems.length>0) setIsOpen(true);
             }}
             onKeyDown={handleKeyDown}
-            className="outline-none w-0.5 grow px-1"
+            className="outline-none grow px-1 field-sizing-content"
             placeholder={selected.length === 0 ? placeholder : ''}
           />
         </div>

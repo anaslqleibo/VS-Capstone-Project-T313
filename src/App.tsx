@@ -19,7 +19,7 @@ export interface PageProps{
 
 
 export function injectModalOverlay(modalContainer: RefObject<HTMLDivElement|null>){
-  return <div className="absolute z-10 inset-0 pointer-events-none" ref={modalContainer}></div>;
+  return <div className="absolute z-100 inset-0 m-auto pointer-events-none w-full" ref={modalContainer}></div>;
 }
 
 function App() {
@@ -37,7 +37,7 @@ function App() {
         
         <Route path="/locations" element={<LocationsPage modalContainer={modalContainer}/>} />
         <Route path="/messaging" element={<MessagingPage />} />
-        <Route path="/account" element={<AccountPage />} />
+        <Route path="/account" element={<AccountPage modalContainer={modalContainer} />} />
         <Route path="/demo" element={<Demo/>}/>
       </Routes>
     </Router>

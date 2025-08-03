@@ -32,7 +32,6 @@ export enum ModalTypes{
 
 export function getModalTypesByStatus(status:Status){
     switch(status){
-        case Status.Unaccepted:
         case Status.Unassigned:
             return null;
         case Status.Request:
@@ -267,7 +266,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                         </div>
                     </div>
                 </div>
-                {((type!==undefined && createButtons(type)!=null) || props.customButtons) && <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row sm:px-6 gap-3 rounded-lg">
+                {((type!==undefined && createButtons(type)!=null) || props.customButtons) && <div className="bg-gray-50 py-3 flex flex-row px-6 gap-3 rounded-lg">
                     {type!==undefined ? createButtons(type) : props.customButtons}
                 </div>}
                 </div>
@@ -290,7 +289,7 @@ export function ModalPortal({children, container, isModalOpen}: ModalPortal ) {
   const elRef = useRef<HTMLDivElement | null>(null);
   if (!elRef.current) {
     const div = document.createElement("div");
-    div.className = "fixed w-[calc(100%-220px)] h-full z-10";
+    div.className = "fixed w-full md:w-[calc(100%-220px)] h-full z-100";
     elRef.current = div;
     }
 

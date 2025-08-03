@@ -7,9 +7,10 @@ interface ToggleProps {
     onClick?: { true: () => void; false: () => void }; 
     disabled?: boolean; 
     children ?: React.ReactNode;
+    className ?: string;
 }
 
-export function Toggle({size = '0.6em', onClick, ...props} : ToggleProps){
+export function Toggle({size = '0.6em', onClick, className, ...props} : ToggleProps){
     let validSize = size;
     if (validSize && !validSize.endsWith('em'))
         validSize += 'em';
@@ -28,6 +29,8 @@ export function Toggle({size = '0.6em', onClick, ...props} : ToggleProps){
     }       
 
     return (
+            <div className={`flex flex-row items-center gap-2 ${className}`}>
+            {props.children}
             <div className={`relative w-[4.8em] h-[2.4em] rounded-full bg-[color:var(--light-grey)] transition-colors duration-200 cursor-pointer text-[color:var(--light-grey)] ${active ? 'bg-[color:var(--primary-color)] text-[color:var(--primary-color)] hover:bg-[color:var(--hover-color)] hover:text-[color:var(--hover-color)]' : 'hover:bg-[color:var(--dark-grey)] hover:text-[color:var(--dark-grey)]'} ${props.disabled ? 'pointer-events-none opacity-50 cursor-not-allowed' : ''}`}
   
                 onClick={onToggleClick}
@@ -37,6 +40,8 @@ export function Toggle({size = '0.6em', onClick, ...props} : ToggleProps){
                     <Icon id="checkmark" />
                 </div>
             </div>
+            </div>
+            
         );
 }
 
@@ -160,7 +165,7 @@ export default function Button({ type = 'cta', fontSize = '1em', onClick, items,
 
     // Toggle Button Setup
     if (type==="toggle"){
-        return <Toggle onClick={props.onToggleClick} size={size} disabled={disabled}/>;
+        return <Toggle onClick={props.onToggleClick} size={size} disabled={disabled} className={props.className}>{children}</Toggle>;
         
     }
 

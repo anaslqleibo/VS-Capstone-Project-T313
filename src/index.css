@@ -15,13 +15,25 @@
 
   /* overflow: hidden; */
 
+  --primary-color: #2D3AA0;
+  --secondary-color: #3259AD;
+  --active-color: #26307F;
+  --hover-color: #6591f0;
+  --secondary-hover-color: #577DCE;
+  --text-color: #f4f4f4;
+  --dark-grey: #676767;
+  --light-grey: #c0c0c0;
+  --active-light-color: #e2e9f5;
+  --warning-color: #FF7A45;
+  --danger-color: #FF4545;
+  --font-display: "Inter", "sans-serif";
 }
 
 @theme {
   --primary-color: #2D3AA0;
   --secondary-color: #3259AD;
   --active-color: #26307F;
-  --hover-color: #6591F0;
+  --hover-color: #6591f0;
   --secondary-hover-color: #577DCE;
   --text-color: #f4f4f4;
   --dark-grey: #676767;
