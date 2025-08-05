@@ -10,6 +10,7 @@ import { ReactNode, RefObject, useRef } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Demo from './demo/Demo';
+import LoginPage from './LoginPage';
 
 export interface PageProps{
   modalContainer: RefObject<HTMLDivElement|null>;
@@ -31,6 +32,9 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<EmployeeDashboardPage modalContainer={modalContainer}/>} />
+        <Route path="/login" element={
+          <LoginPage/>} 
+        />
         <Route path="/unavailability" element={
           <UnavailabilityPage modalContainer={modalContainer}/>} 
         />

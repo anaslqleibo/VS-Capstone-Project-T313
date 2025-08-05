@@ -14,13 +14,12 @@ function FormDemo() {
     setFormResult((prev) => ({
       ...prev, [name] : value
     }));
-
-    console.log('Changed:', formResult.description, formResult.email);
   };
 
   const handleSubmit = (e : React.FormEvent<HTMLFormElement> ) => {
     e.preventDefault();
     alert(JSON.stringify(formResult, null, 2));
+    return '';
   };
  
   // Have these sort of approach if otherwise

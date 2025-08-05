@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import Icon from '../assets/icons/Icons';
 import { validateInput } from './utils/validateInput';
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 interface InputIconProps{
   type: string;
@@ -68,17 +69,24 @@ interface InputProps {
   validateMode ?: "onSubmit" | "onBlur" | "onChange";
   externalTrigger ?: number;
   className ?: string;
+  allowViewPassword ?: boolean;
 }
+
 
 function Input({
   id, name, label, type = "text", required = false, value, onChange, placeholder, validate = true, minLength, maxLength, pattern, textarea,
   customValidate, validateMode = "onSubmit", externalTrigger=0, className, ...props
 } : InputProps) {
 
-  const internalRef = useRef(null);
+  const internalRef = useRef<HTMLInputElement>(null);
   const [internalValue, setInternalValue] = useState("");
   const controlled = typeof value !== "undefined" && typeof onChange === "function";
   const isControlled = value !== undefined;
+  const [isPasswordShown, setPasswordShown] = useState(false);
+
+  
+  const isPassword = type === "password";
+  const inputType = isPassword ? (isPasswordShown ? "text" : "password") : type;
 
   const handleChange = (e : React.ChangeEvent<HTMLTextAreaElement> | React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -144,7 +152,9 @@ function Input({
         {...props}
       ></textarea>);
 
-  const Text = (<input id={id || name} name={name} type={type} required={required} ref={internalRef}
+  const Text = (
+  <div className="relative">
+    <input id={id || name} name={name} type={inputType} required={required} ref={internalRef}
           value={controlled ? value : internalValue}
           onChange={(e) => {
             handleChange(e)
@@ -161,10 +171,18 @@ function Input({
             " hover:border-[color:var(--hover-color)] hover:border-[1.5px] focus:border-[color:var(--primary-color)] "}  
           `}
           {...props}
-        />);
+        />
+
+        {props.allowViewPassword &&
+          (isPasswordShown ? <FaEyeSlash className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-[color:var(--primary-color)]" onClick={()=>{setPasswordShown(false)}}/> : <FaEye className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-[color:var(--primary-color)]" onClick={()=>{setPasswordShown(true)} }/>)
+        }
+        
+  </div>
+  
+  );
 
   return (
-    <div className={`flex flex-col gap-1 ${className} group`}>
+    <div className={`flex flex-col gap-1 ${className ? className : ""} group`}>
       {label && (
         <label htmlFor={id || name} className={`text-sm font-medium text-left group-has-focus:text-[color:var(--primary-color)] ${required && "after:ml-0.5 after:text-red-500 after:content-['*']"}`}>
           {label}

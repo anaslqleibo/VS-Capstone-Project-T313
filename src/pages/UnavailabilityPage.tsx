@@ -18,7 +18,7 @@ const UnavailabilityPage = ({modalContainer}: PageProps) => {
 
   return (
     <Layout modalContainer={modalContainer}>
-      <div className="flex justify-between items-center mb-[20px]">
+      <div className="flex flex-wrap gap-3 justify-between items-center mb-[20px]">
         <h1 className="text-3xl font-bold text-blue-900">Unavailability</h1>
         
         <Button onClick={()=>setOpenModal(true)}>Add Unavailability</Button>

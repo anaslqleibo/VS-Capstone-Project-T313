@@ -158,7 +158,7 @@ interface ButtonProps{
     children?:React.ReactNode;
 }
 
-const className = "flex w-fit h-fit p-[1em] justify-center items-center gap-2.5 shrink-0 text-[#FFFFFF] text-center font-[family-name:var(--font-family)] font-normal border-0 outline-0";
+
 
 export default function Button({ type = 'cta', fontSize = '1em', onClick, items, onItemClicks, size, htmlType, disabled, children, ...props } : ButtonProps){
     
@@ -193,11 +193,11 @@ export default function Button({ type = 'cta', fontSize = '1em', onClick, items,
 
     // General Button Setup
     return (
-        <button onClick={onClick} className={`${className}
+        <button onClick={onClick} className={`flex px-6 py-4 justify-center items-center gap-2.5 shrink-0 text-[#FFFFFF] text-center font-[family-name:var(--font-family)] font-normal border-0 outline-0
     ${type === 'cta' && 'rounded-xl bg-[color:var(--primary-color)] font-semibold transition-colors duration-200 hover:bg-[color:var(--hover-color)] active:bg-[color:var(--active-color)]'}
-    ${type === 'text' && 'rounded-[75px] px-6 bg-[#3259AD] hover:bg-[color:var(--hover-color)] active:bg-[#274689]'}
-    ${type === 'outline' && 'px-[1.3em] py-[0.8em] rounded-xl border-2 border-[color:var(--primary-color)] bg-transparent text-[color:var(--primary-color)] hover:bg-[color:var(--primary-color)] hover:text-white active:bg-transparent active:text-[color:var(--primary-color)]'}
-    ${type === 'fab' && "rounded-full border-[0.2rem] border-[color:var(--primary-color)] bg-white shadow-md p-2 text-[color:var(--primary-color)] text-[0.75rem] transition-colors duration-200 hover:bg-[color:var(--hover-color)] hover:border-[color:var(--hover-color)] hover:text-white active:bg-[color:var(--active-color)] active:border-[color:var(--active-color)] active:text-white disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed"}
+    ${type === 'text' ? 'rounded-[75px] px-6 bg-[#3259AD] hover:bg-[color:var(--hover-color)] active:bg-[#274689]' : ''}
+    ${type === 'outline' ? 'px-[1.3em] py-[0.8em] rounded-xl border-2 border-[color:var(--primary-color)] bg-transparent text-[color:var(--primary-color)] hover:bg-[color:var(--primary-color)] hover:text-white active:bg-transparent active:text-[color:var(--primary-color)]' : ''}
+    ${type === 'fab' ? "rounded-full border-[0.2rem] border-[color:var(--primary-color)] bg-white shadow-md p-2 text-[color:var(--primary-color)] text-[0.75rem] transition-colors duration-200 hover:bg-[color:var(--hover-color)] hover:border-[color:var(--hover-color)] hover:text-white active:bg-[color:var(--active-color)] active:border-[color:var(--active-color)] active:text-white disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed" : ''}
     ${props.className}
     ${disabled ? 'pointer-events-none opacity-50 cursor-not-allowed bg-gray-400' : ''}`} disabled={disabled}
         style = {{fontSize}} type={htmlType || "button"} >

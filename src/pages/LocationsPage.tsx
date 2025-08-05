@@ -1,11 +1,7 @@
-import React from 'react';
-import Sidebar from '../components/Sidebar';
-import './LocationsPage.css';
+
 import { PageProps } from '../App';
 import Layout from '../components/Layout';
-import { useLocation } from 'react-router-dom';
-import Input, { InputIcon } from '../components/Input';
-import Button from '../components/Button';
+import { InputIcon } from '../components/Input';
 
 const LocationsPage = ({modalContainer}:PageProps) => {
   const councils = [

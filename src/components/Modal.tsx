@@ -244,7 +244,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                 }
 
                 {type !== ModalTypes.Notifications && 
-                <div className="relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto sm:w-full sm:max-w-lg" ref={containerRef}>
+                <div className="relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto w-80 sm:w-full sm:max-w-lg" ref={containerRef}>
                 <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg">
                     <div className="sm:flex sm:items-start">
                     

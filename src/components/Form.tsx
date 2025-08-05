@@ -1,10 +1,14 @@
-import { useState, cloneElement, isValidElement } from "react";
+import { useState, cloneElement, isValidElement, Dispatch, SetStateAction } from "react";
 import { validateInput } from "./utils/validateInput";
 
 interface FormProps {
   children: React.ReactNode;
-  onSubmit: Function;
+  onSubmit: (e : React.FormEvent<HTMLFormElement>) => string; // string represents the error message, return empty string if no error
   scrollToError?: boolean;
+  showToast?:Dispatch<SetStateAction<boolean>>;
+  setToastMessage?:Dispatch<SetStateAction<string>>;
+  className?: string;
+  showAllErrorOnToast?: boolean;
 }
 interface ValidatableProps {
   value?: string;
@@ -14,7 +18,7 @@ interface ValidatableProps {
 }
 
 
-function Form({ children, onSubmit, scrollToError = true } : FormProps) {
+function Form({ children, onSubmit, scrollToError = true, className, showAllErrorOnToast=false, ...props } : FormProps) {
   const [errors, setErrors] = useState<{ [key: number]: string }>({});
   const [externalTrigger, setExternalTrigger] = useState(0);
   const childArray = Array.isArray(children) ? children : [children];
@@ -45,18 +49,18 @@ function Form({ children, onSubmit, scrollToError = true } : FormProps) {
     setExternalTrigger(prev => prev + 1);
 
     // Validate all children with validate function
-    const newErrors: { [key: number]: string } = {};
+    const newErrors:string[] = [];
     childArray.forEach((child, index) => {
       const error = validateChild(child);
-      if (error) newErrors[index] = error;
+      if (error) newErrors.push(error);
     });
 
     setErrors(newErrors);
 
-    if (Object.keys(newErrors).length === 0) {
-      // No errors - submit allowed
+    let errorOnSubmit = '';
+    if (newErrors.length === 0) {
       setExternalTrigger(0); // reset trigger after submit
-      onSubmit?.(e);
+      errorOnSubmit=onSubmit?.(e);
     } else if (scrollToError) {
       // Scroll to first error input
       const firstInvalid = document.querySelector("[data-error-index]");
@@ -64,6 +68,11 @@ function Form({ children, onSubmit, scrollToError = true } : FormProps) {
         firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
         if (firstInvalid instanceof HTMLElement) firstInvalid.focus();
       }
+    }
+    
+    if (((newErrors[0] && newErrors[0] !== '' && showAllErrorOnToast) || errorOnSubmit!=='') && (props.showToast && props.setToastMessage)){
+      props.setToastMessage(errorOnSubmit!==''?errorOnSubmit:newErrors[0]);
+      props.showToast(true);
     }
   };
 
@@ -81,7 +90,7 @@ function Form({ children, onSubmit, scrollToError = true } : FormProps) {
   });
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
+    <form onSubmit={handleSubmit} noValidate className={className}>
       <div className="flex flex-col gap-4">{enhancedChildren}</div>
     </form>
   );
