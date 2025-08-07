@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, SetStateAction, Dispatch } from "react";
 import Icon from '../assets/icons/Icons';
 import { validateInput } from './utils/validateInput';
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -57,7 +57,7 @@ interface InputProps {
   label ?: string;
   type ?: string;
   required ?: boolean;
-  value ?: string;
+  value ?: string | number;
   onChange ?: (e : any) => void;
   placeholder ?: string;
   validate ?: boolean;
@@ -70,6 +70,9 @@ interface InputProps {
   externalTrigger ?: number;
   className ?: string;
   allowViewPassword ?: boolean;
+  arrow ?: 'leftRight' | 'topBottom';
+  readonly?: boolean;
+  setValue ?: (e:any) => void;
 }
 
 
@@ -80,7 +83,7 @@ function Input({
 
   const internalRef = useRef<HTMLInputElement>(null);
   const [internalValue, setInternalValue] = useState("");
-  const controlled = typeof value !== "undefined" && typeof onChange === "function";
+  const controlled = typeof value !== "undefined" //&& typeof onChange === "function"; 
   const isControlled = value !== undefined;
   const [isPasswordShown, setPasswordShown] = useState(false);
 
@@ -145,11 +148,12 @@ function Input({
           }
         }}
         placeholder={placeholder}
-        className={`w-full rounded-md border-[1.5px] px-3 py-2 text-sm !outline-none border-[color:var(--dark-grey)] transition-colors min-h-fit
+        className={`w-full rounded-md border-[1.5px] px-3 py-2 text-sm !outline-none border-[color:var(--dark-grey)] transition-colors min-h-fit 
           ${error && touched ? "border-red-500 ring-red-200" :
-          " hover:border-[color:var(--hover-color)] hover:border-[1.5px] focus:border-[color:var(--primary-color)] "}  
+          " hover:border-[color:var(--hover-color)] hover:border-[1.5px] focus:border-[color:var(--primary-color)]"}  
         `}
-        {...props}
+        // {...props}
+        disabled={props.readonly}
       ></textarea>);
 
   const Text = (
@@ -166,11 +170,13 @@ function Input({
             }
           }}
           placeholder={placeholder}
-          className={`w-full rounded-md border-[1.5px] px-3 py-2 text-sm !outline-none border-[color:var(--dark-grey)] transition-colors
+          className={`${props.arrow ? "w-20" : "w-full"} rounded-md border-[1.5px] px-3 py-2 ${props.arrow ? "text-lg" : "text-sm"} !outline-none border-[color:var(--dark-grey)] transition-colors
             ${error && touched ? "border-red-500 ring-red-200" :
             " hover:border-[color:var(--hover-color)] hover:border-[1.5px] focus:border-[color:var(--primary-color)] "}  
-          `}
-          {...props}
+            ${props.arrow && 'border-none text-center font-semibold'}
+            `}
+          disabled={props.readonly}
+          // {...props}
         />
 
         {props.allowViewPassword &&
@@ -181,15 +187,22 @@ function Input({
   
   );
 
+  
   return (
-    <div className={`flex flex-col gap-1 ${className ? className : ""} group`}>
+    <div className={`flex flex-col gap-1 ${className ? className : ""} group ${props.arrow && "flex-row items-center"}`}>
       {label && (
         <label htmlFor={id || name} className={`text-sm font-medium text-left group-has-focus:text-[color:var(--primary-color)] ${required && "after:ml-0.5 after:text-red-500 after:content-['*']"}`}>
           {label}
         </label>
       )}
-      {textarea ? TextArea : Text
-      }
+
+      {props.arrow && <Icon id='arrow-left' className="hover:text-[color:var(--hover-color)]" onClick={()=>{props.setValue && typeof value === 'number' && props.setValue(value-1)}} />}
+
+      {textarea ? TextArea : Text}
+
+      {props.arrow && <Icon id='arrow-right' className="hover:text-[color:var(--hover-color)]"
+      onClick={()=>{props.setValue && typeof value === 'number' && props.setValue(value+1)}} />}
+
       {error && touched && (
         <p className="text-left text-xs text-[color:var(--danger-color)]">{error}</p>
       )}

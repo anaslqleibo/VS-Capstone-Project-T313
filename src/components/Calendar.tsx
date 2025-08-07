@@ -4,22 +4,29 @@ import interactionPlugin from '@fullcalendar/interaction';
 import getStatusColor, { Status } from "./utils/getStatusColor";
 import Modal, { createModal, DetailsPropsList, getModalTypesByStatus, ModalDetailsProps, ModalLeaveDetailsProps, ModalPortal, ModalTypes, ModalUnavailDetailsProps } from "./Modal";
 import { createRoot } from "react-dom/client";
-import { RefObject, useState } from "react";
+import { RefObject, useEffect, useRef, useState } from "react";
+import dayjs from "dayjs";
 // import listPlugin from '@fullcalendar/list';
 
 export interface EventProps{
     status: Status;
     time: string;
-    location?: string;
+    location: string;
     date: string;
     details?: ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps; 
+}
+
+export interface CalendarFilter{
+    location: string[];
+    status: string[];
+    month: dayjs.Dayjs;
 }
 
 interface CalendarProps{
     initialView ?: string; // TODO: should specify enum
     selectable ?: boolean;
     events: EventProps[];
-    showStatus?: string[];
+    showSelectedFilter?: CalendarFilter;
     modalContainer: React.RefObject<HTMLDivElement|null>;
     rootRef ?: RefObject<ReturnType<typeof createRoot> | null>;
     // onClicks ?: ((...e:any) => void)[];
@@ -28,19 +35,20 @@ interface CalendarProps{
 function constructEventsArray(events: EventProps[]){
     const newEvents:any = [];
     events.forEach(e => {
-        const event = {title: e.status+" shift"+"\n"+e.time+(e.location===undefined?"":"\n"+e.location), date: e.date, color: getStatusColor(e.status), status:e.status, details: e.details};
+        const event = {title: e.status+" shift"+"\n"+e.time+(e.location?"\n"+e.location:""), date: e.date, color: getStatusColor(e.status), status:e.status, details: e.details};
         newEvents.push(event);
     });
    return newEvents;
 }
 
-function filterEventsArray(events: EventProps[], showStatus : string[]){
-    if (showStatus.includes("All")) return events;
-    else return events.filter(e => showStatus.includes(e.status));
+function filterEventsArray(events: EventProps[], showSelectedFilter : CalendarFilter){
+    if (showSelectedFilter.status.includes("All shifts") && showSelectedFilter.location.includes('All locations')) return events;
+    else {
+        return events.filter(e => ((showSelectedFilter.status.includes(e.status) || showSelectedFilter.status.includes("All shifts")) && (showSelectedFilter.location.includes(e.location) || showSelectedFilter.location.includes("All locations"))))};
 }
 
-export function Calendar({initialView = "dayGridMonth", selectable = true, events, showStatus, modalContainer, ...props} : CalendarProps){
-    const newEvents = constructEventsArray(showStatus ? filterEventsArray(events, showStatus) : events);
+export function Calendar({initialView = "dayGridMonth", selectable = true, events, showSelectedFilter, modalContainer, ...props} : CalendarProps){
+    const newEvents = constructEventsArray(showSelectedFilter ? filterEventsArray(events, showSelectedFilter) : events);
 
     const [activeModal, setActiveModal] = useState<{
         isOpen: boolean;
@@ -49,10 +57,17 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
     }>({ isOpen: false, status: Status.Accepted, details: null });
 
     const setOpen = (val:boolean) => setActiveModal(prev => ({...prev, isOpen: val}));
+    const calendarRef = useRef<FullCalendar>(null);
+
+    
+    useEffect(()=>{
+        if (showSelectedFilter) calendarRef.current?.getApi().gotoDate(showSelectedFilter?.month.format('YYYY-MM-DD'));        
+    }, [showSelectedFilter?.month]);
 
     return (
     <>
     <FullCalendar
+        ref={calendarRef}
         height="100%"
         plugins={[dayGridPlugin, interactionPlugin]}
         initialView={initialView}

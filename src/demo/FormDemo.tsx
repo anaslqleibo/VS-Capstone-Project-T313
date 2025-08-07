@@ -52,7 +52,7 @@ function FormDemo() {
         {/* Could use internal value, no need to pass in useState variables */}
         {/* <Input label="Description" name="description" validateMode='onSubmit' minLength={20}/> */}
 
-      <Input label="Description" name="description" validateMode='onSubmit' onChange={handleChange} value={formResult.description} minLength={20}/>
+      <Input label="Description" name="description" validateMode='onSubmit' onChange={handleChange} value={20} minLength={20}/>
       <Button type='cta' htmlType='submit' fontSize="0.9em">Submit</Button>
     </Form>
     </div>

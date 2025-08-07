@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
-// import './LoginPage.css';
 import Input from './components/Input';
 import Button from './components/Button';
 import Toast from './components/Toast';
 import Form from './components/Form';
-import { useNavigate } from 'react-router-dom';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from './firebase';
 
 const LoginPage = () => {
-  const [login, setLogin] = useState<{email: string, password: string}>({email: '', password: ''})
-  const nav = useNavigate();
+  const [login, setLogin] = useState<{email: string, password: string}>({email: '', password: ''})  
   const [error, setError] = useState('');
   const [shown, setShown] = useState(false);
 
@@ -20,20 +19,33 @@ const LoginPage = () => {
     }))
   }
 
-  const handleLogin = (e : React.FormEvent<HTMLFormElement>) => {
+  // const handleLogin = (e : React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   if (login.password === "what"){
+  //     nav('/home');
+  //     return '';
+  //   }
+  //   else return 'Password or email is incorrect, Clue: what is the password';
+  // };
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (login.password === "what"){
-      nav('/home');
-      return '';
+  
+    try {
+      await signInWithEmailAndPassword(auth, login.email, login.password);
+      window.location.href = "/home";
+    } catch (err) {
+      setError("Password or email is incorrect");
+      setShown(true);
     }
-    else return 'Password or email is incorrect, Clue: what is the password';
   };
+  
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-[color:#f3f4f8]">
       <Toast message={error} type="error" shown={shown} setShown={setShown}/>
 
-      <Form className="bg-white p-7 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)] w-[80%] md:w-[40%] text-center" onSubmit={handleLogin} showToast={setShown} setToastMessage={setError}>
+      <Form className="bg-white p-7 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)] w-[80%] md:w-[30%] text-center" onSubmit={handleLogin} showToast={setShown} setToastMessage={setError}>
         <img src="/logo.png" alt="2 Bent Rods" className="w-24 m-auto" />
         <h2 className='mb-4 text-[color:var(--primary-color)] text-xl font-bold'>Employee Login</h2>
     

@@ -9,6 +9,7 @@ interface ToastProps{
     shown: boolean;
     setShown: Dispatch<SetStateAction<boolean>>;
     message: string;
+    neverClose?: boolean;
     icon?: ReactNode;
 }
 
@@ -50,22 +51,23 @@ export default function Toast({title, type, message, timeout, shown, setShown, .
 
     const timeRef = useRef<NodeJS.Timeout | null>(null);
 
-    useEffect(() => {
-    if (shown) {
-        if (timeRef.current) clearTimeout(timeRef.current);
+    if (!props.neverClose){
+        useEffect(() => {
+        if (shown) {
+            if (timeRef.current) clearTimeout(timeRef.current);
 
-        timeRef.current = setTimeout(() => {
-        setShown(false);
-        }, timeout ?? 5000);
+            timeRef.current = setTimeout(() => {
+            setShown(false);
+            }, timeout ?? 5000);
+        }
+
+            return () => {
+                if (timeRef.current) {
+                clearTimeout(timeRef.current);
+                }
+            };
+        }, [shown]);
     }
-
-        return () => {
-            if (timeRef.current) {
-            clearTimeout(timeRef.current);
-            }
-        };
-    }, [shown]);
-
     return (
         <div className={`bg-white border-2 rounded-xl flex flex-col absolute z-100 top-6 p-4 min-w-1/2 w-64 shadow-[0_4px_15px_rgba(0,0,0,0.1)] transition-[transform, opacity] duration-500 ease-out ${shown ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0"}`} style={ {borderColor: activeColor, color: activeColor} }>
 

@@ -11,6 +11,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Demo from './demo/Demo';
 import LoginPage from './LoginPage';
+import PrivateRoute from './components/PrivateRoute';
 
 export interface PageProps{
   modalContainer: RefObject<HTMLDivElement|null>;
@@ -30,19 +31,50 @@ function App() {
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Router>
       <Routes>
+        <Route path="/login" element={<LoginPage/>} />
         <Route path="/" element={<Navigate to="/home" replace />} />
-        <Route path="/home" element={<EmployeeDashboardPage modalContainer={modalContainer}/>} />
-        <Route path="/login" element={
-          <LoginPage/>} 
+      
+        {/* Protected Routes */}
+        <Route
+          path="/home"
+          element={
+            <PrivateRoute>
+              <EmployeeDashboardPage modalContainer={modalContainer} />
+            </PrivateRoute>
+          }
         />
-        <Route path="/unavailability" element={
-          <UnavailabilityPage modalContainer={modalContainer}/>} 
+        <Route
+          path="/unavailability"
+          element={
+            <PrivateRoute>
+              <UnavailabilityPage modalContainer={modalContainer} />
+            </PrivateRoute>
+          }
         />
-        
-        <Route path="/locations" element={<LocationsPage modalContainer={modalContainer}/>} />
-        <Route path="/messaging" element={<MessagingPage />} />
-        <Route path="/account" element={<AccountPage modalContainer={modalContainer} />} />
-        <Route path="/demo" element={<Demo/>}/>
+        <Route
+          path="/locations"
+          element={
+            <PrivateRoute>
+              <LocationsPage modalContainer={modalContainer}/>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/messaging"
+          element={
+            <PrivateRoute>
+              <MessagingPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/account"
+          element={
+            <PrivateRoute>
+              <AccountPage modalContainer={modalContainer}/>
+            </PrivateRoute>
+          }
+        />
       </Routes>
     </Router>
     </LocalizationProvider>

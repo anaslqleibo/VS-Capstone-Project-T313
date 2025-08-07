@@ -1,21 +1,41 @@
 import { useState } from 'react';
-import { Calendar, EventProps } from '../components/Calendar';
+import { Calendar, CalendarFilter, EventProps } from '../components/Calendar';
 import getStatusColor, { Status } from '../components/utils/getStatusColor';
-import formatDate from '../components/utils/formatDate';
+import formatDate, { formatDateDayJS } from '../components/utils/formatDate';
 import Dropdown from '../components/Dropdown';
 import { createModal, ModalDetailsProps, ModalTypes } from '../components/Modal';
 import { PageProps } from '../App';
 import Layout from '../components/Layout';
 import Button from '../components/Button';
-import { MonthCalendar } from '@mui/x-date-pickers';
+import { MonthCalendar, PickerValidDate } from '@mui/x-date-pickers';
 import dayjs from 'dayjs';
 import Accordion from '../components/Accordion';
+import Input from '../components/Input';
 
 
 export default function EmployeeDashboardPage({modalContainer}: PageProps) {
+  // const [status, setStatus] = useState<string[]>(["All shifts"]);
+  // const [location, setLocation] = useState<string[]>(["All locations"]);
+  // const [month, setMonth] = useState<dayjs.Dayjs>(dayjs());
 
-  const [activeFilter, setActiveFilter] = useState(["All"]);
+  const [activeFilter, setActiveFilter] = useState<CalendarFilter>({status: ["All shifts"], location:["All locations"], month:dayjs()});
   
+  const setStatus = (status:string[]) => {
+    setActiveFilter((prev) => ({
+      ...prev, status : status
+    }));
+  }
+  const setLocation = (location:string[]) => {
+    setActiveFilter((prev) => ({
+      ...prev, location : location
+    }));
+  }
+  const setMonth = (month:dayjs.Dayjs) => {
+    setActiveFilter((prev) => ({
+      ...prev, month : month
+    }));
+  }
+
   const leaveDetails = {
       Date: "11-04-2024",
       Time: "12:00-16:30"
@@ -39,16 +59,28 @@ export default function EmployeeDashboardPage({modalContainer}: PageProps) {
   };
 
   const events: EventProps[] = [
-            { status: Status.Accepted, time: '12:00–16:00', location: 'Noosa', date: formatDate(new Date(), true), details: openShiftDetails},
-            { status: Status.Unaccepted, time: '12:00–16:00', location: 'Noosa', date: formatDate(new Date(), true), details: openShiftDetails },
-            { status: Status.Leave, time: '00:00–23:59', date: formatDate(new Date(), true) , details: leaveDetails},
-            { status: Status.OpenShift, time: '12:00–16:00', location: 'Noosa', date: formatDate(new Date(), true), details: openShiftDetails},
-            { status: Status.DeclinedShift, time: '12:00–16:00', location: 'Noosa', date: formatDate(new Date(), true), details: declinedShiftDetails },
-            { status: Status.Request, time: '12:00–16:00', location: 'Noosa', date: formatDate(new Date(), true) },
-            { status: Status.Unassigned, time: '12:00–16:00', location: '', date: formatDate(new Date(), true) }
+            { status: Status.Accepted, time: '12:00–16:00', location: 'BCC', date: formatDate(new Date(), true), details: openShiftDetails},
+            { status: Status.Unaccepted, time: '12:00–16:00', location: 'MBRC', date: formatDate(new Date(), true), details: openShiftDetails },
+            { status: Status.Leave, time: '00:00–23:59', date: formatDate(new Date(), true) , details: leaveDetails, location: 'BCC'},
+            { status: Status.OpenShift, time: '12:00–16:00', location: 'LCC', date: formatDate(new Date(), true), details: openShiftDetails},
+            { status: Status.DeclinedShift, time: '12:00–16:00', location: 'LCC', date: formatDate(new Date(), true), details: declinedShiftDetails },
+            { status: Status.Request, time: '12:00–16:00', location: 'MBRC', date: formatDate(new Date(), true) },
+            { status: Status.Unassigned, time: '12:00–16:00', location: 'MBRC', date: formatDate(new Date(), true) }
           ];
 
   const [openModal, setOpenModal] = useState(false);
+
+  const setYear = (year:number) => {
+    setMonth(formatDateDayJS(year, activeFilter.month.month(), activeFilter.month.date()));
+  }
+
+  const handleMonthChange = (e : PickerValidDate) => {
+    setMonth(e);
+  }
+
+  const monthSelectedDropdown = (activeFilter.month.year() === dayjs().year()) ? activeFilter.month.format('MMMM') : activeFilter.month.format('MMMM') + ", " + activeFilter.month.year(); 
+
+
   return (
       <Layout modalContainer={modalContainer}>
         <div className="relative flex-[1] h-full bg-[#f4f4f4]">
@@ -59,12 +91,15 @@ export default function EmployeeDashboardPage({modalContainer}: PageProps) {
             <div className='flex justify-between md:-mb-6 items-end'>
               <div className="flex flex-wrap gap-3 items-end">
               
-                <Dropdown items={['BCC', 'LCC', 'MBRC']} placeholder="Select location" actAsFilter setFilter={setActiveFilter} maxVisibleItems={6} className='md:rounded-b-none'/>
+                <Dropdown items={['All locations', 'BCC', 'LCC', 'MBRC']} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} className='md:rounded-b-none' initialSelectedItem='All locations'/>
 
-                <Dropdown items={['All', ...Object.values(Status)]} multiple placeholder="Select shift" actAsFilter setFilter={setActiveFilter} maxVisibleItems={6} className='md:rounded-b-none' initialSelectedItem='All'/>
+                <Dropdown items={['All shifts', ...Object.values(Status)]} multiple placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} className='md:rounded-b-none' initialSelectedItem='All shifts'/>
 
-                <Dropdown placeholder="Select month" actAsFilter setFilter={setActiveFilter} maxVisibleItems={6} className='md:rounded-b-none' custom={true}>
-                  <MonthCalendar defaultValue={dayjs()}/>
+                <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='md:rounded-b-none' custom customSelected={monthSelectedDropdown}>
+                  <Input arrow='leftRight' value={activeFilter.month.year()} className='float-end pr-7' readonly setValue={setYear}/>
+
+                  
+                  <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)}/>
                 
                 </Dropdown>
               </div>
@@ -88,7 +123,7 @@ export default function EmployeeDashboardPage({modalContainer}: PageProps) {
             </Accordion>
             
             
-            <Calendar events = {events} showStatus={activeFilter} modalContainer={modalContainer}></Calendar>
+            <Calendar events = {events} showSelectedFilter={activeFilter} modalContainer={modalContainer}></Calendar>
 
             {openModal && modalContainer.current && createModal(ModalTypes.AddLeave, true, modalContainer.current, null, setOpenModal)}
             

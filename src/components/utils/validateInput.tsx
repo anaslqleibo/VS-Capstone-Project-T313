@@ -1,5 +1,5 @@
 interface ParamTypes {
-  value?: string;
+  value?: string | number;
   required?: boolean | undefined;
   minLength?: number;
   maxLength?: number;
@@ -12,20 +12,24 @@ export function validateInput({ value="", required, minLength, maxLength, patter
   if (required && !value) {
     return "This field is required.";
   }
-  if (minLength && value.length < minLength) {
+
+  if (typeof value === 'string'){
+    if (minLength && value.length < minLength) {
     return `Minimum length is ${minLength} characters.`;
-  }
-  if (maxLength && value.length > maxLength) {
-    return `Maximum length is ${maxLength} characters.`;
-  }
-  if (pattern && !new RegExp(pattern).test(value)) {
-    return "Invalid format.";
-  }
-  if (type === "email" && value && value!="") {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      return "Please enter a valid email address.";
+    }
+    if (maxLength && value.length > maxLength) {
+      return `Maximum length is ${maxLength} characters.`;
+    }
+    if (pattern && !new RegExp(pattern).test(value)) {
+      return "Invalid format.";
+    }
+    if (type === "email" && value && value!="") {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+        return "Please enter a valid email address.";
+      }
     }
   }
+  
   if (typeof customValidate === "function") {
     return customValidate(value) || null;
   }

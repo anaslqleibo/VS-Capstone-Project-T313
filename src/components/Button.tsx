@@ -187,7 +187,9 @@ export default function Button({ type = 'cta', fontSize = '1em', onClick, items,
         <button onClick={onClick} className={`text-[#FFFFFF]
        p-2 rounded-xl bg-[color:var(--primary-color)] text-[0.75rem] transition-colors duration-200 hover:bg-[color:var(--hover-color)] active:bg-[color:var(--active-color)] disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed
         
-        ${type.includes("outline") && "border-2 bg-white border-[color:var(--primary-color)] text-[color:var(--primary-color)] hover:border-[color:var(--hover-color)] hover:text-white active:border-[color:var(--active-color)] active:text-[color:var(--active-color)]"}`} disabled={disabled} type={htmlType || "button"} >
+        ${type.includes("outline") && "border-2 bg-white border-[color:var(--primary-color)] text-[color:var(--primary-color)] hover:border-[color:var(--hover-color)] hover:text-white active:border-[color:var(--active-color)] active:text-[color:var(--active-color)]"}
+        ${props.className}
+        `} disabled={disabled} type={htmlType || "button"} >
             {children}
         </button>);
 

@@ -3,7 +3,7 @@ import { validateInput } from "./utils/validateInput";
 
 interface FormProps {
   children: React.ReactNode;
-  onSubmit: (e : React.FormEvent<HTMLFormElement>) => string; // string represents the error message, return empty string if no error
+  onSubmit: ((e : React.FormEvent<HTMLFormElement>) => string) | ((e : React.FormEvent<HTMLFormElement>) => Promise<void>);
   scrollToError?: boolean;
   showToast?:Dispatch<SetStateAction<boolean>>;
   setToastMessage?:Dispatch<SetStateAction<string>>;
@@ -57,10 +57,15 @@ function Form({ children, onSubmit, scrollToError = true, className, showAllErro
 
     setErrors(newErrors);
 
-    let errorOnSubmit = '';
+    // let errorOnSubmit = '';
     if (newErrors.length === 0) {
       setExternalTrigger(0); // reset trigger after submit
-      errorOnSubmit=onSubmit?.(e);
+      setExternalTrigger(1); // set the trigger to remove any error message on each input
+      // errorOnSubmit = onSubmit?.(e);
+      
+
+      onSubmit?.(e);
+
     } else if (scrollToError) {
       // Scroll to first error input
       const firstInvalid = document.querySelector("[data-error-index]");
@@ -70,10 +75,10 @@ function Form({ children, onSubmit, scrollToError = true, className, showAllErro
       }
     }
     
-    if (((newErrors[0] && newErrors[0] !== '' && showAllErrorOnToast) || errorOnSubmit!=='') && (props.showToast && props.setToastMessage)){
-      props.setToastMessage(errorOnSubmit!==''?errorOnSubmit:newErrors[0]);
-      props.showToast(true);
-    }
+    // if (((newErrors[0] && newErrors[0] !== '' && showAllErrorOnToast) || errorOnSubmit!=='') && (props.showToast && props.setToastMessage)){
+    //   props.setToastMessage(errorOnSubmit!==''?errorOnSubmit:newErrors[0]);
+    //   props.showToast(true);
+    // }
   };
 
   const enhancedChildren = childArray.map((child, index) => {
