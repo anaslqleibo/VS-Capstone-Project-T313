@@ -1,8 +1,8 @@
-import { JSX, ReactNode, useEffect, useRef, useState } from "react";
+import { Dispatch, JSX, ReactNode, SetStateAction, useEffect, useRef, useState } from "react";
 import Icon from "../assets/icons/Icons";
 import Button from "./Button";
 import { overlayAnimation, useClickOutside } from "./utils/useClickOutside";
-import { Status } from "./utils/getStatusColor";
+import getStatusColor, { Status } from "./utils/getStatusColor";
 import { PageProps } from "../App";
 import { createRoot } from "react-dom/client";
 import React from "react";
@@ -13,6 +13,8 @@ import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-picker
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from "dayjs";
 import Dropdown, { DayPicker } from "./Dropdown";
+import { EventInput } from "@fullcalendar/core";
+import { buildEventTitle } from "../classes/Event";
 
 
 // TODO: Still missing some code, please go through everything and finish what's still missing
@@ -20,7 +22,7 @@ import Dropdown, { DayPicker } from "./Dropdown";
 export enum ModalTypes{
     ShiftDetails = "Shift details",
     OpenShiftDetails = "Open shift details",
-    UnacceptedDetails = "Unaccepted shift details",
+    PendingDetails = "Pending shift details",
     LeaveDetails = "Leave details",
     UnavailabilityDetails = "Unavailability details",
     DeclinedDetails = "Declined shift details",
@@ -38,8 +40,8 @@ export function getModalTypesByStatus(status:Status){
             return null;
         case Status.Accepted:
             return ModalTypes.ShiftDetails;
-        case Status.Unaccepted:
-            return ModalTypes.UnacceptedDetails;
+        case Status.Pending:
+            return ModalTypes.PendingDetails;
         case Status.Leave:
             return ModalTypes.LeaveDetails;
         case Status.OpenShift:
@@ -71,6 +73,7 @@ export interface ModalDetailsProps{
 
 export type DetailsPropsList = ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps|null;
 
+export type setEventType = (event: EventInput, mode:"create"|"update"|"delete")=>void;
 interface ModalProps{
     type?: ModalTypes|null;
     startOpen ?: boolean;
@@ -82,6 +85,9 @@ interface ModalProps{
     setParentOpen?:(e:boolean)=>void;
     children?: React.ReactNode;
     customButtons?: React.ReactNode;
+    setEvents?:setEventType;
+    event?:EventInput;
+    displayToast?:(message:string, toastType: 'success'|'error')=>void;
 }
 
 function createDetail(label: string, detail: string, type:string=""){
@@ -188,35 +194,163 @@ function createDetails(type: string|null, details?: DetailsPropsList){
     }
 }
 
-function createButtons(type: string|null){
+function createButtons(type: string|null, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function){
+    
     let buttons = null;
-    if (type === ModalTypes.LeaveDetails)
-        buttons = <Button type="cta" fontSize="0.8em">Delete leave</Button>;
-    else if (type === ModalTypes.UnavailabilityDetails)
-        buttons = <Button type="cta" fontSize="0.8em">Delete unavailability</Button>;
+    if (type === ModalTypes.LeaveDetails){
+        const handleDelete = () => {
+            // delete from db and check if succesful, if yes then proceed
+            // deleteLeave();
+            const result = true;
+            
+
+            if (result){
+                if (event) setEvents!(event, "delete"); 
+                closeModal!();
+                displayToast!('Leave deleted successfully!', 'success');
+            }
+            else{
+                displayToast!('Failed to delete leave!', 'error');
+            }
+            
+        }
+        buttons = <Button type="cta" fontSize="0.8em" onClick={handleDelete}>Delete leave</Button>;
+    }
+    else if (type === ModalTypes.UnavailabilityDetails){
+        const handleDelete = () => {
+            // delete from db and check if succesful, if yes then proceed
+            // deleteAvailability();
+            const result = true;
+
+            if (result){
+                if (event) setEvents!(event, "delete"); 
+                closeModal!();
+                displayToast!('Availability deleted successfully!', 'success');
+            }
+            else{
+                displayToast!('Failed to delete availability details!', 'error');
+            }
+            
+        }
+        buttons = <Button type="cta" fontSize="0.8em" onClick={handleDelete}>Delete unavailability</Button>;
+    }
     else if (type === ModalTypes.AddLeave)
         buttons = <Button type="cta" fontSize="0.8em">Submit leave</Button>;
     else if (type === ModalTypes.AddUnavailability)
         buttons = <Button type="cta" fontSize="0.8em">Submit unavailability</Button>;
     else if (type === ModalTypes.OpenShiftDetails)
     {
+        const handlePickup = () => {
+            // delete from db and check if succesful, if yes then proceed
+            // pickUpShift();
+            const result = true;
+            
+            if (result){
+                if (event) {
+                    const updatedEvent = {
+                        ...event,
+                        extendedProps: {
+                            ...event.extendedProps,
+                            status: Status.Accepted
+                        },
+                        title: buildEventTitle(Status.Accepted, event.extendedProps?.time, event.extendedProps?.location),
+                        backgroundColor: getStatusColor(Status.Accepted)
+                    };
+
+                    setEvents!(updatedEvent, "update");
+
+                    closeModal!();
+                    displayToast!(`Picked up shift at ${event.extendedProps?.location}, ${event.extendedProps?.time} successfully!`, 'success');
+                }
+            }
+            else{
+                displayToast!('Failed to pick-up shift!', 'error');
+            }
+            
+        }
+
         buttons = (<>
-        <Button type="cta" fontSize="0.8em">Pick-up Shift</Button>
+        <Button type="cta" fontSize="0.8em" onClick={handlePickup}>Pick-up Shift</Button>
         </>);
     }
-    else if (type === ModalTypes.UnacceptedDetails)
+    else if (type === ModalTypes.PendingDetails)
     {
+        const handleAccept = () => {
+            // delete from db and check if succesful, if yes then proceed
+            // acceptShift();
+            const result = true;
+
+            if (result){
+                if (event) {
+                    const updatedEvent = {
+                        ...event,
+                        extendedProps: {
+                            ...event.extendedProps,
+                            status: Status.Accepted
+                        },
+                        title: buildEventTitle(Status.Accepted, event.extendedProps?.time, event.extendedProps?.location),
+                        backgroundColor: getStatusColor(Status.Accepted)
+                    };
+
+                    setEvents!(updatedEvent, "update");
+
+                    closeModal!();
+                    displayToast!(`Accepted shift at ${event.extendedProps?.location}, ${event.extendedProps?.time} successfully!`, 'success');
+                }
+            }
+            else{
+                displayToast!('Failed to accept your pending shift!', 'error');
+            }
+            
+        }
+        const handleDecline = () => {
+            // delete from db and check if succesful, if yes then proceed
+            // declineShift();
+
+            const confirmation = window.confirm("This action cannot be undone. Are you sure you want to decline this shift?");
+            const result = true;
+
+            if (!confirmation) return;
+
+            if (result){
+                if (event) setEvents!(event, "delete"); 
+                closeModal!();
+                displayToast!('Shift declined!', 'success');
+            }
+            else{
+                displayToast!('Failed to decline shift!', 'error');
+            }
+            
+        }
+
         buttons = (<>
-        <Button type="cta" fontSize="0.8em">Accept</Button>
-        <Button type="cta" fontSize="0.8em">Decline</Button>
+        <Button type="cta" fontSize="0.8em" className="bg-[color:var(--success-color)] hover:bg-[color:var(--success-color-hover)]" onClick={handleAccept}>Accept</Button>
+        <Button type="cta" fontSize="0.8em" className="bg-[color:var(--danger-color)] hover:bg-[color:var(--danger-color-hover)]" onClick={handleDecline}>Decline</Button>
         </>);
+    }
+    else if (type === ModalTypes.DeclinedDetails){
+        const onView = () => {
+            // delete from db and check if succesful, if yes then proceed
+            // viewDeclined();
+            const result = true;
+
+            if (result){
+                if (event) setEvents!(event, "delete"); 
+                closeModal!();
+            }
+            else{
+                displayToast!('An unknown error occured', 'error');
+            }
+            
+        }
+        buttons = <Button fontSize="0.8em" onClick={onView}>Mark as viewed</Button>
     }
     
     return buttons;
 }
 
-export function createModal(type:ModalTypes|null, startOpen: boolean, modalContainer: HTMLDivElement, details?:ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps|null, setParentOpen?: (e:boolean)=>void){
-    return (<Modal type={type} details={details} startOpen={startOpen} modalContainer={modalContainer} setParentOpen={setParentOpen}/>);
+export function createModal(type:ModalTypes|null, startOpen: boolean, modalContainer: HTMLDivElement, details?:ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps|null, setParentOpen?: (e:boolean)=>void, setEvents?:setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void){
+    return (<Modal type={type} details={details} startOpen={startOpen} modalContainer={modalContainer} setParentOpen={setParentOpen} setEvents={setEvents} event={event} displayToast={displayToast}/>);
 }
 
 export default function Modal({type, details, startOpen, title, modalContainer, setParentOpen, ...props} : ModalProps){
@@ -229,6 +363,8 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
     const [visible, setVisible] = useState(false);
 
     overlayAnimation(props.shown ? props.shown : shown, setRendered, setVisible, modalContainer, setParentOpen)
+
+    const closeModal = () => props.setShown ? props.setShown(false) : setShown(false);
 
     return (
         <ModalPortal container={modalContainer} isModalOpen={rendered}>
@@ -244,7 +380,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                 }
 
                 {type !== ModalTypes.Notifications && 
-                <div className="relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto w-80 sm:w-full sm:max-w-lg" ref={containerRef}>
+                <div className="fixed -translate-y-1/2 top-1/2 md:translate-none md:relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto w-80 sm:w-full sm:max-w-lg" ref={containerRef}>
                 <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg">
                     <div className="sm:flex sm:items-start">
                     
@@ -256,7 +392,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                                     width="1.5em"
                                     height="1.5em"
                                     className="text-black-700 hover:text-[color:var(--danger-color)]"
-                                    onClick={() => props.setShown ? props.setShown(false) : setShown(false)}
+                                    onClick={closeModal}
                                 />
                             </div>
                             
@@ -267,7 +403,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                     </div>
                 </div>
                 {((type!==undefined && createButtons(type)!=null) || props.customButtons) && <div className="bg-gray-50 py-3 flex flex-row px-6 gap-3 rounded-lg">
-                    {type!==undefined ? createButtons(type) : props.customButtons}
+                    {type!==undefined ? createButtons(type, props.setEvents, props.event, props.displayToast, closeModal) : props.customButtons}
                 </div>}
                 </div>
                 }
@@ -317,28 +453,3 @@ export function ModalPortal({children, container, isModalOpen}: ModalPortal ) {
 
   return container ? createPortal(children, elRef.current) : null;
 }
-
-
-// export function renderModal({modalContainer, rootRef}: PageProps, status: Status, details?:ModalUnavailDetailsProps | ModalLeaveDetailsProps | ModalDetailsProps | null){    
-//     if (modalContainer.current) {
-//         if (rootRef && !rootRef.current)
-//             rootRef.current = createRoot(modalContainer.current);
-        
-//         rootRef?.current?.render(createModal(getModalTypesByStatus(status), true, modalContainer.current, details));
-//     } 
-//     else {
-//         console.warn("Modal container is missing or not mounted.");
-//     }
-// }
-
-// export function renderCustomModal({modalContainer, rootRef}: PageProps, jsx: ReactNode){
-//     if (modalContainer.current) {
-//         if (rootRef && !rootRef.current)
-//             rootRef.current = createRoot(modalContainer.current);
-        
-//         rootRef?.current?.render(jsx);
-//     } 
-//     else {
-//         console.warn("Modal container is missing or not mounted.");
-//     }
-// }

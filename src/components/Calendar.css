@@ -1,0 +1,15 @@
+.fc-day-today {
+    background-color: rgba(var(--hover-color-rgb), 0.2) !important;
+}
+
+.fc-list-event-dot{
+    display: hidden;
+}
+
+.fc-list-event-time{
+    font-size: small;
+}
+
+.fc-list-event-graphic{
+    display: none;
+}

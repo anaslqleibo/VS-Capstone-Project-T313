@@ -69,7 +69,7 @@ export default function Toast({title, type, message, timeout, shown, setShown, .
         }, [shown]);
     }
     return (
-        <div className={`bg-white border-2 rounded-xl flex flex-col absolute z-100 top-6 p-4 min-w-1/2 w-64 shadow-[0_4px_15px_rgba(0,0,0,0.1)] transition-[transform, opacity] duration-500 ease-out ${shown ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0"}`} style={ {borderColor: activeColor, color: activeColor} }>
+        <div className={`bg-white border-2 rounded-xl flex flex-col mx-auto fixed z-100 top-6 left-1/2 -translate-x-1/2 p-4 min-w-[70%] md:min-w-[40%] md:w-fit w-64 shadow-[0_4px_15px_rgba(0,0,0,0.1)] transition-[transform, opacity] duration-500 ease-out ${shown ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0"}`} style={ {borderColor: activeColor, color: activeColor} }>
 
 
             <div className="flex justify-between mb-2">

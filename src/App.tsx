@@ -33,6 +33,8 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage/>} />
         <Route path="/" element={<Navigate to="/home" replace />} />
+
+        <Route path="/demo" element={<Demo/>} />
       
         {/* Protected Routes */}
         <Route

@@ -123,7 +123,7 @@ const Dropdown = ({
           />
         </div>
 
-        {isOpen ? <Icon id="chevron" width="1em" height="0.5em" className='rotate-180 transition-transform'/> : <Icon id="chevron" width="1em" height="0.5em" className='transition-transform'/>}
+        {isOpen ? <Icon id="arrow-down"  className='rotate-180 transition-transform'/> : <Icon id="arrow-down" className='transition-transform'/>}
       </div>
 
       {isOpen && (
@@ -134,7 +134,7 @@ const Dropdown = ({
           {!props.custom && (
             filteredItems.length > 0 ? 
             (filteredItems.map((item, index) => (
-              <div key={index} className={`flex items-center justify-between px-3 py-2 cursor-pointer ${!showCheckbox&&selected.includes(item) ? "bg-gray-200": "hover:bg-gray-100"} `} onClick={(e) => {
+              <div key={index} className={`flex items-center justify-between px-3 py-2 cursor-pointer text-left ${!showCheckbox&&selected.includes(item) ? "bg-gray-200": "hover:bg-gray-100"} `} onClick={(e) => {
                     setSearch("");
                     handleSelect(item);
                 }}>
