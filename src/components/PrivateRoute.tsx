@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { Navigate } from "react-router-dom";
 import { auth } from "../firebase";
+import { RoleProvider } from "./RoleContext";
 
 function PrivateRoute({children}:React.PropsWithChildren) {
   const [user, setUser] = useState<User|undefined|null>(undefined); // undefined = still checking
@@ -15,7 +16,13 @@ function PrivateRoute({children}:React.PropsWithChildren) {
 
   if (user === undefined) return null; // Or a spinner while checking
 
-  return user ? children : <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/login" replace />;
+
+  return (
+    <RoleProvider user={user}>
+      {children}
+    </RoleProvider>
+  );
 };
 
 export default PrivateRoute;

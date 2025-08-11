@@ -13,6 +13,6 @@ export function buildEvent(date: string, timeRange: string, otherProps: Partial<
   };
 }
 
-export function buildEventTitle(status: string, time: string, location: string){
-  return `${status} ${status==="Leave" ? "" : "shift"}${time ? `\n${time}` : ''}${location ? `\n${location}` : ''}` 
+export function buildEventTitle(status: string, time: string, location: string, employee?: string){
+  return `${status} ${status==="Leave" ? "" : "shift"}${employee ? `\n${employee}` : ''}${time ? `\n${time}` : ''}${location ? `\n${location}` : ''}` 
 }

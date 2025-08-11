@@ -88,6 +88,7 @@ interface ModalProps{
     setEvents?:setEventType;
     event?:EventInput;
     displayToast?:(message:string, toastType: 'success'|'error')=>void;
+    noOverlay?:boolean;
 }
 
 function createDetail(label: string, detail: string, type:string=""){
@@ -366,22 +367,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
     const closeModal = () => props.setShown ? props.setShown(false) : setShown(false);
 
-    return (
-        <ModalPortal container={modalContainer} isModalOpen={rendered}>
-            {rendered && <div role="dialog" aria-modal="true" aria-labelledby="dialog-title" className={`relative z-10 h-full transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} >
-            
-            <div aria-hidden="true" className={`absolute inset-0 bg-gray-200/75 backdrop-blur-sm transition-all duration-200 ${visible ? 'backdrop-opacity-100' : 'backdrop-opacity-0'}`}></div>
-
-            <div className="relative z-10 w-full overflow-y-auto h-full">
-            <div className="flex min-h-full justify-center p-4 text-center items-center sm:p-0">
-            
-                {type === ModalTypes.Notifications &&
-                    <ListView title="Notifications" containerRef={containerRef} setShown={setShown}>{createNotifications()}</ListView>
-                }
-
-                {type !== ModalTypes.Notifications && 
-                <div className="fixed -translate-y-1/2 top-1/2 md:translate-none md:relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto w-80 sm:w-full sm:max-w-lg" ref={containerRef}>
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg">
+    const ModalJSX = <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg">
                     <div className="sm:flex sm:items-start">
                     
                         <div className="mt-3 w-full sm:mt-0 sm:text-left">
@@ -404,7 +390,26 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                 </div>
                 {((type!==undefined && createButtons(type)!=null) || props.customButtons) && <div className="bg-gray-50 py-3 flex flex-row px-6 gap-3 rounded-lg">
                     {type!==undefined ? createButtons(type, props.setEvents, props.event, props.displayToast, closeModal) : props.customButtons}
-                </div>}
+                </div>};
+
+    if (props.noOverlay) return ModalJSX;
+
+    return (
+        <ModalPortal container={modalContainer} isModalOpen={rendered}>
+            {rendered && <div role="dialog" aria-modal="true" aria-labelledby="dialog-title" className={`relative z-10 h-full transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} >
+            
+            <div aria-hidden="true" className={`absolute inset-0 bg-gray-200/75 backdrop-blur-sm transition-all duration-200 ${visible ? 'backdrop-opacity-100' : 'backdrop-opacity-0'}`}></div>
+
+            <div className="relative z-10 w-full overflow-y-auto h-full">
+            <div className="flex min-h-full justify-center p-4 text-center items-center sm:p-0">
+            
+                {type === ModalTypes.Notifications &&
+                    <ListView title="Notifications" containerRef={containerRef} setShown={setShown}>{createNotifications()}</ListView>
+                }
+
+                {type !== ModalTypes.Notifications && 
+                <div className="fixed -translate-y-1/2 top-1/2 md:translate-none md:relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto w-80 sm:w-full sm:max-w-lg" ref={containerRef}>
+                    {ModalJSX}
                 </div>
                 }
             </div>

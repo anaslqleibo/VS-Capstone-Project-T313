@@ -1,10 +1,10 @@
 import './App.css';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import UnavailabilityPage from './pages/UnavailabilityPage';
+import UnavailabilityPage from './pages/employee/UnavailabilityPage';
 import MessagingPage from './pages/MessagingPage';
 import AccountPage from './pages/AccountPage';
 import LocationsPage from './pages/LocationsPage';
-import EmployeeDashboardPage from './pages/DashboardPage';
+import EmployeeDashboardPage from './pages/employee/EmployeeDashboardPage';
 import './App.css'
 import { ReactNode, RefObject, useRef } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
@@ -12,6 +12,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import Demo from './demo/Demo';
 import LoginPage from './LoginPage';
 import PrivateRoute from './components/PrivateRoute';
+import AdminCalendarPage from './pages/admin/AdminCalendarPage';
+import DashboardPage from './pages/DashboardPage';
 
 export interface PageProps{
   modalContainer: RefObject<HTMLDivElement|null>;
@@ -41,7 +43,7 @@ function App() {
           path="/home"
           element={
             <PrivateRoute>
-              <EmployeeDashboardPage modalContainer={modalContainer} />
+              <DashboardPage modalContainer={modalContainer} />
             </PrivateRoute>
           }
         />
@@ -71,6 +73,25 @@ function App() {
         />
         <Route
           path="/account"
+          element={
+            <PrivateRoute>
+              <AccountPage modalContainer={modalContainer}/>
+            </PrivateRoute>
+          }
+        />
+
+
+        {/* Admin Pages */}
+        <Route
+          path="/calendar"
+          element={
+            <PrivateRoute>
+              <AdminCalendarPage modalContainer={modalContainer}/>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/shift-creation"
           element={
             <PrivateRoute>
               <AccountPage modalContainer={modalContainer}/>

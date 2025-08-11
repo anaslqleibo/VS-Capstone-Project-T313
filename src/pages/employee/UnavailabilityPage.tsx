@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import Layout from '../components/Layout';
+import Layout from '../../components/Layout';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
-import { injectModalOverlay, PageProps } from '../App';
-import { createModal, ModalTypes } from '../components/Modal';
-import Button from '../components/Button';
+import { injectModalOverlay, PageProps } from '../../App';
+import { createModal, ModalTypes } from '../../components/Modal';
+import Button from '../../components/Button';
 
 const UnavailabilityPage = ({modalContainer}: PageProps) => {
   const unavailableEvents = [

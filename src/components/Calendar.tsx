@@ -11,6 +11,8 @@ import { EventInput } from "@fullcalendar/core";
 import './Calendar.css'
 import Toast from "./Toast";
 import { buildEventTitle } from "../classes/Event";
+import { useRole } from "./RoleContext";
+import { Role } from "../classes/User";
 
 // export interface EventProps{
 //     status: Status;
@@ -26,22 +28,29 @@ export interface CalendarFilter{
     month: dayjs.Dayjs;
 }
 
+export interface AdminCalendarFilter{
+    location: string[];
+    status: string[];
+    month: dayjs.Dayjs;
+    employee: string[];
+}
+
 interface CalendarProps{
     initialView ?: 'dayGridMonth' | 'listMonth'; // TODO: should specify enum
     selectable ?: boolean;
     events: EventInput[];
-    showSelectedFilter?: CalendarFilter;
+    showSelectedFilter?: CalendarFilter | AdminCalendarFilter;
     modalContainer: React.RefObject<HTMLDivElement|null>;
     rootRef ?: RefObject<ReturnType<typeof createRoot> | null>;
     hideHeader?: boolean;
     // onClicks ?: ((...e:any) => void)[];
 }
 
-function constructEventsArray(events: EventInput[]) {
+function constructEventsArray(events: EventInput[], role: Role) {
   const newEvents: EventInput[] = [];
-
+  
   events.forEach(e => {
-    const { status, time, location, details} = e.extendedProps || {};
+    const { status, time, location, employee, details} = e.extendedProps || {};
 
     const [startTime, endTime] = (time || '00:00–23:59').split("–");
     const start = `${e.start}T${startTime}`;
@@ -49,7 +58,7 @@ function constructEventsArray(events: EventInput[]) {
 
     const event: EventInput = {
         id: crypto.randomUUID(),
-        title: buildEventTitle(status, time, location),
+        title: role===Role.Admin ? buildEventTitle(status, time, location, employee) : buildEventTitle(status, time, location),
         start,
         end,
         allDay: e.allDay ?? false,
@@ -61,6 +70,7 @@ function constructEventsArray(events: EventInput[]) {
             time,
             location,
             details,
+            employee,
         }
     };
 
@@ -70,21 +80,28 @@ function constructEventsArray(events: EventInput[]) {
   return newEvents;
 }
 
-function filterEventsArray(events: EventInput[], showSelectedFilter: CalendarFilter) {
+function filterEventsArray(events: EventInput[], showSelectedFilter: CalendarFilter | AdminCalendarFilter) {
   return events.filter(e => {
-    const { status, location } = e.extendedProps || {};
-    const matchStatus =
-      showSelectedFilter.status.includes("All shifts") ||
+    const { status, location, employee } = e.extendedProps || {};
+    const matchStatus = showSelectedFilter.status.includes("All shifts") ||
       showSelectedFilter.status.includes(status);
-    const matchLocation =
-      showSelectedFilter.location.includes("All locations") ||
+    const matchLocation = showSelectedFilter.location.includes("All locations") ||
       showSelectedFilter.location.includes(location);
+
+      console.log(employee);
+    if (((showSelectedFilter as AdminCalendarFilter).employee)){
+        const filter = (showSelectedFilter as AdminCalendarFilter);
+        const matchEmployee = filter.employee.includes("All employees") ||
+        filter.employee.includes(employee);
+        return matchStatus && matchLocation && matchEmployee;
+    }
     return matchStatus && matchLocation;
   });
 }
 
 export function Calendar({initialView = "dayGridMonth", selectable = true, events, showSelectedFilter, modalContainer, hideHeader=false, ...props} : CalendarProps){
-    const initialEvents = useMemo(() => constructEventsArray(events), [events]);
+    const role = useRole();
+    const initialEvents = useMemo(() => constructEventsArray(events, role), [events]);
     
     const [originalEvents, setOriginalEvents] = useState<EventInput[]>(initialEvents);
     const [newEvents, setEvents] = useState<EventInput[]>(initialEvents);
@@ -121,9 +138,6 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
     const calendarRef = useRef<FullCalendar>(null);
  
     useEffect(()=>{
-        console.log('showSelectedFilter changed:', showSelectedFilter);
-  console.log('originalEvents before filtering:', originalEvents);
-
         if (showSelectedFilter) {
             calendarRef.current?.getApi().gotoDate(showSelectedFilter?.month.format('YYYY-MM-DD'));   
 
@@ -186,7 +200,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
                 const lineDiv = document.createElement('div');
 
                 lineDiv.textContent = line;
-                lineDiv.className = "text-xs md:font-semibold font-[Inter] " // TODO: Change font to use global font
+                lineDiv.className = "text-xs text-wrap first:font-bold"
                 eventContainer.appendChild(lineDiv);
             });
 
