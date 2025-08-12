@@ -14,6 +14,7 @@ import LoginPage from './LoginPage';
 import PrivateRoute from './components/PrivateRoute';
 import AdminCalendarPage from './pages/admin/AdminCalendarPage';
 import DashboardPage from './pages/DashboardPage';
+import ShiftCreationPage from './pages/admin/ShiftCreationPage';
 
 export interface PageProps{
   modalContainer: RefObject<HTMLDivElement|null>;
@@ -94,7 +95,7 @@ function App() {
           path="/shift-creation"
           element={
             <PrivateRoute>
-              <AccountPage modalContainer={modalContainer}/>
+              <ShiftCreationPage modalContainer={modalContainer}/>
             </PrivateRoute>
           }
         />

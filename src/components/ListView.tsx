@@ -108,7 +108,7 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
   const isMarkedForRemoval = (id: string) =>
     Object.prototype.hasOwnProperty.call(removalQueue, id);
   
-  return (<div className='w-max text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg overflow-hidden text-left shadow-xl transition-all my-auto block' ref={containerRef}>
+  return (<div className='w-max h-full text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg overflow-hidden text-left shadow-xl transition-all my-auto block' ref={containerRef}>
                   <div className="w-full px-4 py-2 border-b border-gray-200 text-xl text-[color:var(--secondary-color))] font-semibold flex items-center justify-between gap-5">
                     {title || "Title"}
 

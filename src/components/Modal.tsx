@@ -155,7 +155,7 @@ function createDetail(label: string, detail: string, type:string="", isEditing=f
                 {label}
             </div>
                 
-            <Input value={detail} className="p-0"/></div>);
+            <Input value={detail} className="py-1 px-3 border-1"/></div>);
         }
         else 
             return (<p className="text-sm font-semibold text-gray-600 mt-1">{label}

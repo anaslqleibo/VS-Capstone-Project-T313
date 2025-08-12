@@ -151,6 +151,8 @@ function Input({
         className={`w-full rounded-md border-[1.5px] px-3 py-2 text-sm !outline-none border-[color:var(--dark-grey)] transition-colors min-h-fit 
           ${error && touched ? "border-red-500 ring-red-200" :
           " hover:border-[color:var(--hover-color)] hover:border-[1.5px] focus:border-[color:var(--primary-color)]"}  
+
+          ${className ? className : ""}
         `}
         // {...props}
         disabled={props.readonly}
@@ -170,10 +172,12 @@ function Input({
             }
           }}
           placeholder={placeholder}
-          className={`${props.arrow ? "w-20" : "w-full"} rounded-md border-[1.5px] px-3 py-2 ${props.arrow ? "text-lg" : "text-sm"} !outline-none border-[color:var(--dark-grey)] transition-colors
+          className={`${props.arrow ? "w-20" : "w-full"} rounded-md ${className?.includes('border-') ? "" : "border-[1.5px]"} ${className?.includes('p-') || className?.includes('px-') || className?.includes('py-') ? "" : "px-3 py-2"}  ${props.arrow ? "text-lg" : "text-sm"} !outline-none border-[color:var(--dark-grey)] transition-colors
             ${error && touched ? "border-red-500 ring-red-200" :
             " hover:border-[color:var(--hover-color)] hover:border-[1.5px] focus:border-[color:var(--primary-color)] "}  
-            ${props.arrow && 'border-none text-center font-semibold'}
+            ${props.arrow ? 'border-none text-center font-semibold':""}
+            
+            ${className ? className : ""}
             `}
           disabled={props.readonly}
           // {...props}
@@ -189,7 +193,7 @@ function Input({
 
   
   return (
-    <div className={`flex flex-col gap-1 ${className ? className : ""} group ${props.arrow && "flex-row items-center"}`}>
+    <div className={`flex flex-col gap-1 group ${props.arrow && "flex-row items-center"}`}>
       {label && (
         <label htmlFor={id || name} className={`text-sm font-medium text-left group-has-focus:text-[color:var(--primary-color)] ${required && "after:ml-0.5 after:text-red-500 after:content-['*']"}`}>
           {label}
