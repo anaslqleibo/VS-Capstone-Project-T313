@@ -3,7 +3,7 @@ import { User } from "firebase/auth";
 // Temporary utility class to detect account access, can be replaced later
 export enum Role{
     Admin,
-    Staff
+    Staff,
 }
 
 export function getUserAccess(user: User){
@@ -11,4 +11,9 @@ export function getUserAccess(user: User){
         return Role.Admin;
     }
     else return Role.Staff;
+}
+
+
+export function isAdmin(role?:Role){
+    return (role === Role.Admin);
 }

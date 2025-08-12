@@ -3,24 +3,29 @@ import { PageProps } from "../App";
 import Layout from "../components/Layout";
 import Form from "../components/Form";
 import Input from "../components/Input";
-import Button from "../components/Button";
+import Button, { Toggle } from "../components/Button";
 
 const AccountPage = ({ modalContainer }: PageProps) => {
-  const [profile, setProfile] = useState({
+  // Retrieve from db
+  const initialProfile = {
     firstName: "Test",
     lastName: "Testington",
     email: "Test@example.com",
     phone: "0123 456 789",
     role: "Casual Instructor",
-  });
+  }
 
-  const [settings, setSettings] = useState({
+  const [profile, setProfile] = useState(initialProfile);
+
+  // Retrieve from db
+  const initialSettings = {
     emailNotifications: true,
     smsAlerts: false,
     shiftReminders: true,
     showPhoneToSupervisors: true,
-  });
+  };
 
+  const [settings, setSettings] = useState(initialSettings);
   const [isEditing, setIsEditing] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -34,9 +39,15 @@ const AccountPage = ({ modalContainer }: PageProps) => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); // demo-only
-    // TODO: persist to Firebase here
+    // TODO: persist to Firebase here 
+    // Note: or can be saved through cookies
     setIsEditing(false);
   };
+
+  const handleCancel = () => {
+    setSettings(initialSettings);
+    setProfile(initialProfile);
+  }
 
   return (
     <Layout modalContainer={modalContainer}>
@@ -140,26 +151,25 @@ const AccountPage = ({ modalContainer }: PageProps) => {
                     ].map(({ key, label }) => (
                       <label key={key} className="flex items-center justify-between border rounded-lg px-3 py-2 cursor-pointer">
                         <span>{label}</span>
-                        <input
+                        {/* <input
                           type="checkbox"
                           className="h-4 w-4"
                           checked={settings[key as keyof typeof settings]}
                           onChange={() => toggleSetting(key as keyof typeof settings)}
-                        />
+                        /> */}
+
+                        <Toggle checked={settings[key as keyof typeof settings]}
+                          onChange={() => toggleSetting(key as keyof typeof settings)} />
                       </label>
                     ))}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 justify-end">
-                  <button
-                    type="button"
-                    className="px-5 py-2 rounded-md border hover:bg-gray-50"
-                    onClick={() => setIsEditing(false)}
-                  >
+                <div className="flex items-stretch gap-3 justify-end">
+                  <Button type="outline" onClick={() => {setIsEditing(false); handleCancel();}}>
                     Cancel
-                  </button>
-                  <Button htmlType="submit" className="px-6">Save changes</Button>
+                  </Button>
+                  <Button htmlType="submit">Save changes</Button>
                 </div>
               </Form>
             )}

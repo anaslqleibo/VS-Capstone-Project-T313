@@ -2,7 +2,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import getStatusColor, { Status } from "./utils/getStatusColor";
-import { createModal, DetailsPropsList, getModalTypesByStatus, ModalDetailsProps, ModalLeaveDetailsProps, ModalUnavailDetailsProps } from "./Modal";
+import { createModal, DetailsPropsList, getModalTypesByStatus, DetailsExtProps, LeaveExtProps, UnavailExtProps } from "./Modal";
 import { createRoot } from "react-dom/client";
 import { RefObject, useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
@@ -50,11 +50,20 @@ function constructEventsArray(events: EventInput[], role: Role) {
   const newEvents: EventInput[] = [];
   
   events.forEach(e => {
-    const { status, time, location, employee, details} = e.extendedProps || {};
+    const { status, date, time, location, employee, address, notes, repeat} = e.extendedProps || {};
 
     const [startTime, endTime] = (time || '00:00–23:59').split("–");
     const start = `${e.start}T${startTime}`;
     const end = `${e.start}T${endTime}`;
+
+    let details = {};
+    if (status === Status.Unavailable){
+      
+        details = {day:"Monday", date, time, repeat}
+    }
+    else{
+        details = {status, employee, date, time, location, address, notes};
+    }
 
     const event: EventInput = {
         id: crypto.randomUUID(),
@@ -69,8 +78,8 @@ function constructEventsArray(events: EventInput[], role: Role) {
             status,
             time,
             location,
-            details,
             employee,
+            details,
         }
     };
 
@@ -88,7 +97,6 @@ function filterEventsArray(events: EventInput[], showSelectedFilter: CalendarFil
     const matchLocation = showSelectedFilter.location.includes("All locations") ||
       showSelectedFilter.location.includes(location);
 
-      console.log(employee);
     if (((showSelectedFilter as AdminCalendarFilter).employee)){
         const filter = (showSelectedFilter as AdminCalendarFilter);
         const matchEmployee = filter.employee.includes("All employees") ||

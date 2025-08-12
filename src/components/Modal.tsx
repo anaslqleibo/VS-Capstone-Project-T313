@@ -9,12 +9,14 @@ import React from "react";
 import { createPortal } from "react-dom";
 import ListView from "./ListView";
 import { createNotifications } from "./utils/notification";
-import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import dayjs from "dayjs";
-import Dropdown, { DayPicker } from "./Dropdown";
+import { DatePicker, TimePicker } from "@mui/x-date-pickers";
+import { DayPicker } from "./Dropdown";
 import { EventInput } from "@fullcalendar/core";
 import { buildEventTitle } from "../classes/Event";
+import { useRole } from "./RoleContext";
+import { isAdmin, Role } from "../classes/User";
+import { FaBell, FaEdit, FaRegBell, FaSave, FaTrash } from "react-icons/fa";
+import Input from "./Input";
 
 
 // TODO: Still missing some code, please go through everything and finish what's still missing
@@ -23,21 +25,23 @@ export enum ModalTypes{
     ShiftDetails = "Shift details",
     OpenShiftDetails = "Open shift details",
     PendingDetails = "Pending shift details",
+    RequestDetails = "Request shift details",
     LeaveDetails = "Leave details",
     UnavailabilityDetails = "Unavailability details",
     DeclinedDetails = "Declined shift details",
+    UnassignedShiftDetails = "Unassigned shift details",
     AddShift = "Add shift",
     AddLeave = "Add leave",
     AddUnavailability = "Add unavailability",
-    Notifications="Notifications"
+    Notifications="Notifications",
 }
 
 export function getModalTypesByStatus(status:Status){
     switch(status){
         case Status.Unassigned:
-            return null;
+            return ModalTypes.UnassignedShiftDetails;
         case Status.Request:
-            return null;
+            return ModalTypes.RequestDetails;
         case Status.Accepted:
             return ModalTypes.ShiftDetails;
         case Status.Pending:
@@ -53,25 +57,31 @@ export function getModalTypesByStatus(status:Status){
     }
 }
 
-export interface ModalUnavailDetailsProps{
-    Day: string;
-    Time: string;
+export interface UnavailExtProps{
+    day: string;
+    date: string; // starting from this date
+    time: string;
+    repeat: string;
 }
 
-export interface ModalLeaveDetailsProps{
-    Date: string;
-    Time: string;
+export interface LeaveExtProps{
+    status: Status.Leave;
+    employee ?: string;
+    date: string;
+    time: string;
 }
 
-export interface ModalDetailsProps{
-    Date: string;
-    Time: string;
-    Location: string;
-    Address: string;
-    Notes: string;
+export interface DetailsExtProps{
+    status: Status;
+    employee ?: string;
+    date: string;
+    time: string;
+    location: string;
+    address: string;
+    notes: string;
 }
 
-export type DetailsPropsList = ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps|null;
+export type DetailsPropsList = UnavailExtProps|LeaveExtProps|DetailsExtProps|null;
 
 export type setEventType = (event: EventInput, mode:"create"|"update"|"delete")=>void;
 interface ModalProps{
@@ -91,35 +101,88 @@ interface ModalProps{
     noOverlay?:boolean;
 }
 
-function createDetail(label: string, detail: string, type:string=""){
-    if (type === "textarea")
-        return (<><p className="text-sm font-semibold text-gray-600 mt-1 mb-1">{label}</p>
-    <textarea readOnly className="text-gray-500 font-normal text-sm border-2 border-gray-500 bg-gray-100 rounded-md min-w-full p-2 min-h-[72px] resize-none focus:outline-0" value={detail}></textarea></>);
-    else
-        return (<p className="text-sm font-semibold text-gray-600 mt-1">{label}
-    <span className="text-[color:var(--secondary-color)] font-normal">{detail}</span></p>);
+function createAdminComponent(status: Status, employee?:string, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isEditing=false, setEditing?:(e:boolean)=>void){
+    const handleDelete = () => {
+        const confirm = window.confirm("Are you sure you want to delete this shift?")
+        if (!confirm) return;
+        // delete from db and check if succesful, if yes then proceed
+        // deleteLeave();
+        const result = true;
+        
+        if (result){
+            if (event) setEvents!(event, "delete"); 
+            closeModal!();
+            displayToast!('Shift deleted successfully!', 'success');
+        }
+        else{
+            displayToast!('Failed to delete leave!', 'error');
+        }
+        
+    }
+    
+    return (
+        <>
+    <div className = "flex justify-between">
+        <p className="text-sm font-semibold text-gray-600 mt-1">Status: 
+        <span className="font-bold" style={{color: getStatusColor(status)}}> {status}</span></p>
+
+        <div className="flex gap-3 text-[color:var(--primary-color)] [&>*]:hover:text-[color:var(--hover-color)]">
+            {isEditing ? <FaSave onClick={()=>setEditing && setEditing(false)}/> :
+            <>
+            <FaRegBell/>
+            <FaEdit onClick={()=>setEditing && setEditing(true)}/>
+            <FaTrash onClick={handleDelete}/>
+            </>
+            }
+            
+        </div>
+    </div>
+    
+    {employee ? <p className="text-sm font-semibold text-gray-600 mt-1">Employee: 
+    <span className="text-[color:var(--secondary-color)] font-normal"> {employee}</span></p> : ""}    
+    </>);
 }
 
-function createDetails(type: string|null, details?: DetailsPropsList){
+
+function createDetail(label: string, detail: string, type:string="", isEditing=false){
+    if (type === "textarea")
+        return (<><p className="text-sm font-semibold text-gray-600 mt-1 mb-1">{label}</p>
+    <textarea readOnly={!isEditing} className="text-gray-500 font-normal text-sm border-2 border-gray-500 bg-gray-100 rounded-md min-w-full p-2 min-h-[72px] resize-none focus:outline-0" value={detail}></textarea></>);
+    else{
+        if (isEditing){
+            return (<div className="flex items-center gap-2 text-sm font-semibold text-gray-600 mt-2 w-100">
+            <div className="">
+                {label}
+            </div>
+                
+            <Input value={detail} className="p-0"/></div>);
+        }
+        else 
+            return (<p className="text-sm font-semibold text-gray-600 mt-1">{label}
+    <span className="text-[color:var(--secondary-color)] font-normal">{detail}</span></p>);
+    }
+}
+
+function createDetails(type: string|null, details?: DetailsPropsList, isAdmin?:boolean, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isEditing?: boolean, setEditing?:((e:boolean)=>void)){
     if (details === undefined || type==null) return;
 
     if (type === ModalTypes.UnavailabilityDetails)
     {
-        const newDetails = details as ModalUnavailDetailsProps;
+        const newDetails = details as UnavailExtProps;
         return (
             <>
-            {createDetail("Day: ", newDetails.Day)}
-            {createDetail("Time: ", newDetails.Time)}
+            {createDetail("Day: ", newDetails.day)}
+            {createDetail("Time: ", newDetails.time)}
             </>
         );
     }
     else if (type === ModalTypes.LeaveDetails)
     {
-        const newDetails = details as ModalLeaveDetailsProps;
+        const newDetails = details as LeaveExtProps;
         return (
             <>
-            {createDetail("Date: ", newDetails.Date)}
-            {createDetail("Time: ", newDetails.Time)}
+            {createDetail("Day: ", newDetails.date)}
+            {createDetail("Time: ", newDetails.time)}
             </>
         );
     }
@@ -168,34 +231,22 @@ function createDetails(type: string|null, details?: DetailsPropsList){
                 </div>            
             </div>
         );
-    else if (type === ModalTypes.DeclinedDetails)
-    {
-        const newDetails = details as ModalDetailsProps;
-        return (
-            <>
-            {createDetail("Date: ", newDetails.Date)}
-            {createDetail("Time: ", newDetails.Time)}
-            {createDetail("Location: ", newDetails.Location)}
-            {createDetail("Address: ", newDetails.Address)}
-            {createDetail("Reason: ", newDetails.Notes, "textarea")}
-            </>
-        );
-    }
     else{
-        const newDetails = details as ModalDetailsProps;
+        const newDetails = details as DetailsExtProps;
         return (
             <>
-            {createDetail("Date: ", newDetails.Date)}
-            {createDetail("Time: ", newDetails.Time)}
-            {createDetail("Location: ", newDetails.Location)}
-            {createDetail("Address: ", newDetails.Address)}
-            {createDetail("Notes: ", newDetails.Notes, "textarea")}
+            {isAdmin && setEditing && createAdminComponent(newDetails.status, newDetails.employee, setEvents, event, displayToast, closeModal, isEditing, setEditing)}
+            {createDetail("Date: ", newDetails.date, "", isEditing)}
+            {createDetail("Time: ", newDetails.time, "", isEditing)}
+            {createDetail("Location: ", newDetails.location, "", isEditing)}
+            {createDetail("Address: ", newDetails.address, "", isEditing)}
+            {createDetail("Notes: ", newDetails.notes, "textarea", isEditing)}
             </>
         );
     }
 }
 
-function createButtons(type: string|null, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function){
+function createButtons(type: string|null, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isAdmin?:boolean){
     
     let buttons = null;
     if (type === ModalTypes.LeaveDetails){
@@ -215,7 +266,9 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
             }
             
         }
-        buttons = <Button type="cta" fontSize="0.8em" onClick={handleDelete}>Delete leave</Button>;
+
+        if (!isAdmin)
+            buttons = <Button type="cta" fontSize="0.8em" onClick={handleDelete}>Delete leave</Button>;
     }
     else if (type === ModalTypes.UnavailabilityDetails){
         const handleDelete = () => {
@@ -324,7 +377,8 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
             
         }
 
-        buttons = (<>
+        if (!isAdmin)
+            buttons = (<>
         <Button type="cta" fontSize="0.8em" className="bg-[color:var(--success-color)] hover:bg-[color:var(--success-color-hover)]" onClick={handleAccept}>Accept</Button>
         <Button type="cta" fontSize="0.8em" className="bg-[color:var(--danger-color)] hover:bg-[color:var(--danger-color-hover)]" onClick={handleDecline}>Decline</Button>
         </>);
@@ -344,19 +398,24 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
             }
             
         }
-        buttons = <Button fontSize="0.8em" onClick={onView}>Mark as viewed</Button>
+
+        if (isAdmin)
+            buttons = <Button fontSize="0.8em" onClick={onView}>Reassign</Button>
+        else buttons = <Button fontSize="0.8em" onClick={onView}>Mark as viewed</Button>
     }
     
     return buttons;
 }
 
-export function createModal(type:ModalTypes|null, startOpen: boolean, modalContainer: HTMLDivElement, details?:ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps|null, setParentOpen?: (e:boolean)=>void, setEvents?:setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void){
+export function createModal(type:ModalTypes|null, startOpen: boolean, modalContainer: HTMLDivElement, details?:UnavailExtProps|LeaveExtProps|DetailsExtProps|null, setParentOpen?: (e:boolean)=>void, setEvents?:setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void){
     return (<Modal type={type} details={details} startOpen={startOpen} modalContainer={modalContainer} setParentOpen={setParentOpen} setEvents={setEvents} event={event} displayToast={displayToast}/>);
 }
 
 export default function Modal({type, details, startOpen, title, modalContainer, setParentOpen, ...props} : ModalProps){
     const [shown, setShown] = useState(startOpen ?? false);
+    const [isEditing, setIsEditing] = useState(false);
     
+
     const containerRef = useRef<HTMLDivElement>(null);
     useClickOutside(containerRef, ()=> props.setShown ? props.setShown(false) : setShown(false));
     
@@ -367,30 +426,41 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
     const closeModal = () => props.setShown ? props.setShown(false) : setShown(false);
 
-    const ModalJSX = <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg">
-                    <div className="sm:flex sm:items-start">
-                    
-                        <div className="mt-3 w-full sm:mt-0 sm:text-left">
-                            <div className="flex items-center justify-between align-middle mb-2">
-                                <h1 id="dialog-title" className="text-lg font-semibold text-gray-900">{type !== undefined ? type : title??"Please set the tag 'title'"}</h1>
-                                <Icon
-                                    id="x"
-                                    width="1.5em"
-                                    height="1.5em"
-                                    className="text-black-700 hover:text-[color:var(--danger-color)]"
-                                    onClick={closeModal}
-                                />
-                            </div>
-                            
-                            {type!==undefined && createDetails(type, details)}
+    const admin = isAdmin(useRole());
+    const buttons = type!==undefined && createButtons(type, props.setEvents, props.event, props.displayToast, closeModal, admin);
 
-                            {props.children}
-                        </div>
-                    </div>
+    const setEditing = (edit:boolean) => {
+        setIsEditing(admin && edit);
+    }
+
+    const ModalJSX = (<div className="fixed -translate-y-1/2 top-1/2 md:translate-none md:relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto w-80 sm:w-full sm:max-w-lg" ref={containerRef}>
+    <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg">
+        <div className="sm:flex sm:items-start">
+        
+            <div className="mt-3 w-full sm:mt-0 sm:text-left">
+                <div className="flex items-center justify-between align-middle mb-2">
+                    <h1 id="dialog-title" className="text-lg font-semibold text-gray-900">{type !== undefined ? type : title??"Please set the tag 'title'"}</h1>
+                    <Icon
+                        id="x"
+                        width="1.5em"
+                        height="1.5em"
+                        className="text-black-700 hover:text-[color:var(--danger-color)]"
+                        onClick={closeModal}
+                    />
                 </div>
-                {((type!==undefined && createButtons(type)!=null) || props.customButtons) && <div className="bg-gray-50 py-3 flex flex-row px-6 gap-3 rounded-lg">
-                    {type!==undefined ? createButtons(type, props.setEvents, props.event, props.displayToast, closeModal) : props.customButtons}
-                </div>};
+                
+
+                {type!==undefined && createDetails(type, details, admin, props.setEvents, props.event, props.displayToast, closeModal, isEditing, setEditing)}
+                
+
+                {props.children}
+            </div>
+        </div>  
+    </div>
+    {(buttons!=null || props.customButtons) && <div className="bg-gray-50 py-3 flex flex-row px-6 gap-3 rounded-lg">
+        {type!==undefined ? buttons : props.customButtons}
+    </div>}    
+    </div>);
 
     if (props.noOverlay) return ModalJSX;
 
@@ -407,11 +477,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                     <ListView title="Notifications" containerRef={containerRef} setShown={setShown}>{createNotifications()}</ListView>
                 }
 
-                {type !== ModalTypes.Notifications && 
-                <div className="fixed -translate-y-1/2 top-1/2 md:translate-none md:relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto w-80 sm:w-full sm:max-w-lg" ref={containerRef}>
-                    {ModalJSX}
-                </div>
-                }
+                {type !== ModalTypes.Notifications && ModalJSX}
             </div>
             </div>
         </div>  }

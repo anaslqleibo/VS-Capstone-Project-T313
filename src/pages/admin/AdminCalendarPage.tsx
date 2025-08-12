@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { AdminCalendarFilter, Calendar, CalendarFilter } from '../../components/Calendar';
 import getStatusColor, { Status } from '../../components/utils/getStatusColor';
-import formatDate, { formatDateDayJS } from '../../components/utils/formatDate';
+import formatDate, { formatDateDayJS, sqlDateFormatToRegularFormat } from '../../components/utils/formatDate';
 import Dropdown from '../../components/Dropdown';
-import { createModal, ModalDetailsProps, ModalTypes } from '../../components/Modal';
+import { createModal, DetailsExtProps, DetailsPropsList, ModalTypes } from '../../components/Modal';
 import { PageProps } from '../../App';
 import Layout from '../../components/Layout';
 import Button from '../../components/Button';
@@ -42,28 +42,6 @@ export default function AdminCalendarPage({modalContainer}: PageProps) {
     }));
   }
 
-  const leaveDetails = {
-      Date: "11-04-2024",
-      Time: "12:00-16:30"
-  };
-
-
-  const openShiftDetails : ModalDetailsProps = {
-      Date: "11-04-2024",
-      Time: "12:00-16:30",
-      Location: "Noosa",
-      Address: "111 Test Drive, Noosa, 4110",
-      Notes: "School excursion. 50+ students. Arrive early."
-  };
-
-  const declinedShiftDetails : ModalDetailsProps = {
-      Date: "11-04-2024",
-      Time: "12:00-16:30",
-      Location: "Noosa",
-      Address: "111 Test Drive, Noosa, 4110",
-      Notes: "Please take a break, you have done a lot of shifts this week..."
-  };
-
   const employees = getEmployeeStatic();
   const locations = getLocationsStatic();
 
@@ -76,10 +54,12 @@ export default function AdminCalendarPage({modalContainer}: PageProps) {
       start: today,
       extendedProps: {
         status: Status.Accepted,
+        date: sqlDateFormatToRegularFormat(today),
         time: '12:00–16:00',
         location: locations[0],
-        details: openShiftDetails,
         employee: employees[0],
+        address: "111 Test Drive, Noosa, 4110",
+        notes: "School excursion. 50+ students. Arrive early.",
       },
       color: getStatusColor(Status.Accepted),
     },
@@ -87,19 +67,23 @@ export default function AdminCalendarPage({modalContainer}: PageProps) {
       start: nextWeek,
       extendedProps: {
         status: Status.Pending,
+        date: sqlDateFormatToRegularFormat(nextWeek),
         time: '11:00–12:00',
         location: locations[1],
-        details: openShiftDetails,
         employee: employees[1],
+        address: "111 Test Drive, Noosa, 4110",
+        notes: "School excursion. 50+ students. Arrive early.",
       },
       color: getStatusColor(Status.Pending),
     },
     {
       start: yesterday,
-      allDay: true,
+      end: nextWeek,
+      
       extendedProps: {
         status: Status.Leave,
-        details: leaveDetails,
+        date: sqlDateFormatToRegularFormat(yesterday),
+        time: '00:00-23:59',
         employee: employees[2],
       },
       color: getStatusColor(Status.Leave),
@@ -107,22 +91,13 @@ export default function AdminCalendarPage({modalContainer}: PageProps) {
     {
       start: today,
       extendedProps: {
-        status: Status.OpenShift,
-        time: '08:00–12:00',
-        location: locations[2],
-        details: openShiftDetails,
-        employee: employees[2],
-      },
-      color: getStatusColor(Status.OpenShift),
-    },
-    {
-      start: today,
-      extendedProps: {
         status: Status.DeclinedShift,
+        date: sqlDateFormatToRegularFormat(today),
         time: '14:00–17:30',
         location: locations[3],
-        details: declinedShiftDetails,
         employee: employees[3],
+        address: "111 Test Drive, Noosa, 4110",
+        notes: "School excursion. 50+ students. Arrive early.",
       },
       color: getStatusColor(Status.DeclinedShift),
     },
@@ -130,18 +105,24 @@ export default function AdminCalendarPage({modalContainer}: PageProps) {
       start: today,
       extendedProps: {
         status: Status.Request,
+        date: sqlDateFormatToRegularFormat(today),
         time: '13:00–16:00',
         location: locations[4],
         employee: employees[0],
+        address: "111 Test Drive, Noosa, 4110",
+        notes: "School excursion. 50+ students. Arrive early.",
       },
-      color: getStatusColor(Status.Leave),
+      color: getStatusColor(Status.Request),
     },
     {
       start: today,
       extendedProps: {
         status: Status.Unassigned,
-        time: '07:00-11:00',
+        date: sqlDateFormatToRegularFormat(today),
+        time: '08:00–12:00',
         location: locations[2],
+        address: "111 Test Drive, Noosa, 4110",
+        notes: "School excursion. 50+ students. Arrive early.",
       },
       color: getStatusColor(Status.Unassigned),
     },

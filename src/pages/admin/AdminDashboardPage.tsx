@@ -3,7 +3,7 @@ import { Calendar, CalendarFilter } from '../../components/Calendar';
 import getStatusColor, { Status } from '../../components/utils/getStatusColor';
 import formatDate, { formatDateDayJS } from '../../components/utils/formatDate';
 import Dropdown from '../../components/Dropdown';
-import Modal, { createModal, ModalDetailsProps, ModalTypes } from '../../components/Modal';
+import Modal, { createModal, DetailsExtProps, ModalTypes } from '../../components/Modal';
 import { PageProps } from '../../App';
 import Layout from '../../components/Layout';
 import Button from '../../components/Button';
@@ -20,25 +20,15 @@ import { createNotifications } from '../../components/utils/notification';
 
 export default function AdminDashboardPage({modalContainer}: PageProps) {
 
-  const leaveDetails = {
-      Date: "11-04-2024",
-      Time: "12:00-16:30"
-  };
 
-  const openShiftDetails : ModalDetailsProps = {
-      Date: "11-04-2024",
-      Time: "12:00-16:30",
-      Location: "Noosa",
-      Address: "111 Test Drive, Noosa, 4110",
-      Notes: "School excursion. 50+ students. Arrive early."
-  };
-
-  const declinedShiftDetails : ModalDetailsProps = {
-      Date: "11-04-2024",
-      Time: "12:00-16:30",
-      Location: "Noosa",
-      Address: "111 Test Drive, Noosa, 4110",
-      Notes: "Please take a break, you have done a lot of shifts this week..."
+  const declinedShiftDetails : DetailsExtProps = {
+      status: Status.DeclinedShift,
+      employee: "Naomi",
+      date: "11-04-2024",
+      time: "12:00-16:30",
+      location: "Noosa",
+      address: "111 Test Drive, Noosa, 4110",
+      notes: "Please take a break, you have done a lot of shifts this week..."
   };
   
   return (

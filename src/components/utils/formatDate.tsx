@@ -36,3 +36,8 @@ export default function formatDate(date : Date | string = new Date(), sqlDateFor
 export function formatDateDayJS(year:number|string, month:number, date:number){
     return dayjs([year,(month+1<10)?('0' + (month+1)):(month+1),(date<10)?('0' + date):date].join('-'));
 }
+
+export function sqlDateFormatToRegularFormat(date:string){
+    const [year, month, day] = date.split('-');
+    return [day, month, year].join('-');
+}

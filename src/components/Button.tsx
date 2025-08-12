@@ -8,9 +8,13 @@ interface ToggleProps {
     disabled?: boolean; 
     children ?: React.ReactNode;
     className ?: string;
+
+    // controlled props
+    checked ?: boolean;
+    onChange?: (() => void);
 }
 
-export function Toggle({size = '0.6em', onClick, className, ...props} : ToggleProps){
+export function Toggle({size = '0.6em', onClick, className, checked, onChange, ...props} : ToggleProps){
     let validSize = size;
     if (validSize && !validSize.endsWith('em'))
         validSize += 'em';
@@ -31,12 +35,12 @@ export function Toggle({size = '0.6em', onClick, className, ...props} : TogglePr
     return (
             <div className={`flex flex-row items-center gap-2 ${className}`}>
             {props.children}
-            <div className={`relative w-[4.8em] h-[2.4em] rounded-full bg-[color:var(--light-grey)] transition-colors duration-200 cursor-pointer text-[color:var(--light-grey)] ${active ? 'bg-[color:var(--primary-color)] text-[color:var(--primary-color)] hover:bg-[color:var(--hover-color)] hover:text-[color:var(--hover-color)]' : 'hover:bg-[color:var(--dark-grey)] hover:text-[color:var(--dark-grey)]'} ${props.disabled ? 'pointer-events-none opacity-50 cursor-not-allowed' : ''}`}
+            <div className={`relative w-[4.8em] h-[2.4em] rounded-full bg-[color:var(--light-grey)] transition-colors duration-200 cursor-pointer text-[color:var(--light-grey)] ${checked ||active ? 'bg-[color:var(--primary-color)] text-[color:var(--primary-color)] hover:bg-[color:var(--hover-color)] hover:text-[color:var(--hover-color)]' : 'hover:bg-[color:var(--dark-grey)] hover:text-[color:var(--dark-grey)]'} ${props.disabled ? 'pointer-events-none opacity-50 cursor-not-allowed' : ''}`}
   
-                onClick={onToggleClick}
+                onClick={onChange ? onChange : onToggleClick}
                 aria-disabled={props.disabled}
                 style={{ fontSize: validSize }}>
-                <div className={`absolute top-[0.2em] left-[0.2em] w-[2em] h-[2em] rounded-full bg-white flex items-center justify-center transition-transform duration-200 ${active ? 'translate-x-[2.4em]' : ''}`}>
+                <div className={`absolute top-[0.2em] left-[0.2em] w-[2em] h-[2em] rounded-full bg-white flex items-center justify-center transition-transform duration-200 ${checked || active ? 'translate-x-[2.4em]' : ''}`}>
                     <Icon id="checkmark" />
                 </div>
             </div>
@@ -196,11 +200,11 @@ export default function Button({ type = 'cta', fontSize = '1em', onClick, items,
     // General Button Setup
     return (
         <button onClick={onClick} className={`flex ${!props.className?.includes('p-') && 'px-6 py-4'} justify-center items-center gap-2.5 shrink-0 text-[#FFFFFF] text-center font-[family-name:var(--font-family)] font-normal border-0 outline-0
-    ${type === 'cta' && `rounded-xl font-semibold transition-colors duration-200 ${!props.className?.includes('bg-') && "bg-[color:var(--primary-color)] hover:bg-[color:var(--hover-color)] active:bg-[color:var(--active-color)]"}`}
+    ${type === 'cta' ? `rounded-xl font-semibold transition-colors duration-200 ${!props.className?.includes('bg-') && "bg-[color:var(--primary-color)] hover:bg-[color:var(--hover-color)] active:bg-[color:var(--active-color)]"}` : ""}
     ${type === 'text' ? 'rounded-[75px] px-6 bg-[#3259AD] hover:bg-[color:var(--hover-color)] active:bg-[#274689]' : ''}
     ${type === 'outline' ? 'px-[1.3em] py-[0.8em] rounded-xl border-2 border-[color:var(--primary-color)] bg-transparent text-[color:var(--primary-color)] hover:bg-[color:var(--primary-color)] hover:text-white active:bg-transparent active:text-[color:var(--primary-color)]' : ''}
     ${type === 'fab' ? "rounded-full border-[0.2rem] border-[color:var(--primary-color)] bg-white shadow-md p-2 text-[color:var(--primary-color)] text-[0.75rem] transition-colors duration-200 hover:bg-[color:var(--hover-color)] hover:border-[color:var(--hover-color)] hover:text-white active:bg-[color:var(--active-color)] active:border-[color:var(--active-color)] active:text-white disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed" : ''}
-    ${props.className}
+    ${props.className ? props.className : ''}
     ${disabled ? 'pointer-events-none opacity-50 cursor-not-allowed bg-gray-400' : ''}`} disabled={disabled}
         style = {{fontSize}} type={htmlType || "button"} >
             <div className='gap-[0.5em] flex items-center'>

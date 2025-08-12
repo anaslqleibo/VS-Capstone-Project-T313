@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Calendar, CalendarFilter } from '../../components/Calendar';
 import getStatusColor, { Status } from '../../components/utils/getStatusColor';
-import formatDate, { formatDateDayJS } from '../../components/utils/formatDate';
+import formatDate, { formatDateDayJS, sqlDateFormatToRegularFormat } from '../../components/utils/formatDate';
 import Dropdown from '../../components/Dropdown';
-import { createModal, ModalDetailsProps, ModalTypes } from '../../components/Modal';
+import { createModal, DetailsExtProps, ModalTypes } from '../../components/Modal';
 import { PageProps } from '../../App';
 import Layout from '../../components/Layout';
 import Button from '../../components/Button';
@@ -39,27 +39,6 @@ export default function EmployeeDashboardPage({modalContainer}: PageProps) {
     }));
   }
 
-  const leaveDetails = {
-      Date: "11-04-2024",
-      Time: "12:00-16:30"
-  };
-
-
-  const openShiftDetails : ModalDetailsProps = {
-      Date: "11-04-2024",
-      Time: "12:00-16:30",
-      Location: "Noosa",
-      Address: "111 Test Drive, Noosa, 4110",
-      Notes: "School excursion. 50+ students. Arrive early."
-  };
-
-  const declinedShiftDetails : ModalDetailsProps = {
-      Date: "11-04-2024",
-      Time: "12:00-16:30",
-      Location: "Noosa",
-      Address: "111 Test Drive, Noosa, 4110",
-      Notes: "Please take a break, you have done a lot of shifts this week..."
-  };
 
   const locations = ['Alberta Park', 'Bald Hills Boat Ramp', 'Bellara - Pirate Park', 'Boat Ramp Cribb Park', 'Chambers Island']
 
@@ -67,14 +46,17 @@ export default function EmployeeDashboardPage({modalContainer}: PageProps) {
   const yesterday = formatDate(new Date(dayjs().subtract(1,'day').format('YYYY-MM-DD')), true);
   const nextWeek = formatDate(new Date(dayjs().add(7,'day').format('YYYY-MM-DD')), true);
 
+  
   const events2: EventInput[] = [
     {
       start: today,
       extendedProps: {
         status: Status.Accepted,
+        date: sqlDateFormatToRegularFormat(today),
         time: '12:00–16:00',
         location: locations[0],
-        details: openShiftDetails
+        address: "111 Test Drive, Noosa, 4110",
+        notes: "School excursion. 50+ students. Arrive early.",
       },
       color: getStatusColor(Status.Accepted),
     },
@@ -82,9 +64,11 @@ export default function EmployeeDashboardPage({modalContainer}: PageProps) {
       start: nextWeek,
       extendedProps: {
         status: Status.Pending,
+        date: sqlDateFormatToRegularFormat(nextWeek),
         time: '11:00–12:00',
         location: locations[1],
-        details: openShiftDetails,
+        address: "111 Test Drive, Noosa, 4110",
+        notes: "School excursion. 50+ students. Arrive early.",
       },
       color: getStatusColor(Status.Pending),
     },
@@ -93,7 +77,8 @@ export default function EmployeeDashboardPage({modalContainer}: PageProps) {
       allDay: true,
       extendedProps: {
         status: Status.Leave,
-        details: leaveDetails,
+        date: sqlDateFormatToRegularFormat(yesterday),
+        time: '00:00-23:59',
       },
       color: getStatusColor(Status.Leave),
     },
@@ -101,9 +86,11 @@ export default function EmployeeDashboardPage({modalContainer}: PageProps) {
       start: today,
       extendedProps: {
         status: Status.OpenShift,
+        date: sqlDateFormatToRegularFormat(today),
         time: '08:00–12:00',
         location: locations[2],
-        details: openShiftDetails,
+        address: "111 Test Drive, Noosa, 4110",
+        notes: "School excursion. 50+ students. Arrive early.",
       },
       color: getStatusColor(Status.OpenShift),
     },
@@ -111,9 +98,11 @@ export default function EmployeeDashboardPage({modalContainer}: PageProps) {
       start: today,
       extendedProps: {
         status: Status.DeclinedShift,
+        date: sqlDateFormatToRegularFormat(today),
         time: '14:00–17:30',
         location: locations[3],
-        details: declinedShiftDetails,
+        address: "111 Test Drive, Noosa, 4110",
+        notes: "School excursion. 50+ students. Arrive early.",
       },
       color: getStatusColor(Status.DeclinedShift),
     },
@@ -121,19 +110,13 @@ export default function EmployeeDashboardPage({modalContainer}: PageProps) {
       start: today,
       extendedProps: {
         status: Status.Request,
+        date: sqlDateFormatToRegularFormat(today),
         time: '13:00–16:00',
         location: locations[4],
+        address: "111 Test Drive, Noosa, 4110",
+        notes: "School excursion. 50+ students. Arrive early.",
       },
-      color: getStatusColor(Status.Leave),
-    },
-    {
-      start: today,
-      extendedProps: {
-        status: Status.Unassigned,
-        time: '07:00-11:00',
-        location: locations[2],
-      },
-      color: getStatusColor(Status.Unassigned),
+      color: getStatusColor(Status.Request),
     },
   ];
 

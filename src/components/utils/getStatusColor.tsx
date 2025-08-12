@@ -5,7 +5,8 @@ export enum Status {
     Leave = 'Leave',
     OpenShift = 'Open',
     Request = 'Request',
-    DeclinedShift = 'Declined'
+    DeclinedShift = 'Declined',
+    Unavailable = 'Unavailable',
 }
 
 function getStatusColor(status:Status, returnHex:boolean=true){
