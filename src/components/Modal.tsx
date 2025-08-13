@@ -10,13 +10,17 @@ import { createPortal } from "react-dom";
 import ListView from "./ListView";
 import { createNotifications } from "./utils/notification";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
-import { DayPicker } from "./Dropdown";
+import Dropdown, { DayPicker } from "./Dropdown";
 import { EventInput } from "@fullcalendar/core";
 import { buildEventTitle } from "../classes/Event";
 import { useRole } from "./RoleContext";
 import { isAdmin, Role } from "../classes/User";
 import { FaBell, FaEdit, FaRegBell, FaSave, FaTrash } from "react-icons/fa";
 import Input from "./Input";
+import { getLocationsStatic } from "../classes/Location";
+import dayjs from "dayjs";
+import { formatDateDayJS, formatToSqlDate } from "./utils/formatDate";
+import { responsiveFontSizes } from "@mui/material";
 
 
 // TODO: Still missing some code, please go through everything and finish what's still missing
@@ -150,12 +154,39 @@ function createDetail(label: string, detail: string, type:string="", isEditing=f
     <textarea readOnly={!isEditing} className="text-gray-500 font-normal text-sm border-2 border-gray-500 bg-gray-100 rounded-md min-w-full p-2 min-h-[72px] resize-none focus:outline-0" value={detail}></textarea></>);
     else{
         if (isEditing){
-            return (<div className="flex items-center gap-2 text-sm font-semibold text-gray-600 mt-2 w-100">
-            <div className="">
-                {label}
+            const pickerSetup = { "& .MuiPickersInputBase-sectionsContainer": {padding: "8px 4px", fontSize: "0.9em"}};
+
+            let editJSX = <></>;
+
+            if (label.toLowerCase().includes('date')){
+                editJSX = <DatePicker  format="DD-MM-YYYY"  slotProps={{textField: {sx: pickerSetup}}} defaultValue={dayjs(formatToSqlDate(detail))}/>
+            }
+            else if (label.toLowerCase().includes('time')){
+                const [start, end] = detail.split('–');
+
+                editJSX = <>
+                    <TimePicker format="hh:mm A" slotProps={{ textField: {sx: pickerSetup}}} className="w-36" value={dayjs(start, "HH:mm")}/>
+                    <span className="text-[color:var(--primary-color)] font-bold">–</span>
+                    <TimePicker format="hh:mm A" slotProps={{ textField: {sx: pickerSetup}}} className="w-36" value={dayjs(end, "HH:mm")}/>
+                </>;
+            }
+            else if (label.toLowerCase().includes('location')){
+                editJSX = <Dropdown items={getLocationsStatic()} placeholder="Select location" maxVisibleItems={6} initialSelectedItem={detail} className="text-black border-gray-400"/>
+            }
+            else{
+                editJSX = <Input value={detail} className="py-1 px-3 border-1"/>;
+            }
+
+            return (
+            <div className="flex items-center gap-2 text-sm  mt-2 w-100">
+                <div className="font-semibold text-gray-600">
+                    {label}
+                </div>
+                 
+                {editJSX}
             </div>
-                
-            <Input value={detail} className="py-1 px-3 border-1"/></div>);
+            
+            );
         }
         else 
             return (<p className="text-sm font-semibold text-gray-600 mt-1">{label}
@@ -433,24 +464,27 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
         setIsEditing(admin && edit);
     }
 
-    const ModalJSX = (<div className="fixed -translate-y-1/2 top-1/2 md:translate-none md:relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto w-80 sm:w-full sm:max-w-lg" ref={containerRef}>
+    const ModalJSX = (<div className={`${props.noOverlay ? ' ': 'fixed -translate-y-1/2 top-1/2'}md:translate-none md:relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto w-80 sm:w-full sm:max-w-lg`} ref={containerRef}>
     <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg">
         <div className="sm:flex sm:items-start">
         
             <div className="mt-3 w-full sm:mt-0 sm:text-left">
                 <div className="flex items-center justify-between align-middle mb-2">
                     <h1 id="dialog-title" className="text-lg font-semibold text-gray-900">{type !== undefined ? type : title??"Please set the tag 'title'"}</h1>
+                    
+                    {!props.noOverlay && 
                     <Icon
                         id="x"
                         width="1.5em"
                         height="1.5em"
                         className="text-black-700 hover:text-[color:var(--danger-color)]"
                         onClick={closeModal}
-                    />
+                    />}
+                    
                 </div>
                 
 
-                {type!==undefined && createDetails(type, details, admin, props.setEvents, props.event, props.displayToast, closeModal, isEditing, setEditing)}
+                {type!==undefined && type !== ModalTypes.Notifications && createDetails(type, details, admin, props.setEvents, props.event, props.displayToast, closeModal, isEditing, setEditing)}
                 
 
                 {props.children}

@@ -1,3 +1,4 @@
+import { dA } from "@fullcalendar/core/internal-common";
 import dayjs from "dayjs";
 
 export default function formatDate(date : Date | string = new Date(), sqlDateFormat : boolean = false) : string {
@@ -40,4 +41,9 @@ export function formatDateDayJS(year:number|string, month:number, date:number){
 export function sqlDateFormatToRegularFormat(date:string){
     const [year, month, day] = date.split('-');
     return [day, month, year].join('-');
+}
+
+export function formatToSqlDate(date:string){
+    const [day, month, year] = date.split('-');
+    return [year, month, day].join('-');
 }

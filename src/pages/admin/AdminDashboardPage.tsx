@@ -38,17 +38,13 @@ export default function AdminDashboardPage({modalContainer}: PageProps) {
             
             <h2 className="text-2xl mb-[30px]">Welcome, <span className="text-[color:var(--primary-color)] font-semibold">Anas</span></h2>
 
-            <div className='flex justify-between items-end mb-4 md:mb-0'>
-              <div className="flex flex-col items-start md:flex-row flex-wrap gap-5">
-              
-              <ListView title="Notifications" containerRef={modalContainer} closeButton={false}>{createNotifications()}</ListView>
+            <div className="flex flex-1 justify-center gap-4 flex-col md:flex-row items-center">
+                
+                <ListView title="Notifications" containerRef={modalContainer} closeButton={false}>{createNotifications()}</ListView>
 
-              {modalContainer.current && <Modal modalContainer={modalContainer.current} noOverlay={true} type={ModalTypes.DeclinedDetails} details={declinedShiftDetails}/>}
-            </div>
-
-            
+                {modalContainer.current && <Modal modalContainer={modalContainer.current} noOverlay={true} type={ModalTypes.DeclinedDetails} details={declinedShiftDetails}/>}
+              </div>
           </div>
-        </div>
         </div>
 
       </Layout>

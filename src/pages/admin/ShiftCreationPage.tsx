@@ -5,7 +5,6 @@ import Layout from "../../components/Layout";
 import { useState } from "react";
 import dayjs from "dayjs";
 import { PickerValue } from "@mui/x-date-pickers/internals";
-import "./ShiftCreationPage.css";
 import { getLocationsStatic } from "../../classes/Location";
 import Dropdown from "../../components/Dropdown";
 import { getEmployeeStatic } from "../../classes/Employee";
@@ -20,8 +19,7 @@ export default function ShiftCreationPage({modalContainer}: PageProps){
 
     }
 
-    const pickerSetup = { "& .MuiPickersInputBase-sectionsContainer": {
-                        padding: "8px 4px" }};
+    const pickerSetup = { "& .MuiPickersInputBase-sectionsContainer": {padding: "8px 4px" }};
 
     return (
     <Layout modalContainer={modalContainer}>
@@ -31,8 +29,8 @@ export default function ShiftCreationPage({modalContainer}: PageProps){
             <h2 className="text-2xl mb-[30px]">Welcome, <span className="text-[color:var(--primary-color)] font-semibold">Anas</span></h2>
 
 
-            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg w-fit">
-                <div className="mt-3 w-fit sm:mt-0 sm:text-left flex flex-col gap-2">
+            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg md:w-fit">
+                <div className="mt-3 sm:mt-0 sm:text-left flex flex-col gap-2">
                         <h1 id="dialog-title" className="text-3xl mb-2 font-semibold text-[color:var(--primary-color)]">Create shift</h1>
 
                         <div className="flex items-center gap-2">

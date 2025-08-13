@@ -73,6 +73,7 @@ interface InputProps {
   arrow ?: 'leftRight' | 'topBottom';
   readonly?: boolean;
   setValue ?: (e:any) => void;
+  containerClassName?:string;
 }
 
 
@@ -193,7 +194,7 @@ function Input({
 
   
   return (
-    <div className={`flex flex-col gap-1 group ${props.arrow && "flex-row items-center"}`}>
+    <div className={`flex flex-col gap-1 group ${props.containerClassName?props.containerClassName:""} ${props.arrow && "flex-row items-center"}`}>
       {label && (
         <label htmlFor={id || name} className={`text-sm font-medium text-left group-has-focus:text-[color:var(--primary-color)] ${required && "after:ml-0.5 after:text-red-500 after:content-['*']"}`}>
           {label}

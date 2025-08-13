@@ -2,7 +2,7 @@ import { PageProps } from "../App";
 import { useEffect, useRef, useState } from "react";
 import logo from '../assets/LOGO.png';
 import notification from '../assets/icons/notification.png';
-import { FaHome, FaCalendarAlt, FaEnvelope, FaUser, FaMapMarkerAlt, FaHamburger } from 'react-icons/fa';
+import { FaHome, FaCalendarAlt, FaEnvelope, FaUser, FaMapMarkerAlt, FaHamburger, FaPen } from 'react-icons/fa';
 import { NavLink } from "react-router-dom";
 import { createModal, ModalTypes } from "./Modal";
 import Button from "./Button";
@@ -61,7 +61,8 @@ export default function Sidebar({modalContainer} : PageProps){
           <>
             <NavLink to="/home" className="aria-[current]:bg-[color:var(--active-color)]"><FaHome /> Home</NavLink>
             <NavLink to="/calendar" className="aria-[current]:bg-[color:var(--active-color)]"><FaCalendarAlt /> Calendar</NavLink>
-            <NavLink to="/shift-creation" className="aria-[current]:bg-[color:var(--active-color)]"><FaMapMarkerAlt /> Shift creation</NavLink>
+            <NavLink to="/shift-creation" className="aria-[current]:bg-[color:var(--active-color)]"><FaPen /> Shift creation</NavLink>
+            <NavLink to="/locations" className="aria-[current]:bg-[color:var(--active-color)]"><FaMapMarkerAlt /> Locations</NavLink>
             <NavLink to="/messaging" className="aria-[current]:bg-[color:var(--active-color)]"><FaEnvelope /> Messaging</NavLink>
             <NavLink to="/account"  className="aria-[current]:bg-[color:var(--active-color)]" ><FaUser /> Account</NavLink>
           </>
@@ -93,7 +94,8 @@ export default function Sidebar({modalContainer} : PageProps){
           <>
             <NavLink to="/home" className="aria-[current]:bg-[color:var(--active-color)]"><FaHome /> Home</NavLink>
             <NavLink to="/calendar" className="aria-[current]:bg-[color:var(--active-color)]"><FaCalendarAlt /> Calendar</NavLink>
-            <NavLink to="/shift-creation" className="aria-[current]:bg-[color:var(--active-color)]"><FaMapMarkerAlt /> Shift creation</NavLink>
+            <NavLink to="/shift-creation" className="aria-[current]:bg-[color:var(--active-color)]"><FaPen /> Shift creation</NavLink>
+            <NavLink to="/locations" className="aria-[current]:bg-[color:var(--active-color)]"><FaMapMarkerAlt /> Locations</NavLink>
             <NavLink to="/messaging" className="aria-[current]:bg-[color:var(--active-color)]"><FaEnvelope /> Messaging</NavLink>
             <NavLink to="/account"  className="aria-[current]:bg-[color:var(--active-color)]" ><FaUser /> Account</NavLink>
           </>

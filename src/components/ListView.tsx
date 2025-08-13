@@ -108,8 +108,8 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
   const isMarkedForRemoval = (id: string) =>
     Object.prototype.hasOwnProperty.call(removalQueue, id);
   
-  return (<div className='w-max h-full text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg overflow-hidden text-left shadow-xl transition-all my-auto block' ref={containerRef}>
-                  <div className="w-full px-4 py-2 border-b border-gray-200 text-xl text-[color:var(--secondary-color))] font-semibold flex items-center justify-between gap-5">
+  return (<div className='w-full md:w-max h-80 flex flex-col text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg overflow-hidden text-left shadow-xl transition-all my-auto' ref={containerRef}>
+                  <div className="w-full h-fit px-4 py-2 border-b border-gray-200 text-xl text-[color:var(--secondary-color))] font-semibold flex items-center justify-between gap-5">
                     {title || "Title"}
 
                     {closeButton && (
@@ -120,7 +120,7 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
                       />
                     )}
                   </div>
-                  <ul className="bg-[color:var(--primary-color)] transition-all">
+                  <ul className="bg-[color:var(--primary-color)] transition-all overflow-y- overflow-x-hidden">
                     {items && items.length > 0 ? (
                       items.map((item) => {
                         const id = item.id;

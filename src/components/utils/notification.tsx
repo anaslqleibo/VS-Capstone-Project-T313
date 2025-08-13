@@ -15,7 +15,7 @@ export interface NotificationProps {
 
 // should retrieve from db
 function getNotifications(){
-  const notifications : NotificationProps[] = [{type:Status.Request},{type:Status.Accepted, date:"17-02-2025", onClick: ()=>alert("Redirecting...")},{type:Status.Unassigned, date:"01-02-2025", daysLeft: 5, onClick: ()=>alert("Redirecting...")},{type:Status.DeclinedShift, date:"15-02-2025"}]
+  const notifications : NotificationProps[] = [{type:Status.Request},{type:Status.Request},{type:Status.Request},{type:Status.Request},{type:Status.Request},{type:Status.Request},{type:Status.Request},{type:Status.Request},{type:Status.Request},{type:Status.Request},{type:Status.Request},{type:Status.Request},{type:Status.Request},{type:Status.Request},{type:Status.Accepted, date:"17-02-2025", onClick: ()=>alert("Redirecting...")},{type:Status.Unassigned, date:"01-02-2025", daysLeft: 5, onClick: ()=>alert("Redirecting...")},{type:Status.DeclinedShift, date:"15-02-2025"}]
   return notifications;
 }
 

@@ -161,7 +161,7 @@ export default function AdminCalendarPage({modalContainer}: PageProps) {
                 <Dropdown items={['All shifts', ...Object.values(Status)]} multiple placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} className='md:rounded-b-none' initialSelectedItem='All shifts'/>
 
                 <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='md:rounded-b-none' custom customSelected={monthSelectedDropdown}>
-                  <Input arrow='leftRight' value={activeFilter.month.year()} className='float-end pr-7' readonly setValue={setYear}/>
+                  <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
 
                   
                   <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)}/>
