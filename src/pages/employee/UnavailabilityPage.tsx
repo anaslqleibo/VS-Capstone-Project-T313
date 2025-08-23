@@ -17,11 +17,12 @@ const UnavailabilityPage = ({modalContainer}: PageProps) => {
   const [openModal, setOpenModal] = useState(false);
 
   return (
-    <Layout modalContainer={modalContainer}>
-      <div className="flex flex-wrap gap-3 justify-between items-center mb-[20px]">
-        <h1 className="text-3xl font-bold text-blue-900">Unavailability</h1>
-        
-        <Button onClick={()=>setOpenModal(true)}>Add Unavailability</Button>
+    <Layout modalContainer={modalContainer}>      
+      <div className="relative mb-6">
+        <h1 className="text-3xl font-bold text-blue-900 text-center">Unavailability</h1>
+        <div className="absolute right-0 top-1/2 -translate-y-1/2">
+        <Button onClick={() => setOpenModal(true)}>Add Unavailability</Button>
+        </div>
       </div>
 
       <div className="bg-white p-[20px] rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.08)]">

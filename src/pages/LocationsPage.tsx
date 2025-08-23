@@ -21,13 +21,11 @@ const LocationsPage = ({modalContainer}:PageProps) => {
 
   return (
     <Layout modalContainer={modalContainer}>
+      <h1 className="text-3xl font-bold mb-6 text-blue-900">Locations</h1>
+      
       <div className="flex h-screen">
 
       <main className="w-full bg-[#f9f9fb]">
-        <h1>
-          Welcome, <span className="text-[#273469] underline">Naomi</span>
-        </h1>
-       
         <InputIcon placeholder="Search locations..." type="search" icon="search" className='w-full mt-5'/>
 
         <div className='p-6'>
