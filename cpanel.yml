@@ -1,6 +1,0 @@
----
-deployment:
-    tasks:
-    - export DEPLOYPATH=/home/2bentrods/public_html/
-    - /bin/cp -R src $DEPLOYPATH
-    - /bin/cp index.html $DEPLOYPATH

@@ -1,0 +1,115 @@
+@import "tailwindcss";
+
+:root {
+  
+}
+
+@theme {
+  --primary-color: #2D3AA0;
+  --primary-color-rgb: 45, 58, 160;
+
+  --secondary-color: #3259AD;
+  --secondary-color-rgb: 50, 89, 173;
+
+  --active-color: #26307F;
+  --active-color-rgb: 38, 48, 127;
+
+  --hover-color: #6591f0;
+  --hover-color-rgb: 101, 145, 240;
+
+  --secondary-hover-color: #577DCE;
+  --secondary-hover-color-rgb: 87, 125, 206;
+
+  --text-color: #f4f4f4;
+  --text-color-rgb: 244, 244, 244;
+
+  --dark-grey: #676767;
+  --dark-grey-rgb: 103, 103, 103;
+
+  --light-grey: #c0c0c0;
+  --light-grey-rgb: 192, 192, 192;
+
+  --active-light-color: #e2e9f5;
+  --active-light-color-rgb: 226, 233, 245;
+
+  --warning-color: #FF7A45;
+  --warning-color-rgb: 255, 122, 69;
+
+  --danger-color: #FF4545;
+  --danger-color-hover: #cc3737;
+  --danger-color-rgb: 255, 69, 69;
+
+  --success-color: #41ba68;
+  --success-color-hover: #369a56;
+  --success-color-rgb: 65, 186, 104;
+
+  --font-display: "Inter", "sans-serif";
+}
+
+
+/* === GENERAL STYLES === */
+body {
+  font-family: Inter, sans-serif;
+  margin: 0;
+  background: #f2f2f2;
+}
+
+header {
+  background: #004466;
+  color: white;
+  padding: 1rem;
+  text-align: center;
+}
+
+nav a {
+  color: white;
+  margin: 0 10px;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+main {
+  padding: 1rem;
+}
+
+/* === CALENDAR SHARED STYLES === */
+#calendar {
+  max-width: 900px;
+  margin: 20px auto;
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}
+
+.fc-event {
+  position: relative;
+  transition: all 0.2s ease-in-out;
+  z-index: 1;
+}
+
+.fc-event:hover {
+  z-index: 1000;
+  transform: scale(1.05);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.event-hover-details {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #fff;
+  color: #333;
+  border: 1px solid #ccc;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  white-space: nowrap;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.fc-event:hover .event-hover-details {
+  display: block;
+}
