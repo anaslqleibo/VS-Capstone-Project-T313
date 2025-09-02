@@ -18,6 +18,11 @@ import Input from "./Input";
 import { fetchLocations, getLocationsStatic } from "../controllers/Location";
 import dayjs from "dayjs";
 import { formatToSqlDate, sqlDateFormatToRegularFormat } from "./utils/formatDate";
+import FormControl from "@mui/material/FormControl";
+import FormLabel from "@mui/material/FormLabel";
+import RadioGroup from "@mui/material/RadioGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import Radio from "@mui/material/Radio";
 
 
 // TODO: Still missing some code, please go through everything and finish what's still missing
@@ -285,27 +290,33 @@ function createDetails(type: string|null, details?: ExtendedProps|null, isAdmin?
     
     else if (type === ModalTypes.AddLeave)
         return (
-            <div className="flex flex-col gap-4 mt-4">
-                <div className="flex items-center gap-2">
-                    <p className="text-md font-semibold text-gray-600 mt-1 mb-1">Date:</p>
-                    {/* TODO: Add checking so that 'to' cant be before 'from' and vice versa */}
-
-                    <DatePicker label="From" format="DD-MM-YYYY"/>
-                        <span className="text-[color:var(--primary-color)] font-bold">–</span>
-                    <DatePicker label="To" format="DD-MM-YYYY"/>
+           <div className="flex flex-col gap-4 mt-4">
+            <div className="flex flex-wrap items-center gap-2">
+                <p className="text-md font-semibold text-gray-600 mt-1 mb-1">Date:</p>
+                <div className="flex gap-2">
+                    <DatePicker label="From" format="DD-MM-YYYY" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} />
+                    <span className="text-[color:var(--primary-color)] font-bold">–</span>
+                    <DatePicker label="To" format="DD-MM-YYYY" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} />
                 </div>
-
-                <div className="flex items-center gap-2">
-                    <p className="text-md font-semibold text-gray-600 mt-1 mb-1">Time:</p>
-                    
-
-                    {/* TODO: Add checking so that 'to' cant be before 'from' and vice versa */}
-                    <TimePicker label="From" format="hh:mm A"/>
-                        <span className="text-[color:var(--primary-color)] font-bold">–</span>
-                    <TimePicker label="To" format="hh:mm A"/>
-                </div>            
             </div>
-        );
+            <div className="flex flex-wrap items-center gap-2">
+                <p className="text-md font-semibold text-gray-600 mt-1 mb-1">Time:</p>
+                <div className="flex gap-2">
+                    <TimePicker label="From" format="hh:mm A" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} />
+                    <span className="text-[color:var(--primary-color)] font-bold">–</span>
+                    <TimePicker label="To" format="hh:mm A" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} />
+                </div>
+            </div>
+            <FormControl component="fieldset">
+                <FormLabel component="legend" className="!text-md !font-semibold !text-gray-600">Recurrence</FormLabel>
+                <RadioGroup row>
+                    {["Never", "Daily", "Weekly", "Monthly"].map((opt) => (
+                        <FormControlLabel key={opt} value={opt} control={<Radio color="primary" />} label={opt} />
+                    ))}
+                </RadioGroup>
+            </FormControl>
+        </div>
+        ); 
     else{
 
         return (
@@ -365,8 +376,9 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         if (!isAdmin)
             buttons = <Button type="cta" fontSize="0.8em" onClick={handleDelete}>Delete unavailability</Button>;
     }
-    else if (type === ModalTypes.AddLeave)
-        buttons = <Button type="cta" fontSize="0.8em">Submit leave</Button>;
+    else if (type === ModalTypes.AddLeave){
+        buttons = <Button type="cta" fontSize="0.8em">Submit leave</Button>
+    }
     else if (type === ModalTypes.AddUnavailability)
         buttons = <Button type="cta" fontSize="0.8em">Submit unavailability</Button>;
     else if (type === ModalTypes.OpenShiftDetails)
@@ -557,7 +569,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
             </div>
         </div>  
     </div>
-    {(buttons!=null || props.customButtons) && <div className="bg-gray-50 py-3 flex flex-row px-6 gap-3 rounded-lg">
+    {(buttons!=null || props.customButtons) && <div className=" py-3 flex flex-row px-6 gap-3 rounded-lg">
         {type!==undefined ? buttons : props.customButtons}
     </div>}    
     </div>);
