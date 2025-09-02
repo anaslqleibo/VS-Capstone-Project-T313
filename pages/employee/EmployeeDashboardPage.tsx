@@ -147,7 +147,8 @@ export default function EmployeeDashboardPage() {
             
             <Calendar key={isOverMd ? 'month' : 'list'}  events={events} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'}></Calendar>
 
-            {openModal && modalContainer.current && createModal(ModalTypes.AddLeave, true, modalContainer.current, null, setOpenModal)}
+            {openModal && modalContainer.current && createModal(ModalTypes.AddLeave, true, modalContainer.current, {user_id: account?.id, recurrence: ''}, setOpenModal)}
+            {/* The key 'recurrence' here plays an important role as it is used to check what type of details it sent, so either keep it or implement a safety measure to replace it*/}
             
           </div>
         </div>
