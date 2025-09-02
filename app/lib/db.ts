@@ -9,10 +9,10 @@ export interface DatabaseConfig {
 
 export async function createConnection() {
   const config: DatabaseConfig = {
-    host: process.env.DB_HOST || "s02bd.syd2.hostingplatform.net.au",
-    user: process.env.DB_USER || "bentrod2_crm",
-    password: process.env.DB_PASS || "85vNo2k=Qk@Q",
-    database: process.env.DB_NAME || "bentrod2_crm",
+    host: process.env.DB_HOST || "",
+    user: process.env.DB_USER || "",
+    password: process.env.DB_PASS || "",
+    database: process.env.DB_NAME || "",
   };
 
 
