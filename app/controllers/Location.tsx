@@ -1,19 +1,28 @@
 export type Location = {
-    id: string;
-    name: string;
-    address: string;
-}
+  id: string;
+  name: string;
+  address: string;
+};
 
-export async function fetchLocations(){
-    const res = await fetch('/api/locations');
+// Fetches the full list of locations from the API
+export async function fetchLocations(): Promise<Location[]> {
+  const res = await fetch('/api/locations');
 
-    if (!res.ok) {
+  if (!res.ok) {
     throw new Error('Failed to fetch locations');
-    }
-    const data = await res.json();
-    return data as Location[];
+  }
+
+  const data = await res.json();
+  return data as Location[];
 }
 
-export function getLocationsStatic(){
-    return ['Alberta Park', 'Bald Hills Boat Ramp', 'Bellara - Pirate Park', 'Boat Ramp Cribb Park', 'Chambers Island'];
+// Optional: returns a hardcoded static list (can be removed if unused)
+export function getLocationsStatic(): string[] {
+  return [
+    'Alberta Park',
+    'Bald Hills Boat Ramp',
+    'Bellara - Pirate Park',
+    'Boat Ramp Cribb Park',
+    'Chambers Island',
+  ];
 }

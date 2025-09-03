@@ -1,4 +1,4 @@
-import { ShiftStatus } from "@/app/controllers/Shift";
+import { ShiftStatus } from "@/app/controllers/Shifts";
 
 export enum Status {
     Pending = 'Pending',

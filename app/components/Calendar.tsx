@@ -11,7 +11,7 @@ import listPlugin from '@fullcalendar/list';
 import { EventInput } from "@fullcalendar/core";
 import './Calendar.css'
 import Toast from "./Toast";
-import { buildShiftEventTitle } from "../controllers/Shift";
+import { buildShiftEventTitle } from "../controllers/Shifts";
 import { Role } from "../controllers/User";
 import { useAuth } from "@/app/contexts/AuthContext";
 

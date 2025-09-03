@@ -14,7 +14,7 @@ import Input from '@/app/components/Input';
 import useIsOverMd from '@/app/components/utils/useIsOverMd';
 import { EventInput } from '@fullcalendar/core';
 import { fetchLocations, getLocationsStatic } from '@/app/controllers/Location';
-import { getEventInputShifts } from '@/app/controllers/Shift';
+import { getEventInputShifts } from '@/app/controllers/Shifts';
 import { fetchAllEmployees } from '@/app/controllers/User';
 import Checkbox from '@/app/components/Checkbox';
 import { fetchLeaves, getEventInputLeaves, getEventInputUnavailabilities } from '@/app/controllers/Unavailabilities';

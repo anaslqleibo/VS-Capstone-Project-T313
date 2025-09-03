@@ -3,6 +3,7 @@ import Icon from "@/public/icons/Icons";
 import React, { forwardRef, JSX, ReactElement, ReactNode, RefObject, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { overlayAnimation, useClickOutside } from "./utils/useClickOutside";
 import { createRoot } from "react-dom/client";
+import { v4 as uuidv4 } from 'uuid';
 
 interface ListViewProps {
   title: string;
@@ -58,7 +59,7 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
 
   const [items, setItems] = useState<Item[]>(
     flattenChildren(props.children).map((child) => ({
-      id: crypto.randomUUID(),
+      id: uuidv4(),
       content: child as Item["content"],
     }))
   );

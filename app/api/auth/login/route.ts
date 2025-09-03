@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
     const user = users[0];
 
     // Verify password
-    // const isPasswordValid = await bcrypt.compare(password, user.password);
-    const isPasswordValid = password === user.password;
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    
 
     if (!isPasswordValid) {
       return NextResponse.json(

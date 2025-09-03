@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
-import { Shift } from "@/app/controllers/Shift";
+import { Shift } from "@/app/controllers/Shifts";
 import { User } from "@/app/controllers/User";
 
 

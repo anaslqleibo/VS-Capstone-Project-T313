@@ -6,7 +6,6 @@ import { fetchLocations, Location } from '../controllers/Location';
 import Input from './Input';
 import { fetchAllEmployees, User } from '../controllers/User';
 
-
 interface DropdownProps{
   items?:string[];
   multiple?:boolean;
@@ -31,7 +30,6 @@ export function DayPicker(props: {[key:string] : any}){
     <Dropdown items={days} placeholder='Select a day' className='border-gray-400 hover:border-black text-[16px] w-full placeholder-shown:text-[#000] text-black' props={props}></Dropdown>
   );
 }
-
 
 const Dropdown = ({
   items = [],
@@ -106,7 +104,6 @@ const Dropdown = ({
     <div className={`relative w-fit min-w-fit text-sm ${className}`} ref={containerRef}>
       <div className={` ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : "border-1 border-[color:var(--primary-color)] text-[color:var(--primary-color)]"} rounded-md ${className} px-3 py-2 flex items-center justify-between cursor-pointer `} onClick={toggleDropdown}>
         <div className="flex flex-wrap items-center gap-1 flex-1 min-w-fit">
-          {/* {selected.length === 0 && <span className="text-gray-500">{placeholder}</span>} */}
           {props.custom ? <span>{props.customSelected}</span> : ((!multiple && selected.length>0) || 
           (multiple && selected.length == 1 && (!isOpen))) ? <span>{selected.at(0)}</span> : selected.map((item, index) => (
             <span key={index} className="flex items-center gap-1 bg-gray-100 border border-[color:var(--primary-color)] text-[color:var(--primary-color)] px-2 py-1 rounded whitespace-nowrap text-sm">
@@ -149,7 +146,6 @@ const Dropdown = ({
                 <span>{item}</span>
                 {multiple && showCheckbox && (
                   <input type="checkbox" checked={selected.includes(item)} readOnly />
-                  // TODO: Replace with custom Checkbox
                 )}
               </div>
             )))
@@ -164,7 +160,15 @@ const Dropdown = ({
 
 export default Dropdown;
 
-export function LocationDropdownWithAddress({ detail, setUpdatedLocation }: { detail?: string, setUpdatedLocation?: (field:string, value:string) => void }) {
+export function LocationDropdownWithAddress({
+  detail,
+  setUpdatedLocation,
+  onSelect,
+}: {
+  detail?: string;
+  setUpdatedLocation?: (field: string, value: string) => void;
+  onSelect?: (loc: Location) => void;
+}) {
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
 
@@ -174,10 +178,31 @@ export function LocationDropdownWithAddress({ detail, setUpdatedLocation }: { de
       setLocations(locs);
 
       const found = locs.find((l) => l.name === detail);
-      if (found) setSelectedLocation(found);
+      if (found) {
+        setSelectedLocation(found);
+        setUpdatedLocation?.("location_id", found.id);
+        setUpdatedLocation?.("location", found.name);
+        setUpdatedLocation?.("address", found.address);
+        onSelect?.(found);
+      }
     }
     load();
   }, [detail]);
+
+  const handleChange = (name: string) => {
+    const loc: Location =
+      locations.find((l) => l.name === name) || {
+        id: "-1",
+        name: "Not found",
+        address: "Not found",
+      };
+
+    setSelectedLocation(loc);
+    setUpdatedLocation?.("location_id", loc.id);
+    setUpdatedLocation?.("location", loc.name);
+    setUpdatedLocation?.("address", loc.address);
+    onSelect?.(loc);
+  };
 
   return (
     <div className="flex flex-col gap-2 w-full">
@@ -185,17 +210,9 @@ export function LocationDropdownWithAddress({ detail, setUpdatedLocation }: { de
         items={locations.map((l) => l.name)}
         placeholder="Select location"
         maxVisibleItems={6}
-        initialSelectedItem={detail ? detail : undefined}
+        initialSelectedItem={detail ?? undefined}
         className="text-black border-gray-400"
-        onChange={(name: string) => {
-          const loc : Location = locations.find((l) => l.name === name) || {id: '-1', name: 'Not found', address: 'Not found'};
-          setSelectedLocation(loc);
-          if (setUpdatedLocation) {
-            setUpdatedLocation("location_id", loc.id);
-            setUpdatedLocation("location", loc.name);
-            setUpdatedLocation("address", loc.address)
-          }
-        }}
+        onChange={handleChange}
       />
 
       <Input
@@ -207,4 +224,3 @@ export function LocationDropdownWithAddress({ detail, setUpdatedLocation }: { de
     </div>
   );
 }
-

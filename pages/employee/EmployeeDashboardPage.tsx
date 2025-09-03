@@ -13,7 +13,7 @@ import dayjs from 'dayjs';
 import Accordion from '@/app/components/Accordion';
 import Input from '@/app/components/Input';
 import useIsOverMd from '@/app/components/utils/useIsOverMd';
-import { buildShiftEvent, getEventInputShifts } from '@/app/controllers/Shift';
+import { buildShiftEvent, getEventInputShifts } from '@/app/controllers/Shifts';
 import { EventInput } from '@fullcalendar/core';
 import Checkbox from '@/app/components/Checkbox';
 import { fetchLocations } from '@/app/controllers/Location';
