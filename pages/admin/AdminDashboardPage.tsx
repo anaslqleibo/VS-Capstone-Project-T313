@@ -1,7 +1,7 @@
 "use client";
 import { useRef} from 'react';
 import { Status } from '@/app/components/utils/getStatusColor';
-import Modal, { ExtendedProps, ModalTypes } from '@/app/components/Modal';
+import Modal, { ShiftExtendedProps, ModalTypes } from '@/app/components/Modal';
 import Layout from '@/app/components/Layout';
 import ListView from '@/app/components/ListView';
 import { createNotifications } from '@/app/components/utils/notification';
@@ -12,7 +12,7 @@ export default function AdminDashboardPage() {
   const modalContainer = useRef<HTMLDivElement>(null);
   const user = useAuth().user;
 
-  const declinedShiftDetails : ExtendedProps = {
+  const declinedShiftDetails : ShiftExtendedProps = {
       status: Status.DeclinedShift,
       employee: "Naomi",
       date: "11-04-2024",

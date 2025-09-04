@@ -38,7 +38,6 @@ export enum ModalTypes{
     UnassignedShiftDetails = "Unassigned shift details",
     AddShift = "Add shift",
     AddLeave = "Add leave",
-    AddUnavailability = "Add unavailability",
     Notifications="Notifications",
 }
 
@@ -65,7 +64,16 @@ export function getModalTypesByStatus(status:Status){
     }
 }
 
-export type ExtendedProps = {
+export type LeaveExtendedProps = {
+    employee_id: string;
+    date_from?: string;
+    date_to?: string;
+    time_from?: string;
+    time_to?: string;
+    recurrence?: string;
+}
+
+export type ShiftExtendedProps = {
     id: string;
     user_id: string;
     status: Status;
@@ -81,14 +89,13 @@ export type ExtendedProps = {
     day?: string;
 }
 
-
 export type setEventType = (event: EventInput, mode:"create"|"update"|"delete"|"updateDate")=>void;
 interface ModalProps{
     type?: ModalTypes|null;
     startOpen ?: boolean;
     shown?: boolean;
     setShown?: (arg0: boolean) => void;
-    details?: ExtendedProps | null; 
+    details?: Record<string, any>; 
     title?:string;
     modalContainer: HTMLDivElement;
     setParentOpen?:(e:boolean)=>void;
@@ -100,7 +107,10 @@ interface ModalProps{
     noOverlay?:boolean;
 }
 
-function createAdminComponent(status: Status, employee?:string, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isEditing=false, setEditing?:(e:boolean)=>void, formValues?: ExtendedProps | null, initialDetails?:ExtendedProps){
+function createAdminComponent(status: Status, employee?:string, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isEditing=false, setEditing?:(e:boolean)=>void, formValues?: Record<string, any>, initialDetails?:ShiftExtendedProps){
+    const castedFormValues =  formValues ? ("status" in formValues ? formValues as ShiftExtendedProps : -1) : -1;
+    if (castedFormValues === -1) return;
+
     const handleDelete = async () => {
         const confirm = window.confirm("Are you sure you want to delete this shift?")
         if (!confirm) return;
@@ -118,15 +128,13 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
     }
 
     const handleSave = async () => {
-        if (formValues){
-            console.log(formValues);
-
-            if (formValues === initialDetails){
+        if (castedFormValues){
+            if (castedFormValues === initialDetails){
                 if (setEditing) setEditing(false);
                 return;
             }
 
-            const updatedShift : Shift = { ...formValues, status: statusToString(formValues.status) };
+            const updatedShift : Shift = { ...castedFormValues, status: statusToString(castedFormValues.status) };
             const result = await updateShift(updatedShift);
 
             if (result){
@@ -134,9 +142,9 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
 
                 const updatedEvent = {
                     ...event,
-                    extendedProps: formValues,
-                    title: buildShiftEventTitle(formValues.status, formValues.time, formValues.location, formValues.employee),
-                    backgroundColor: getStatusColor(formValues.status)
+                    extendedProps: castedFormValues,
+                    title: buildShiftEventTitle(castedFormValues.status, castedFormValues.time, castedFormValues.location, castedFormValues.employee),
+                    backgroundColor: getStatusColor(castedFormValues.status)
                 };
 
                 setEvents!(updatedEvent, "update");
@@ -186,7 +194,10 @@ function createDetail(label: string, detail: string, type:string=""){
     }
 }
 
-function createDetailEditor(label: string, field: keyof ExtendedProps, detail: string, type:string="", isEditing=false, formValues?: ExtendedProps | null, handleChange?: (field: string, value: any) => void){
+function createDetailEditor(label: string, field: keyof ShiftExtendedProps, detail: string, type:string="", isEditing=false, formValues?: Record<string, any>, handleChange?: (field: string, value: any) => void){
+    const castedFormValues =  formValues ? ("status" in formValues ? formValues as ShiftExtendedProps : -1) : -1;
+    if (castedFormValues === -1) return;
+
     if (type === "textarea")
         return (<><p className="text-sm font-semibold text-gray-600 mt-1 mb-1">{label}</p>
     <textarea readOnly={!isEditing} className="text-gray-500 font-normal text-sm border-2 border-gray-500 bg-gray-100 rounded-md min-w-full p-2 min-h-[72px] resize-none focus:outline-0" value={detail} onChange={(e)=>handleChange!("notes", e.target.value)}></textarea></>);
@@ -203,9 +214,9 @@ function createDetailEditor(label: string, field: keyof ExtendedProps, detail: s
                 const [start, end] = detail.split('–');
             
                 editJSX = <>
-                    <TimePicker format="hh:mm A" slotProps={{ textField: {sx: pickerSetup}}} className="w-36" value={formValues?.start ? dayjs(formValues.start, "HH:mm") : dayjs(start,"HH:mm")} onChange={(e)=>handleChange!("start", e?.format('HH:mm:ss'))}/>
+                    <TimePicker format="hh:mm A" slotProps={{ textField: {sx: pickerSetup}}} className="w-36" value={castedFormValues?.start ? dayjs(castedFormValues.start, "HH:mm") : dayjs(start,"HH:mm")} onChange={(e)=>handleChange!("start", e?.format('HH:mm:ss'))}/>
                     <span className="text-[color:var(--primary-color)] font-bold">–</span>
-                    <TimePicker format="hh:mm A" slotProps={{ textField: {sx: pickerSetup}}} className="w-36" value={formValues?.end ? dayjs(formValues.end, "HH:mm") : dayjs(end,"HH:mm")} onChange={(e)=>handleChange!("end", e?.format('HH:mm:ss'))}/>
+                    <TimePicker format="hh:mm A" slotProps={{ textField: {sx: pickerSetup}}} className="w-36" value={castedFormValues?.end ? dayjs(castedFormValues.end, "HH:mm") : dayjs(end,"HH:mm")} onChange={(e)=>handleChange!("end", e?.format('HH:mm:ss'))}/>
                 </>;
             }
             else if (label.toLowerCase().includes('location')){
@@ -245,66 +256,50 @@ function createDetailEditor(label: string, field: keyof ExtendedProps, detail: s
     }
 }
 
-function createDetails(type: string|null, details?: ExtendedProps|null, isAdmin?:boolean, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isEditing?: boolean, setEditing?:((e:boolean)=>void), formValues?: ExtendedProps | null, handleChange?: (field: string, value: any) => void, initialDetails?:ExtendedProps){
-    if (details === undefined || details === null || type===null) return;
+function createDetails(type: string|null, details?: Record<string, any>, isAdmin?:boolean, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isEditing?: boolean, setEditing?:((e:boolean)=>void), formValues?: Record<string, any>, handleChange?: (field: string, value: any) => void, initialDetails?:ShiftExtendedProps){
+    if (type===null || details === undefined) return;
 
-    if (type === ModalTypes.UnavailabilityDetails)
+    const castedDetails = 'status' in details ? details as ShiftExtendedProps : details as LeaveExtendedProps;
+    if (type === ModalTypes.UnavailabilityDetails && 'day' in castedDetails)
     {
         return (
             <>
-            {createDetail("Every: ", details.day ? details.day : "")}
-            {createDetail("Time: ", details.time)}
+            {createDetail("Every: ", castedDetails.day ? castedDetails.day : "")}
+            {createDetail("Time: ", castedDetails.time)}
             </>
         );
     }
-    else if (type === ModalTypes.LeaveDetails)
+    else if (type === ModalTypes.LeaveDetails && 'date' in castedDetails)
     {
         return (
             <>
-            {createDetail("Date: ", details.date)}
-            {createDetail("Time: ", details.time)}
+            {createDetail("Date: ", castedDetails.date)}
+            {createDetail("Time: ", castedDetails.time)}
             </>
         );
     }
-    else if (type === ModalTypes.AddUnavailability)
-        return (
-            <div className="flex flex-col gap-4 mt-4">
-                <div className="flex items-center gap-2">
-                    <p className="text-md font-semibold text-gray-600 mt-1 mb-1 w-12">Day:</p>
-                    {/* TODO: Add checking so that 'to' cant be before 'from' and vice versa */}
+    else if (type === ModalTypes.AddLeave){
+        // Must pass in details having the 'recurrence' key
+        const castedFormValues =  formValues ? ("recurrence" in formValues ? formValues as LeaveExtendedProps : -1) : -1;
+        if (castedFormValues === -1) return;
 
-                    <DayPicker />
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <p className="text-md font-semibold text-gray-600 mt-1 mb-1 w-12">Time:</p>
-                    
-
-                    {/* TODO: Add checking so that 'to' cant be before 'from' and vice versa */}
-                    <TimePicker label="From" format="hh:mm A"/>
-                        <span className="text-[color:var(--primary-color)] font-bold">–</span>
-                    <TimePicker label="To" format="hh:mm A"/>
-                </div>            
-            </div>
-        );
-    
-    else if (type === ModalTypes.AddLeave)
+        console.log(castedFormValues);
         return (
            <div className="flex flex-col gap-4 mt-4">
             <div className="flex flex-wrap items-center gap-2">
                 <p className="text-md font-semibold text-gray-600 mt-1 mb-1">Date:</p>
-                <div className="flex gap-2">
-                    <DatePicker label="From" format="DD-MM-YYYY" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} />
+                <div className="flex gap-2 items-center">
+                    <DatePicker label="From" format="DD-MM-YYYY" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} value={castedFormValues.date_from ? dayjs(castedFormValues.date_from) : null} onChange={(e)=>handleChange!("date_from", e?.format('YYYY-MM-DD'))}/>
                     <span className="text-[color:var(--primary-color)] font-bold">–</span>
-                    <DatePicker label="To" format="DD-MM-YYYY" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} />
+                    <DatePicker label="To" format="DD-MM-YYYY" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} value={castedFormValues.date_to ? dayjs(castedFormValues.date_to) : null} onChange={(e)=>handleChange!("date_to", e?.format('YYYY-MM-DD'))}/>
                 </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
                 <p className="text-md font-semibold text-gray-600 mt-1 mb-1">Time:</p>
-                <div className="flex gap-2">
-                    <TimePicker label="From" format="hh:mm A" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} />
+                <div className="flex gap-2 items-center">
+                    <TimePicker label="From" format="hh:mm A" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} value={castedFormValues.time_from ? dayjs(castedFormValues.time_from, "HH:mm") : null} onChange={(e)=>handleChange!("time_from", e?.format('HH:mm:ss'))}/>
                     <span className="text-[color:var(--primary-color)] font-bold">–</span>
-                    <TimePicker label="To" format="hh:mm A" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} />
+                    <TimePicker label="To" format="hh:mm A" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }}  value={castedFormValues.time_to ? dayjs(castedFormValues.time_to, "HH:mm") : null} onChange={(e)=>handleChange!("time_to", e?.format('HH:mm:ss'))}/>
                 </div>
             </div>
             <FormControl component="fieldset">
@@ -317,22 +312,23 @@ function createDetails(type: string|null, details?: ExtendedProps|null, isAdmin?
             </FormControl>
         </div>
         ); 
-    else{
+    }
+    else if ('status' in castedDetails){
 
         return (
             <>
-            {isAdmin && setEditing && createAdminComponent(details.status, details.employee, setEvents, event, displayToast, closeModal, isEditing, setEditing, formValues, initialDetails)}
-            {createDetailEditor("Date: ", 'date', sqlDateFormatToRegularFormat(details.date), "", isEditing, formValues, handleChange)}
-            {createDetailEditor("Time: ", 'time' , details.time, "", isEditing, formValues, handleChange)}
-            {createDetailEditor("Location: ", 'location' ,details.location, "", isEditing, formValues, handleChange)}
-            {createDetailEditor("Address: ", 'address' ,details.address, "", isEditing, formValues, handleChange)}
-            {createDetailEditor("Notes: ", 'notes',details.notes, "textarea", isEditing, formValues, handleChange)}
+            {isAdmin && setEditing && createAdminComponent(castedDetails.status, castedDetails.employee, setEvents, event, displayToast, closeModal, isEditing, setEditing, formValues, initialDetails)}
+            {createDetailEditor("Date: ", 'date', sqlDateFormatToRegularFormat(castedDetails.date), "", isEditing, formValues, handleChange)}
+            {createDetailEditor("Time: ", 'time' , castedDetails.time, "", isEditing, formValues, handleChange)}
+            {createDetailEditor("Location: ", 'location' ,castedDetails.location, "", isEditing, formValues, handleChange)}
+            {createDetailEditor("Address: ", 'address' ,castedDetails.address, "", isEditing, formValues, handleChange)}
+            {createDetailEditor("Notes: ", 'notes',castedDetails.notes, "textarea", isEditing, formValues, handleChange)}
             </>
         );
     }
 }
 
-function createButtons(type: string|null, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isAdmin?:boolean){
+function createButtons(type: string|null, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isAdmin?:boolean, formValues?: Record<string, any>){
     
     let buttons = null;
     if (type === ModalTypes.LeaveDetails){
@@ -377,10 +373,13 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
             buttons = <Button type="cta" fontSize="0.8em" onClick={handleDelete}>Delete unavailability</Button>;
     }
     else if (type === ModalTypes.AddLeave){
-        buttons = <Button type="cta" fontSize="0.8em">Submit leave</Button>
+        const castedFormValues =  formValues ? ("recurrence" in formValues ? formValues as LeaveExtendedProps : -1) : -1;
+        if (castedFormValues === -1) return;
+
+        // havent implemented the controlled value on the recurrence key
+        // submitLeave() --> build controller function and replace the onClick
+        buttons = <Button type="cta" fontSize="0.8em" onClick={()=>alert(JSON.stringify(castedFormValues))}>Submit leave</Button>
     }
-    else if (type === ModalTypes.AddUnavailability)
-        buttons = <Button type="cta" fontSize="0.8em">Submit unavailability</Button>;
     else if (type === ModalTypes.OpenShiftDetails)
     {
         const handleAssign = () => {};
@@ -498,18 +497,19 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
     return buttons;
 }
 
-export function createModal(type:ModalTypes|null, startOpen: boolean, modalContainer: HTMLDivElement, details?:ExtendedProps|null, setParentOpen?: (e:boolean)=>void, setEvents?:setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void){
+export function createModal(type:ModalTypes|null, startOpen: boolean, modalContainer: HTMLDivElement, details?:Record<string, any>, setParentOpen?: (e:boolean)=>void, setEvents?:setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void){
     return (<Modal type={type} details={details} startOpen={startOpen} modalContainer={modalContainer} setParentOpen={setParentOpen} setEvents={setEvents} event={event} displayToast={displayToast}/>);
 }
 
 export default function Modal({type, details, startOpen, title, modalContainer, setParentOpen, ...props} : ModalProps){
     const [shown, setShown] = useState(startOpen ?? false);
     const [isEditing, setIsEditing] = useState(false);
-    const [formValues, setFormValues] = useState<ExtendedProps|null>(details ?? null);
+    const [formValues, setFormValues] = useState<ShiftExtendedProps|LeaveExtendedProps|undefined>(details ? ('status' in details ? details as ShiftExtendedProps : details as LeaveExtendedProps) : undefined);
 
+    
     const handleChange = (field: string, value: any) => {
         setFormValues((prev: any) => {
-            if (field === "start" || field === "end"){
+            if (formValues && "start" in formValues && (field === "start" || field === "end")){
                 return {
                     ...prev,
                     [field]: value,
@@ -536,7 +536,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
     const closeModal = () => props.setShown ? props.setShown(false) : setShown(false);
 
     const admin = useAuth().user?.role === "admin";
-    const buttons = type!==undefined && createButtons(type, props.setEvents, props.event, props.displayToast, closeModal, admin);
+    const buttons = type!==undefined && createButtons(type, props.setEvents, props.event, props.displayToast, closeModal, admin, formValues);
 
     const setEditing = (edit:boolean) => {
         setIsEditing(admin && edit);
@@ -562,7 +562,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                 </div>
                 
 
-                {type!==undefined && type !== ModalTypes.Notifications && createDetails(type, formValues, admin, props.setEvents, props.event, props.displayToast, closeModal, isEditing, setEditing, formValues, handleChange, details===null?undefined:details)}
+                {type && details && type !== ModalTypes.Notifications && createDetails(type, details, admin, props.setEvents, props.event, props.displayToast, closeModal, isEditing, setEditing, formValues, handleChange, "status" in details ? details as ShiftExtendedProps : undefined)}
                 
 
                 {props.children}

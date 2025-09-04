@@ -3,7 +3,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import getStatusColor, { Status } from "./utils/getStatusColor";
-import { createModal, ExtendedProps, getModalTypesByStatus, setEventType} from "./Modal";
+import { createModal, ShiftExtendedProps, getModalTypesByStatus, setEventType, LeaveExtendedProps} from "./Modal";
 import { createRoot } from "react-dom/client";
 import { RefObject, useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
@@ -15,13 +15,6 @@ import { buildShiftEventTitle } from "../controllers/Shifts";
 import { Role } from "../controllers/User";
 import { useAuth } from "@/app/contexts/AuthContext";
 
-// export interface EventProps{
-//     status: Status;
-//     time: string;
-//     location: string;
-//     date: string;
-//     details?: ModalUnavailDetailsProps|ModalLeaveDetailsProps|ModalDetailsProps; 
-// }
 
 export interface CalendarFilter{
     location: string[];
@@ -172,9 +165,9 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
     const [activeModal, setActiveModal] = useState<{
         isOpen: boolean;
         status: Status;
-        details?: ExtendedProps | null;
+        details?: ShiftExtendedProps | LeaveExtendedProps;
         event?: EventInput;
-    }>({ isOpen: false, status: Status.Accepted, details: null});
+    }>({ isOpen: false, status: Status.Accepted, details: undefined});
 
     const setOpen = (val:boolean) => setActiveModal(prev => ({...prev, isOpen: val}));
     const calendarRef = useRef<FullCalendar>(null);
@@ -253,7 +246,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
                 setActiveModal({
                     isOpen: true,
                     status,
-                    details: arg.event.extendedProps as ExtendedProps,
+                    details: arg.event.extendedProps as ShiftExtendedProps,
                     event: activeEvent,
                 });
             });
