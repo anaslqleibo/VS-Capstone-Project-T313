@@ -15,7 +15,7 @@ export async function PATCH(req: Request, {params}: { params: {id: string}}) {
     }
     
     const result = await executeQuery(
-      `UPDATE shifts SET status = ? WHERE id = ? AND user_id = ?`,
+      `UPDATE shifts SET status = ? WHERE id = ? AND assignee_id = ?`,
       [status, id, user_id]
     ) as any;
 

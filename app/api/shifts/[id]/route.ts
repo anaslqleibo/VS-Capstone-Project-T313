@@ -13,13 +13,13 @@ export async function GET(request : Request, {params}: { params: {id: string }})
         
         if (isAdmin) {
             shifts = await executeQuery(
-                `SELECT s.id as id, s.user_id as user_id, s.status as status, DATE_FORMAT(s.date, '%Y-%m-%d') as date, s.start_time as start, s.end_time as end, s.notes as notes, l.id as location_id, l.name as location, l.address as address, CONCAT(u.first_name," ", u.last_name) as employee FROM shifts s INNER JOIN locations l ON s.location_id = l.id INNER JOIN users u ON s.user_id = u.id`
+                `SELECT s.id as id, s.assignee_id as assignee_id, s.status as status, DATE_FORMAT(s.date, '%Y-%m-%d') as date, s.start_time as start_time, s.end_time as end_time, s.notes as notes, l.id as location_id, l.name as location_name, l.address as address, CONCAT(u.first_name," ", u.last_name) as assignee_name FROM shifts s INNER JOIN locations l ON s.location_id = l.id INNER JOIN users u ON s.assignee_id = u.id WHERE s.type = "shift"`
             );
         }
         else {
             shifts = await executeQuery(
-            `SELECT s.id as id, s.user_id as user_id, s.status as status, DATE_FORMAT(s.date, '%Y-%m-%d') as date, s.start_time as start, s.end_time as end, s.notes as notes, l.id as location_id,  l.name as location, l.address as address, CONCAT(u.first_name," ", u.last_name) as employee FROM shifts s INNER JOIN locations l ON s.location_id = l.id INNER JOIN users u ON s.user_id = u.id WHERE s.status != "Unassigned" AND s.status != "Declined" AND u.id = ?`,
-            [params.id]
+            `SELECT s.id as id, s.assignee_id as assignee_id, s.status as status, DATE_FORMAT(s.date, '%Y-%m-%d') as date, s.start_time as start_time, s.end_time as end_time, s.notes as notes, l.id as location_id,  l.name as location_name, l.address as address, CONCAT(u.first_name," ", u.last_name) as assignee_name FROM shifts s INNER JOIN locations l ON s.location_id = l.id INNER JOIN users u ON s.assignee_id = u.id WHERE s.status != "Unassigned" AND s.status != "Declined" AND u.id = ? AND s.type = "shift"`,
+            [p.id]
             );
         }
 
@@ -37,11 +37,11 @@ export async function DELETE(req: Request, {params}: { params: {id: string }}) {
     const p = await params;
 
     const id = p.id.split('-')[0];
-    const user_id = p.id.split('-')[1];
+    const assignee_id = p.id.split('-')[1];
 
     const result = await executeQuery(`
-      DELETE FROM shifts WHERE id = ? and user_id = ?
-    `, [id, user_id]) as any;
+      DELETE FROM shifts WHERE id = ? and assignee_id = ?
+    `, [id, assignee_id]) as any;
 
     if (result.affectedRows === 0) {
       return NextResponse.json(
@@ -67,10 +67,10 @@ export async function DELETE(req: Request, {params}: { params: {id: string }}) {
 
 export async function PUT(req: Request, {params}: { params: {id: string }}){
   try {
-    const { id, user_id, status, date, start, end, notes, location_id} : Shift = await req.json();
+    const { id, assignee_id, status, date, start_time, end_time, notes, location_id} : Shift = await req.json();
 
     const result = await executeQuery(`
-      UPDATE shifts SET status = ?, date = ?, start_time = ?, end_time = ?, user_id = ?, location_id = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?`, [status, date, start, end, user_id, location_id, notes, id, user_id ]) as any;
+      UPDATE shifts SET status = ?, date = ?, start_time = ?, end_time = ?, assignee_id = ?, location_id = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND assignee_id = ?`, [status, date, start_time, end_time, assignee_id, location_id, notes, id, assignee_id ]) as any;
 
     if (result.affectedRows === 0) {
       return NextResponse.json(

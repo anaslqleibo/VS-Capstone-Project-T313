@@ -19,12 +19,11 @@ import Checkbox from '@/app/components/Checkbox';
 import { fetchLocations } from '@/app/controllers/Location';
 import { getEventInputLeaves, getEventInputUnavailabilities } from '@/app/controllers/Unavailabilities';
 import { useAuth } from '@/app/contexts/AuthContext';
+import Toast from '@/app/components/Toast';
 
 export default function EmployeeDashboardPage() {
   const modalContainer = useRef<HTMLDivElement>(null);
   const account = useAuth().user;
-
-  
 
   const [activeFilter, setActiveFilter] = useState<CalendarFilter>({status: ["All shifts"], location:["All locations"], month:dayjs()});
   
@@ -96,9 +95,20 @@ export default function EmployeeDashboardPage() {
 
   const isOverMd = useIsOverMd();
 
+  const [showToast, setToastShown] = useState(false);
+  const [message, setMessage] = useState("");
+  const [toastType, setToastType] = useState<"success"|"error">("success");
+
+  const displayToast = (message: string, toastType: "success"|"error") => {
+      setMessage(message);
+      setToastType(toastType);
+      setToastShown(true);
+  }
+
   return (
       <Layout modalContainer={modalContainer}>
         <div className="relative flex-[1] h-full bg-[#f4f4f4]">
+          <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
           <div className='p-6 h-full flex flex-col'>
             
             <h2 className="text-2xl mb-[30px]">Welcome, <span className="text-[color:var(--primary-color)] font-semibold">{(account?account.first_name:'')+ ' ' + (account?account.last_name:'')}</span></h2>
@@ -147,7 +157,7 @@ export default function EmployeeDashboardPage() {
             
             <Calendar key={isOverMd ? 'month' : 'list'}  events={events} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'}></Calendar>
 
-            {openModal && modalContainer.current && createModal(ModalTypes.AddLeave, true, modalContainer.current, {user_id: account?.id, recurrence: ''}, setOpenModal)}
+            {openModal && modalContainer.current && createModal(ModalTypes.AddLeave, true, modalContainer.current, {recurrence: ''}, setOpenModal,undefined, undefined, displayToast)}
             {/* The key 'recurrence' here plays an important role as it is used to check what type of details it sent, so either keep it or implement a safety measure to replace it*/}
             
           </div>

@@ -22,6 +22,7 @@ interface DropdownProps{
   children ?: ReactNode;
   props?:{[key:string] : any};
   onChange ?: (e:any) => void;
+  disabled?:boolean;
 }
 
 export function DayPicker(props: {[key:string] : any}){
@@ -101,10 +102,10 @@ const Dropdown = ({
   }, []);
   
   return (
-    <div className={`relative w-fit min-w-fit text-sm ${className}`} ref={containerRef}>
-      <div className={` ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : "border-1 border-[color:var(--primary-color)] text-[color:var(--primary-color)]"} rounded-md ${className} px-3 py-2 flex items-center justify-between cursor-pointer `} onClick={toggleDropdown}>
+    <div className={`relative w-fit min-w-fit text-sm ${className} ${props.disabled ? "pointer-events-none" : ""}`} ref={containerRef}>
+      <div className={` ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : "border-1 border-[color:var(--primary-color)] text-[color:var(--primary-color)]"} rounded-md ${className} px-3 py-2 flex items-center justify-between cursor-pointer ${props.disabled ? "bg-gray-200 text-gray-400" : ""}`} onClick={toggleDropdown}>
         <div className="flex flex-wrap items-center gap-1 flex-1 min-w-fit">
-          {props.custom ? <span>{props.customSelected}</span> : ((!multiple && selected.length>0) || 
+          {!props.disabled && (props.custom ? <span>{props.customSelected}</span> : ((!multiple && selected.length>0) || 
           (multiple && selected.length == 1 && (!isOpen))) ? <span>{selected.at(0)}</span> : selected.map((item, index) => (
             <span key={index} className="flex items-center gap-1 bg-gray-100 border border-[color:var(--primary-color)] text-[color:var(--primary-color)] px-2 py-1 rounded whitespace-nowrap text-sm">
               {item}
@@ -113,7 +114,7 @@ const Dropdown = ({
                 e.preventDefault();
                 handleRemove(item)}} />
             </span>
-          ))}
+          )))}
           <input
             type="text"
             value={search}
@@ -124,7 +125,7 @@ const Dropdown = ({
             }}
             onKeyDown={handleKeyDown}
             className="outline-none grow px-1 field-sizing-content"
-            placeholder={selected.length === 0 && !props.custom ? placeholder : ''}
+            placeholder={selected.length === 0 && !props.custom || props.disabled ? placeholder : ''}
           />
         </div>
 

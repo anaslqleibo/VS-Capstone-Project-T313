@@ -5,6 +5,7 @@ export interface DatabaseConfig {
   user: string;
   password: string;
   database: string;
+  port: number;
 }
 
 export async function createConnection() {
@@ -13,9 +14,8 @@ export async function createConnection() {
     user: process.env.DB_USER || "root",
     password: process.env.DB_PASS || "",
     database: process.env.DB_NAME || "crm_db",
+    port: Number(process.env.DB_PORT) || 3306,
   };
-
-
 
   try {
     const connection = await mysql.createConnection(config);

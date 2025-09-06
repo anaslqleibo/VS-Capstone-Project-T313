@@ -9,6 +9,12 @@ import Button from "@/app/components/Button";
 import { fetchAllEmployees, User } from "@/app/controllers/User";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { createShift, ShiftStatus } from "@/app/controllers/Shifts";
+import Checkbox from "@/app/components/Checkbox";
+import Toast from "@/app/components/Toast";
+import { error } from "console";
+import Accordion from "@/app/components/Accordion";
+import getStatusColor, { Status } from "@/app/components/utils/getStatusColor";
+import Icon from "@/public/icons/Icons";
 
 export default function ShiftCreationPage() {
   const modalContainer = useRef<HTMLDivElement>(null);
@@ -26,6 +32,7 @@ export default function ShiftCreationPage() {
     address: "",
     id: -1,
   });
+  const [openShift, setOpenShift] = useState<boolean>(false);
 
   useEffect(() => {
     async function getEmployees() {
@@ -66,7 +73,8 @@ export default function ShiftCreationPage() {
       !start ||
       !end
     ) {
-      alert("Please fill all fields.");
+      // alert("Please fill all fields.");
+      displayToast("Please fill all fields", "error")
       console.log("Assignee ID:", assignee?.id);
       console.log("Location ID:", location.id);
       console.log("Location Name:", location.name);
@@ -81,18 +89,20 @@ export default function ShiftCreationPage() {
     const isValidDate = dayjs(date).isValid();
 
     if (!isValidTime || !isValidDate) {
-      alert("Invalid date or time.");
+      // alert("Invalid date or time.");
+      displayToast("Invalid date or time", "error");
       return;
     }
 
     const shift = {
-      assignee_id: assignee.id,
-      status: "Pending" as ShiftStatus,
+      assignee_id: assignee.id.toString(),
+      status: openShift ? "Open" as ShiftStatus : "Pending" as ShiftStatus,
       date: dayjs(date).format("YYYY-MM-DD"),
       start_time: dayjs(start).format("HH:mm:ss"),
       end_time: dayjs(end).format("HH:mm:ss"),
       notes,
-      location: location.name,
+      location_id: location.id.toString(),
+      location_name: location.name,
       address: location.address,
     };
 
@@ -100,7 +110,8 @@ export default function ShiftCreationPage() {
 
     try {
       await createShift(shift);
-      alert("Shift created successfully!");
+      // alert("Shift created successfully!");
+      displayToast("Shift created successfully!", "success");
       // Reset form
       setAssignee(null);
       setLocation({ name: "", address: "", id: -1 });
@@ -118,9 +129,21 @@ export default function ShiftCreationPage() {
     "& .MuiPickersInputBase-sectionsContainer": { padding: "8px 4px" },
   };
 
+  const [showToast, setToastShown] = useState(false);
+  const [message, setMessage] = useState("");
+  const [toastType, setToastType] = useState<"success"|"error">("success");
+
+  const displayToast = (message: string, toastType: "success"|"error") => {
+      setMessage(message);
+      setToastType(toastType);
+      setToastShown(true);
+  }
+
+
   return (
     <Layout modalContainer={modalContainer}>
       <div className="relative flex-[1] h-full bg-[#f4f4f4]">
+        <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
         <div className="p-6 h-full md:flex md:flex-col">
           <h2 className="text-2xl mb-[30px]">
             Welcome,{" "}
@@ -129,7 +152,8 @@ export default function ShiftCreationPage() {
             </span>
           </h2>
 
-          <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg md:w-fit">
+          <div className="flex flex-col justify-between md:flex-row gap-4">
+            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg md:w-fit md:flex-1/2">
             <div className="mt-3 sm:mt-0 sm:text-left flex flex-col gap-2">
               <h1 className="text-3xl mb-2 font-semibold text-[color:var(--primary-color)]">Create shift</h1>
 
@@ -176,7 +200,10 @@ export default function ShiftCreationPage() {
                     console.log("Selected employee object:", selectedEmployee);
                     setAssignee(selectedEmployee || null);
                   }}
+                  disabled={openShift}
                 />
+
+                <Checkbox label="Mark as open" checked={openShift} onChange={(e)=>setOpenShift(e)} className="text-xs md:text-sm"/>
               </div>
 
               <div className="flex items-center gap-2 text-sm text-gray-600 w-full">
@@ -214,6 +241,14 @@ export default function ShiftCreationPage() {
               </div>
             </div>
           </div>
+
+          <div className="flex flex-col gap-2 md:flex-1/2">
+            {/* TODO: show selected staff availability */}
+          </div>
+          
+
+          </div>
+          
         </div>
       </div>
     </Layout>

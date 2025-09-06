@@ -154,7 +154,7 @@ export default function AdminCalendarPage() {
             
             <Calendar key={isOverMd ? 'month' : 'list'}  events={events} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'}></Calendar>
 
-            {modalShown && modalContainer.current && createModal(ModalTypes.AddLeave, true, modalContainer.current, null, setModalShown)}
+            {modalShown && modalContainer.current && createModal(ModalTypes.AddLeave, true, modalContainer.current, undefined, setModalShown)}
             
           </div>
         </div>

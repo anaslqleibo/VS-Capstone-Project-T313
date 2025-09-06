@@ -6,13 +6,15 @@ interface AccordionProps{
     text: string;
     children?: React.ReactNode;
     className?: string;
+    componentClassName?: string;
+    startOpen?: boolean;
 }
 
 export default function Accordion({text, ...props}: AccordionProps){
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(props.startOpen??false);
     return (
         <div className={props.className}>
-            <div onClick={()=>setOpen((prev)=>!prev)} className="border-b-1 border-[color:var(--primary-color)] text-[color:var(--primary-color)] font-semibold px-4 py-2 rounded-md flex items-center justify-between">
+            <div onClick={()=>setOpen((prev)=>!prev)} className={`border-b-1 border-[color:var(--primary-color)] text-[color:var(--primary-color)] font-semibold px-4 py-2 rounded-md flex items-center justify-between ${props.componentClassName}`}>
 
                 {text}
 

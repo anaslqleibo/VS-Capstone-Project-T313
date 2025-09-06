@@ -2,6 +2,7 @@
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import rrulePlugin from '@fullcalendar/rrule';
 import getStatusColor, { Status } from "./utils/getStatusColor";
 import { createModal, ShiftExtendedProps, getModalTypesByStatus, setEventType, LeaveExtendedProps} from "./Modal";
 import { createRoot } from "react-dom/client";
@@ -44,44 +45,39 @@ function constructEventsArray(events: EventInput[], role: Role) {
   const newEvents: EventInput[] = [];
   
   events.forEach(e => {
-    const { status, date, start, end, time, location_id, location, employee, address, notes, repeat} = e.extendedProps || {};
+    const { status, type, assignee_id, assignee_name, date, start_time, end_time, time, location_id, location_name, address, notes, repeat} = e.extendedProps || {};
 
-    let details = {};
-    if (status === Status.Unavailable){
-      
-        details = {day:e.daysOfWeek, date, time}
+    const shiftExtProps : ShiftExtendedProps = {
+        id: e.id,
+        assignee_id,
+        assignee_name,
+        status,
+        type,
+        date,
+        start_time,
+        end_time,
+        time,
+        location_id,
+        location_name,
+        address,
+        notes,
+        day:repeat,
+        recurrence:repeat
     }
-    else{
-        details = {status, employee, date, time, location, address, notes};
-    }
-
     const event: EventInput = {
         id: crypto.randomUUID(),
-        title: role==="admin" ? buildShiftEventTitle(status, time, location, employee) : buildShiftEventTitle(status, time, location),
-        start: date + 'T' + start,
-        end: date + 'T' + end,
+        title: role==="admin" ? buildShiftEventTitle(status, time, location_name, assignee_name, type) : buildShiftEventTitle(status, time, location_name, undefined, type),
+        start: date + 'T' + start_time,
+        end: e.end ? e.end : date + 'T' + end_time,
         allDay: e.allDay ?? false,
         daysOfWeek: e.daysOfWeek ?? undefined,
         startRecur: e.startRecur ?? undefined,
         endRecur: e.endRecur ?? undefined,
+        rrule: e.rrule ?? undefined,
         backgroundColor: getStatusColor(status),
         display: 'block',
         textColor: e.textColor ?? "#FFFFFF",
-        extendedProps: {
-            id: e.id,
-            user_id: e.user_id,
-            status,
-            employee,
-            date,
-            start,
-            end,
-            time,
-            location_id,
-            location,
-            address,
-            notes,
-            day:repeat,
-        }
+        extendedProps: shiftExtProps
     };
 
     newEvents.push(event);
@@ -109,7 +105,7 @@ function filterEventsArray(events: EventInput[], showSelectedFilter: CalendarFil
 }
 
 export function Calendar({initialView = "dayGridMonth", selectable = true, events, showSelectedFilter, modalContainer, hideHeader=false, ...props} : CalendarProps){
-    const role : Role = useAuth().user?.role || 'staff';
+    const role : Role = useAuth().user?.role || 'user';
 
     const initialEvents = useMemo(() => constructEventsArray(events, role), [events, role]);
 
@@ -137,10 +133,8 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
         }
         else if (mode==='updateDate'){
             if (event.extendedProps){
-                console.log(event);
-
-                const start = event.extendedProps.date+'T'+event.extendedProps.start;
-                const end = event.extendedProps.date+'T'+event.extendedProps.end;
+                const start = event.extendedProps.date+'T'+event.extendedProps.start_time;
+                const end = event.extendedProps.date+'T'+event.extendedProps.end_time;
 
                 setOriginalEvents(prev =>
                     prev.map(e => e.id === event.id ? {...event, start: start?start:event.start, end: end?end:event.end} : e)
@@ -198,7 +192,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
 
     <FullCalendar
         ref={calendarRef}
-        plugins={[dayGridPlugin, interactionPlugin, listPlugin]}
+        plugins={[dayGridPlugin, interactionPlugin, listPlugin, rrulePlugin]}
         initialView={initialView}
         selectable={true}
         events={newEvents}

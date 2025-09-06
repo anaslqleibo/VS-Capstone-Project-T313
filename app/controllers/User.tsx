@@ -1,5 +1,5 @@
 // Temporary utility class to detect account access, can be replaced later
-export type Role = "admin" | "staff";
+export type Role = "admin" | "user";
 export type User = {
     id: number;
     last_name: string;

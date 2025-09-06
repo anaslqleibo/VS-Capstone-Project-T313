@@ -3,14 +3,17 @@ import { EventInput } from "@fullcalendar/core/index.js";
 import dayjs from "dayjs";
 
 export type Unavailability = {
-    id: string;
-    uid: string;
-    start_date: string;
+    id?: string;
+    assignee_id: string;
+    status: string;
+    type: string;
+    date: string;
     end_date: string;
-    start: string;
-    end: string;
+    start_time: string;
+    end_time: string;
     day_of_week: string | null;
-    employee: string;
+    employee?: string;
+    recurrence: string;
 }
 
 export async function fetchUnavailabilities(all: boolean, user_id: number) {
@@ -40,20 +43,59 @@ export async function fetchLeaves(all: boolean, user_id: number) {
 
 export function getEventInputLeaves(all: boolean, user_id: number){
   const shifts = fetchLeaves(all, user_id).then((unavailabilities) => {
-    return unavailabilities.map((unavailability) => ({
+    return unavailabilities.map((unavailability) => {
+      const recurrence = unavailability.recurrence?.toLowerCase() || "never";
+      let rrule: any = null;
+
+      switch (recurrence) {
+        case "daily":
+          rrule = {
+            freq: "daily",
+            dtstart: unavailability.date,  
+            until: unavailability.end_date, 
+          };
+          break;
+
+        case "weekly":
+          rrule = {
+            freq: "weekly",
+            dtstart: unavailability.date,
+            until: unavailability.end_date,
+          };
+          break;
+
+        case "monthly":
+          rrule = {
+            freq: "monthly",
+            dtstart: unavailability.date,
+            until: unavailability.end_date,
+          };
+          break;
+
+        case "never":
+        default:
+          break;
+      }
+
+      
+      return {
       id: unavailability.id,
-      start: unavailability.start_date,
+      start: unavailability.date,
+      end: unavailability.end_date,
+      rrule,
       allDay: true,
       extendedProps: {
-        status: Status.Leave,
-        date: unavailability.start_date.split('T')[0],
-        start: unavailability.start.slice(0, 5),
-        end: unavailability.end.slice(0, 5),
-        time: `${unavailability.start.slice(0, 5)}–${unavailability.end.slice(0, 5)}`,
-        employee: unavailability.employee
+        status: stringToStatus(unavailability.status),
+        type: unavailability.type,
+        date: unavailability.date.split('T')[0],
+        start_time: unavailability.start_time.slice(0, 5),
+        end_time: unavailability.end_time.slice(0, 5),
+        time: `${unavailability.start_time.slice(0, 5)}–${unavailability.end_time.slice(0, 5)}`,
+        assignee_name: unavailability.employee,
+        repeat: recurrence.charAt(0).toUpperCase() + recurrence.slice(1).toLowerCase()
       },
-      color: getStatusColor(Status.Leave),
-    } as EventInput));
+      color: getStatusColor(stringToStatus(unavailability.status)),
+    } as EventInput});
   });
   return shifts;
 }
@@ -79,18 +121,33 @@ export async function getEventInputUnavailabilities(all: boolean, user_id: numbe
     return {
       id: unavailability.id,
       daysOfWeek: [dayNumber],       
-      start: unavailability.start.slice(0, 5),
-      end: unavailability.end.slice(0, 5),
-      startRecur: unavailability.start_date,                     
+      start: unavailability.start_time.slice(0, 5),
+      end: unavailability.end_time.slice(0, 5),
+      startRecur: unavailability.date,                     
       endRecur,       
       textColor: "#000000",            
       extendedProps: {
         status: Status.Unavailable,
-        employee: unavailability.employee,
+        assignee_name: unavailability.employee,
         repeat: unavailability.day_of_week,
-        time: `${unavailability.start.slice(0, 5)}–${unavailability.end.slice(0, 5)}`
+        time: `${unavailability.start_time.slice(0, 5)}–${unavailability.end_time.slice(0, 5)}`,
+        type: unavailability.type,
       },
       color: getStatusColor(Status.Unavailable),
     } as EventInput;
   });
+}
+
+
+export async function createLeave(unavail: Unavailability) {
+  const res = await fetch('/api/unavailabilities/leaves', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(unavail),
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to create leave/unavailability');
+  }
+  else return res.ok;
 }
