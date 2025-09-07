@@ -16,10 +16,8 @@ export type Unavailability = {
     recurrence: string;
 }
 
-export async function fetchUnavailabilities(all: boolean, user_id: number) {
-  let id = user_id;
-  if (all) id = -1;
-  const res = await fetch(`/api/unavailabilities/${id}`);
+export async function fetchUnavailabilities(user_id: number) {
+  const res = await fetch(`/api/unavailabilities/${user_id}`);
 
   if (!res.ok) {
     throw new Error('Failed to fetch unavailabilities');
@@ -28,10 +26,8 @@ export async function fetchUnavailabilities(all: boolean, user_id: number) {
   return data as Unavailability[];
 }
 
-export async function fetchLeaves(all: boolean, user_id: number) {
-  let id = user_id;
-  if (all) id = -1;
-  const res = await fetch(`/api/unavailabilities/leaves/${id}`);
+export async function fetchLeaves(user_id: number) {
+  const res = await fetch(`/api/unavailabilities/leaves/${user_id}`);
 
   if (!res.ok) {
     throw new Error('Failed to fetch leaves');
@@ -40,9 +36,22 @@ export async function fetchLeaves(all: boolean, user_id: number) {
   return data as Unavailability[];
 }
 
+export async function checkAvailability(user_id: number, date: string, start_time?: string, end_time?:string) {
+  const res = await fetch(`/api/unavailabilities/${user_id}/check`,{
+    method: "POST",
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ date, start_time, end_time })
+  });
 
-export function getEventInputLeaves(all: boolean, user_id: number){
-  const shifts = fetchLeaves(all, user_id).then((unavailabilities) => {
+  if (!res.ok) {
+    throw new Error('Failed to fetch leaves');
+  }
+  const data = await res.json();
+  return data;
+}
+
+export function getEventInputLeaves(user_id: number){
+  const shifts = fetchLeaves(user_id).then((unavailabilities) => {
     return unavailabilities.map((unavailability) => {
       const recurrence = unavailability.recurrence?.toLowerCase() || "never";
       let rrule: any = null;
@@ -101,8 +110,8 @@ export function getEventInputLeaves(all: boolean, user_id: number){
   return shifts;
 }
 
-export async function getEventInputUnavailabilities(all: boolean, user_id: number) {
-  const unavailabilities = await fetchUnavailabilities(all, user_id);
+export async function getEventInputUnavailabilities(user_id: number) {
+  const unavailabilities = await fetchUnavailabilities(user_id);
 
   const endRecur = dayjs().add(1, "month").endOf("month").format("YYYY-MM-DD");
 

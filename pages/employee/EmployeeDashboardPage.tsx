@@ -52,13 +52,13 @@ export default function EmployeeDashboardPage() {
     async function fetchEvents() {
       if (account){
 
-        const shifts = await getEventInputShifts(false, account!.id);
-        const leaves = await getEventInputLeaves(false, account!.id);
+        const shifts = await getEventInputShifts(account!.id);
+        const leaves = await getEventInputLeaves(account!.id);
         
         let allEvents: EventInput[] = [];
 
         if (showUnavailability){
-          const unavailabilities = await getEventInputUnavailabilities(false, account?.id ? account?.id : 0);
+          const unavailabilities = await getEventInputUnavailabilities(account?.id ? account?.id : 0);
           allEvents = [...shifts, ...leaves, ...unavailabilities];
         }
         else{

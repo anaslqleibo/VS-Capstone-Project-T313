@@ -18,9 +18,8 @@ export type Shift = {
   assignee_name ?: string
 };
 
-export async function fetchShifts(all: boolean, user_id: number) {
-  const id = all ? -1 : user_id;
-  const res = await fetch(`/api/shifts/${id}`);
+export async function fetchShifts(user_id: number) {
+  const res = await fetch(`/api/shifts/${user_id}`);
 
   if (!res.ok) {
     throw new Error('Failed to fetch shifts');
@@ -86,8 +85,8 @@ export async function deleteShift(shift_id: string, user_id: string) {
   }
 }
 
-export function getEventInputShifts(isAdmin: boolean, user_id: number) {
-  return fetchShifts(isAdmin, user_id).then((shifts) =>
+export function getEventInputShifts(user_id: number) {
+  return fetchShifts(user_id).then((shifts) =>
     shifts.map((shift) => {
       const shiftExtProps : ShiftExtendedProps = {
         status: stringToStatus(shift.status),

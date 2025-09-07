@@ -57,14 +57,14 @@ export default function AdminCalendarPage() {
 
   useEffect(() => {
     async function fetchEvents() {
-      const shifts = await getEventInputShifts(true, account!.id);
-      const leaves = await getEventInputLeaves(true, account!.id);
+      const shifts = await getEventInputShifts(account!.id);
+      const leaves = await getEventInputLeaves(account!.id);
 
     
       let allEvents: EventInput[] = [];
 
       if (showUnavailability){
-        const unavailabilities = await getEventInputUnavailabilities(true, account!.id);
+        const unavailabilities = await getEventInputUnavailabilities(account!.id);
         allEvents = [...shifts, ...leaves, ...unavailabilities];
       }
       else{
