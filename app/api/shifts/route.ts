@@ -1,39 +1,56 @@
-import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
+import { NextRequest } from "next/server";
 
+// CREATE shift
 export async function POST(req: NextRequest) {
+  const {
+    assignee_id,
+    status,
+    date,
+    start_time,
+    end_time,
+    notes,
+    location_id,
+    type,
+  } = await req.json();
+
+  // ✅ Validate required fields
+  if (!date || !start_time || !end_time || !status || !location_id || !type) {
+    return new Response("Missing required fields", { status: 400 });
+  }
+
   try {
-    const {
-      assignee_id,    
-      status,         
-      location,
-      address,
-      date,
-      start_time,     
-      end_time,       
-      notes
-    } = await req.json();
-
-    console.log("Received shift data:", {
-      assignee_id,
-      status,
-      location,
-      address,
-      date,
-      start_time,
-      end_time,
-      notes
-    });
-
     await executeQuery(
-      `INSERT INTO shifts (assignee_id, status, location, address, date, start_time, end_time, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, // added status field
-      [assignee_id, status, location, address, date, start_time, end_time, notes]
+      `
+      INSERT INTO shifts (
+        assignee_id,
+        status,
+        date,
+        start_time,
+        end_time,
+        notes,
+        location_id,
+        type
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+      [
+        assignee_id || null,
+        status,
+        date,
+        start_time,
+        end_time,
+        notes || null,
+        location_id,
+        type,
+      ]
     );
 
-    return NextResponse.json({ message: "Shift created successfully" });
-  } catch (error) {
-    console.error("Error creating shift:", error);
-    return NextResponse.json({ error: "Failed to create shift" }, { status: 500 });
+    return new Response(JSON.stringify({ message: "Shift created successfully" }), {
+      status: 200,
+    });
+
+  } catch (err) {
+    console.error("❌ Shift creation DB error:", err);
+    return new Response("Failed to create shift", { status: 500 });
   }
 }
