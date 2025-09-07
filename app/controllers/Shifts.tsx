@@ -5,14 +5,14 @@ import { ShiftExtendedProps } from '../components/Modal';
 export type ShiftStatus = 'Pending' | 'Unassigned' | 'Accepted' | 'Open' | 'Request' | 'Declined';
 
 export type Shift = {
-  id?: string; // Optional since it's probably auto-increment in DB
-  assignee_id: string; // Changed from user_id to match your database
+  id?: string; 
+  assignee_id: string; 
   status: ShiftStatus;
   date: string;
-  start_time: string; // Changed from start to match your database
-  end_time: string;   // Changed from end to match your database
+  start_time: string; 
+  end_time: string;   
   notes: string;
-  location_id: string;   // Changed from location_id to match your database
+  location_id: string; 
   location_name: string;
   address: string;
   assignee_name ?: string

@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
 import { isAdmin } from "../users/[id]/is_admin";
+import { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -26,6 +26,9 @@ export async function POST(req: NextRequest) {
       notes
     });
 
+    if (!date || !start_time || !end_time || !status || !location_id) {
+    return new Response("Missing required fields", { status: 400 });
+  }
 
     const admin = await isAdmin(assignee_id);
 
@@ -35,9 +38,12 @@ export async function POST(req: NextRequest) {
       [status !== "Open" ? assignee_id : null, (status !== "Open" && admin) ? "Accepted" : status, location_id, date, start_time, end_time, notes]
     );
 
-    return NextResponse.json({ message: "Shift created successfully" });
-  } catch (error) {
-    console.error("Error creating shift:", error);
-    return NextResponse.json({ error: "Failed to create shift" }, { status: 500 });
+    return new Response(JSON.stringify({ message: "Shift created successfully" }), {
+      status: 200,
+    });
+
+  } catch (err) {
+    console.error("❌ Shift creation DB error:", err);
+    return new Response("Failed to create shift", { status: 500 });
   }
 }

@@ -106,6 +106,7 @@ export default function ShiftCreationPage() {
       location_id: location.id.toString(),
       location_name: location.name,
       address: location.address,
+      type: "shift",
     };
 
     console.log("Sending shift data:", shift);
