@@ -74,7 +74,7 @@ export async function updateShiftStatus(shift_id: string, user_id: string, statu
 
 export async function deleteShift(shift_id: string, user_id: string) {
   try {
-    const res = await fetch(`/api/shifts/${shift_id}-${user_id}`, {
+    const res = await fetch(`/api/shifts/${shift_id}`, {
       method: 'DELETE',
     });
 

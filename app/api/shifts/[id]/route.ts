@@ -36,12 +36,17 @@ export async function DELETE(req: Request, {params}: { params: {id: string }}) {
   try {
     const p = await params;
 
-    const id = p.id.split('-')[0];
-    const assignee_id = p.id.split('-')[1];
+    const id = p.id;
+    // const id = p.id.split('-')[0];
+    // const assignee_id = p.id.split('-')[1];
+
+    // If decided to use composite key betwee id and assignee id
+    // const result = await executeQuery(`
+    //   DELETE FROM shifts WHERE id = ? and assignee_id = ?
+    // `, [id, assignee_id]) as any;
 
     const result = await executeQuery(`
-      DELETE FROM shifts WHERE id = ? and assignee_id = ?
-    `, [id, assignee_id]) as any;
+    DELETE FROM shifts WHERE id = ?`, [id]) as any;
 
     if (result.affectedRows === 0) {
       return NextResponse.json(

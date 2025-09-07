@@ -23,7 +23,7 @@ import FormLabel from "@mui/material/FormLabel";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
-import { createLeave, Unavailability, updateLeaveStatus } from "../controllers/Unavailabilities";
+import { createLeave, deleteLeave, Unavailability, updateLeaveStatus } from "../controllers/Unavailabilities";
 
 
 // TODO: Still missing some code, please go through everything and finish what's still missing
@@ -82,6 +82,7 @@ export type LeaveExtendedProps = {
     end_time: string;
     day?: string;
     recurrence?: string;
+    unavailability?: boolean;
 }
 
 export type ShiftExtendedProps = {
@@ -121,7 +122,7 @@ interface ModalProps{
 }
 
 function createAdminComponent(status: Status, employee?:string, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isEditing=false, setEditing?:(e:boolean)=>void, formValues?: Record<string, any>, initialDetails?:ShiftExtendedProps){
-    const castedFormValues =  formValues ? ("status" in formValues ? formValues as ShiftExtendedProps : -1) : -1;
+    const castedFormValues =  formValues ? ("location_id" in formValues ? formValues as ShiftExtendedProps : -1) : -1;
     if (castedFormValues === -1) return;
 
     const handleDelete = async () => {
@@ -135,7 +136,7 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
             displayToast!('Shift deleted successfully!', 'success');
         }
         else{
-            displayToast!('Failed to delete leave!', 'error');
+            displayToast!('Failed to delete shift!', 'error');
         }
         
     }
@@ -317,12 +318,35 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
         if (castedFormValues === -1) return;
 
         if (castedFormValues.recurrence === "") castedFormValues.recurrence = "Never";
-        console.log(castedFormValues);
+        // console.log(castedFormValues);
+
+        const onToggleLeave = {
+            true: function(){handleChange!("unavailability", false)},
+            false: function(){handleChange!("unavailability", true)},
+        };
+
+        const onToggleUnavail = {
+            true: function(){handleChange!("unavailability", true)},
+            false: function(){handleChange!("unavailability", false)},
+        };
+      
         return (
            <div className="flex flex-col gap-4 mt-4">
             <div className="flex flex-wrap items-center gap-2">
+                <Button type='selectable' fontSize="0.8em" startActive={castedFormValues.unavailability?!castedFormValues.unavailability:true} onToggleClick={onToggleLeave}>Leave</Button>
+                <Button type='selectable' fontSize="0.8em" startActive={castedFormValues.unavailability??false} onToggleClick={onToggleUnavail}>Unavailability</Button>
+            </div>
+            
+
+            {castedFormValues.unavailability && <div className="flex items-center gap-2">
+                <p className="text-md font-semibold text-gray-600 mt-1 mb-1 w-12">Day:</p>
+                
+                <DayPicker onChange={(e:string)=>handleChange!("day", e)} value={castedFormValues.day} />
+            </div>}
+
+            <div className="flex flex-wrap items-center gap-2">
                 <p className="text-md font-semibold text-gray-600 mt-1 mb-1">Date:</p>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2 items-center w-full md:w-auto">
                     <DatePicker label="From" format="DD-MM-YYYY" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} value={castedFormValues.date ? dayjs(castedFormValues.date) : null} onChange={(e)=>{
                         if (!e) return;
                         const end = castedFormValues?.end_date ? dayjs(castedFormValues.end_date, "YYYY-MM-DD") : null;
@@ -332,6 +356,8 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
                             return;
                         }
                         handleChange!("date", e?.format('YYYY-MM-DD'))}}/>
+                    
+                    {!castedFormValues.unavailability && <>
                     <span className="text-[color:var(--primary-color)] font-bold">–</span>
                     <DatePicker label="To" format="DD-MM-YYYY" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} value={castedFormValues.end_date ? dayjs(castedFormValues.end_date) : null} onChange={(e)=>{
                         if (!e) return;
@@ -342,11 +368,13 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
                             return;
                         }
                         handleChange!("end_date", e?.format('YYYY-MM-DD'))}}/>
+                    </>}
+                    
                 </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
                 <p className="text-md font-semibold text-gray-600 mt-1 mb-1">Time:</p>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2 items-center w-full md:w-auto">
                     <TimePicker label="From" format="hh:mm A" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} value={castedFormValues.start_time ? dayjs(castedFormValues.start_time, "HH:mm") : null} onChange={(e)=>{
                         if (!e) return;
                         const end = castedFormValues?.end_time ? dayjs(castedFormValues.end_time, "HH:mm:ss") : null;
@@ -370,6 +398,7 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
                         handleChange!("end_time", e?.format('HH:mm:ss'))}}/>
                 </div>
             </div>
+            {!castedFormValues.unavailability && <>
             <FormControl component="fieldset">
                 <FormLabel component="legend" className="!text-md !font-semibold !text-gray-600">Recurrence</FormLabel>
                 <RadioGroup row value={castedFormValues.recurrence} onChange={(e) => handleChange!("recurrence", e.target.value)}>
@@ -378,6 +407,8 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
                     ))}
                 </RadioGroup>
             </FormControl>
+            </>}
+            
         </div>
         ); 
     }
@@ -445,13 +476,14 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         if (castedFormValues === -1) return;
 
         console.log(castedFormValues);
+        
         const handleSubmit = async () => {
             if (!("date" in castedFormValues)){
                 if (displayToast) displayToast(`Please select the leave starting date.`, 'error');  
                 return;
             }
 
-            if (!("end_date" in castedFormValues)){
+            if (!castedFormValues.unavailability && !("end_date" in castedFormValues)){
                 if (displayToast) displayToast(`Please select the leave ending date.`, 'error');  
                 return;
             }
@@ -471,8 +503,7 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
                 return;
             }
 
-            console.log(castedFormValues);
-            const result = await createLeave({...castedFormValues, day_of_week:null, recurrence: castedFormValues.recurrence? castedFormValues.recurrence : "Never", type: 'leave'});
+            const result = await createLeave({...castedFormValues, day_of_week:null, recurrence: castedFormValues.recurrence? castedFormValues.recurrence : "Never", type: 'leave'}, castedFormValues.unavailability??false);
             
             if (result){
                 closeModal!();
@@ -484,7 +515,7 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
             }
             
         }
-        buttons = <Button type="cta" fontSize="0.8em" onClick={()=>handleSubmit()}>Submit leave</Button>
+        buttons = <Button type="cta" fontSize="0.8em" onClick={()=>handleSubmit()}>Submit {castedFormValues.unavailability ? "unavailability" : "leave"}</Button>
     }
     else if (type === ModalTypes.OpenShiftDetails)
     {
@@ -560,10 +591,9 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
             }
             const handleDecline = async () => {
                 const confirmation = window.confirm("This action cannot be undone. Are you sure you want to decline this leave request?");
-                const result = await updateLeaveStatus(event?.extendedProps?.id as string, (formValues as LeaveExtendedProps).assignee_id, false);;
-
                 if (!confirmation) return;
 
+                const result = await updateLeaveStatus(event?.extendedProps?.id as string, (formValues as LeaveExtendedProps).assignee_id, false);;
                 if (result){
                     if (event) setEvents!(event, "delete"); 
                     closeModal!();
@@ -579,6 +609,25 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         <Button type="cta" fontSize="0.8em" className="bg-[color:var(--danger-color)] hover:bg-[color:var(--danger-color-hover)]" onClick={handleDecline}>Decline</Button>
         </>);
         }   
+        else{
+            
+            const handleCancel = async () => {
+            const result = await deleteLeave(event?.extendedProps?.id as string);
+
+            if (result){
+                if (event) setEvents!(event, "delete"); 
+                closeModal!();
+                displayToast!('Leave request cancelled!', 'success');
+            }
+            else{
+                displayToast!('Failed to cancel leave request!', 'error');
+            }
+            
+            }
+             buttons = (<>
+        <Button type="cta" fontSize="0.8em" className="bg-[color:var(--danger-color)] hover:bg-[color:var(--danger-color-hover)]" onClick={handleCancel}>Cancel</Button>
+        </>);
+        }
     }
     else if (type === ModalTypes.PendingDetails)
     {
@@ -666,7 +715,8 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
     
     const handleChange = (field: string, value: any) => {
         setFormValues((prev: any) => {
-            if (value && formValues && "start_time" in formValues && (field === "start_time" || field === "end_time")){
+            if (value && formValues && "start_time" in formValues && (field === "start_time" || field === "end_time") && !(!formValues?.start_time || !formValues?.end_time)){
+
                 return {
                     ...prev,
                     [field]: value,
@@ -692,13 +742,24 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
     const closeModal = () => props.setShown ? props.setShown(false) : setShown(false);
 
-    const admin = useAuth().user?.role === "admin";
+    const user = useAuth().user;
+    const admin = user?.role === "admin";
     const buttons = type!==undefined && createButtons(type, props.setEvents, props.event, props.displayToast, closeModal, admin, formValues);
 
     const setEditing = (edit:boolean) => {
         setIsEditing(admin && edit);
     }
+    
+    useEffect(()=>{
+        if (user){
+            setFormValues((prev: any) => ({
+                ...prev,
+                assignee_id: user.id
+            }));
+        }
 
+    }, [user])
+    
     const ModalJSX = (<div className={`${props.noOverlay ? ' ': 'fixed -translate-y-1/2 top-1/2'} md:translate-none md:relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto w-80 sm:w-full sm:max-w-lg`} ref={containerRef}>
     <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg">
         <div className="sm:flex sm:items-start">
@@ -706,7 +767,8 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
             <div className="mt-3 w-full sm:mt-0 sm:text-left">
                 <div className="flex items-center justify-between align-middle mb-2">
                     <h1 id="dialog-title" className="text-lg font-semibold text-gray-900">
-                        {type !== undefined ? (formValues?.type && type?.replace("shift", formValues?.type)) : title??"Please set the tag 'title'"}
+                        
+                        {type !== undefined ? (formValues?.type ? type?.replace("shift", formValues?.type) : type) : title??"Please set the tag 'title'"}
                     </h1>
                     
                     {!props.noOverlay && 

@@ -54,10 +54,15 @@ interface SelectableProps{
     onClick ?:{ true: () => void; false: () => void };  
     fontSize ?: string;
     disabled?:boolean;
+    startActive?:boolean;
     children?: React.ReactNode;
 }
-export function Selectable({onClick, fontSize, ...props} : SelectableProps){
-    const [active, setActive] = useState(false);
+export function Selectable({onClick, fontSize, startActive, ...props} : SelectableProps){
+    const [active, setActive] = useState(startActive??false);
+
+    useEffect(()=>{
+        if (startActive !== undefined) setActive(startActive);
+    }, [startActive])
 
     function onToggleClick(){
         setActive(!active)
@@ -70,10 +75,10 @@ export function Selectable({onClick, fontSize, ...props} : SelectableProps){
         }
     }     
 
-    return (<button onClick={onToggleClick} className={`px-[1.3em] py-[0.8em] rounded-xl border-2 transition-colors duration-200
+    return (<button onClick={onToggleClick} className={`px-[1.3em] py-[0.8em] rounded-full border-1 transition-colors duration-200 hover:border-[color:var(--hover-color)] border-[color:var(--primary-color)] 
     ${active
-      ? 'bg-[color:var(--primary-color)] text-white'
-      : 'bg-transparent text-[color:var(--primary-color)] border-[color:var(--primary-color)] hover:text-[color:var(--hover-color)] hover:border-[color:var(--hover-color)] active:text-[color:var(--active-color)] active:border-[color:var(--active-color)]'}
+      ? 'bg-[color:var(--primary-color)] font-semibold text-white hover:text-white hover:bg-[color:var(--hover-color)]'
+      : 'bg-transparent text-[color:var(--primary-color)] hover:text-[color:var(--hover-color)] active:text-[color:var(--active-color)] active:border-[color:var(--active-color)]'}
     ${props.disabled ? 'pointer-events-none opacity-50 cursor-not-allowed' : ''}`}
   disabled={props.disabled}
             style = {{fontSize}}>
@@ -160,6 +165,7 @@ interface ButtonProps{
     htmlType?:"button" | "submit" | "reset" | undefined;
     disabled?: boolean;
     className?: string;
+    startActive?:boolean;
     children?:React.ReactNode;
 }
 
@@ -176,7 +182,7 @@ export default function Button({ type = 'cta', fontSize = '1em', onClick, items,
 
     // Selectable Button Setup
     if (type==="selectable"){
-        return <Selectable onClick={props.onToggleClick} fontSize={fontSize} disabled={disabled}>
+        return <Selectable onClick={props.onToggleClick} fontSize={fontSize} disabled={disabled} startActive={props.startActive}>
             {children}
         </Selectable>;
     }

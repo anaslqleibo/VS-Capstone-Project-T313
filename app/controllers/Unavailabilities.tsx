@@ -149,8 +149,9 @@ export async function getEventInputUnavailabilities(user_id: number) {
 }
 
 
-export async function createLeave(unavail: Unavailability) {
-  const res = await fetch('/api/unavailabilities/leaves', {
+export async function createLeave(unavail: Unavailability, is_unavailability: boolean=false) {
+  const endpoint = is_unavailability ? '/api/unavailabilities' : '/api/unavailabilities/leaves';
+  const res = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(unavail),
@@ -174,6 +175,19 @@ export async function updateLeaveStatus(leave_id: string, user_id: string, is_ac
     return res.ok;
   } catch (err) {
     console.error('Failed to update leave status:', err);
+    return false;
+  }
+}
+
+export async function deleteLeave(shift_id: string) {
+  try {
+    const res = await fetch(`/api/shifts/${shift_id}`, {
+      method: 'DELETE',
+    });
+
+    return res.ok;
+  } catch (err) {
+    console.error('Failed to delete leave', err);
     return false;
   }
 }

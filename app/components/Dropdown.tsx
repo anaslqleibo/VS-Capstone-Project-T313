@@ -25,10 +25,14 @@ interface DropdownProps{
   disabled?:boolean;
 }
 
-export function DayPicker(props: {[key:string] : any}){
+type DayPickerProps = {
+  onChange: (e: string) => void;
+  value?: string;
+};
+export function DayPicker({onChange, value}: DayPickerProps){
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
   return (
-    <Dropdown items={days} placeholder='Select a day' className='border-gray-400 hover:border-black text-[16px] w-full placeholder-shown:text-[#000] text-black' props={props}></Dropdown>
+    <Dropdown items={days} placeholder='Select a day' className='border-gray-400 hover:border-black text-[16px] w-full placeholder-shown:text-[#000] text-black' onChange={onChange} initialSelectedItem={value}></Dropdown>
   );
 }
 
