@@ -59,6 +59,7 @@ export default function AdminCalendarPage() {
     async function fetchEvents() {
       const shifts = await getEventInputShifts(true, account!.id);
       const leaves = await getEventInputLeaves(true, account!.id);
+
     
       let allEvents: EventInput[] = [];
 

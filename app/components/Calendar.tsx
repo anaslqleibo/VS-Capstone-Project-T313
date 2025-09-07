@@ -4,7 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import rrulePlugin from '@fullcalendar/rrule';
 import getStatusColor, { Status } from "./utils/getStatusColor";
-import { createModal, ShiftExtendedProps, getModalTypesByStatus, setEventType, LeaveExtendedProps} from "./Modal";
+import { createModal, ShiftExtendedProps, getModalTypesByStatus, setEventType, LeaveExtendedProps, EventTypes} from "./Modal";
 import { createRoot } from "react-dom/client";
 import { RefObject, useEffect, useMemo, useRef, useState } from "react";
 import dayjs from "dayjs";
@@ -64,6 +64,7 @@ function constructEventsArray(events: EventInput[], role: Role) {
         day:repeat,
         recurrence:repeat
     }
+    
     const event: EventInput = {
         id: crypto.randomUUID(),
         title: role==="admin" ? buildShiftEventTitle(status, time, location_name, assignee_name, type) : buildShiftEventTitle(status, time, location_name, undefined, type),
@@ -74,7 +75,7 @@ function constructEventsArray(events: EventInput[], role: Role) {
         startRecur: e.startRecur ?? undefined,
         endRecur: e.endRecur ?? undefined,
         rrule: e.rrule ?? undefined,
-        backgroundColor: getStatusColor(status),
+        backgroundColor: getStatusColor(type === "leave" && status === Status.Accepted ? Status.Leave : status),
         display: 'block',
         textColor: e.textColor ?? "#FFFFFF",
         extendedProps: shiftExtProps
@@ -88,7 +89,7 @@ function constructEventsArray(events: EventInput[], role: Role) {
 
 function filterEventsArray(events: EventInput[], showSelectedFilter: CalendarFilter | AdminCalendarFilter) {
   return events.filter(e => {
-    const { status, location, employee } = e.extendedProps || {};
+    const { status, location, assignee_name } = e.extendedProps || {};
     
     const matchStatus = showSelectedFilter.status.includes("All shifts") ||
       showSelectedFilter.status.includes(status);
@@ -97,7 +98,7 @@ function filterEventsArray(events: EventInput[], showSelectedFilter: CalendarFil
     if (((showSelectedFilter as AdminCalendarFilter).employee)){
         const filter = (showSelectedFilter as AdminCalendarFilter);
         const matchEmployee = filter.employee.includes("All employees") ||
-        filter.employee.includes(employee);
+        filter.employee.includes(assignee_name);
         return matchStatus && matchLocation && matchEmployee;
     }
     return matchStatus && matchLocation;
@@ -276,7 +277,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
             
         />
 
-        {activeModal.isOpen && modalContainer.current && createModal(getModalTypesByStatus(activeModal.status),true,modalContainer.current,activeModal.details, setOpen, updateEvent, activeModal.event, displayToast)}
+        {activeModal.isOpen && modalContainer.current && createModal(getModalTypesByStatus(activeModal.status, activeModal.details?.type as EventTypes),true,modalContainer.current,activeModal.details, setOpen, updateEvent, activeModal.event, displayToast)}
 
     </>
     );

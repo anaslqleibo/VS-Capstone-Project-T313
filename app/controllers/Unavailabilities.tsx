@@ -85,6 +85,7 @@ export function getEventInputLeaves(all: boolean, user_id: number){
       rrule,
       allDay: true,
       extendedProps: {
+        assignee_id: unavailability.assignee_id,
         status: stringToStatus(unavailability.status),
         type: unavailability.type,
         date: unavailability.date.split('T')[0],
@@ -150,4 +151,20 @@ export async function createLeave(unavail: Unavailability) {
     throw new Error('Failed to create leave/unavailability');
   }
   else return res.ok;
+}
+
+
+export async function updateLeaveStatus(leave_id: string, user_id: string, is_accepted: boolean) {
+  try {
+    const res = await fetch(`/api/unavailabilities/leaves/${leave_id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id, is_accepted}),
+    });
+
+    return res.ok;
+  } catch (err) {
+    console.error('Failed to update leave status:', err);
+    return false;
+  }
 }

@@ -23,7 +23,7 @@ import FormLabel from "@mui/material/FormLabel";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
-import { createLeave, Unavailability } from "../controllers/Unavailabilities";
+import { createLeave, Unavailability, updateLeaveStatus } from "../controllers/Unavailabilities";
 
 
 // TODO: Still missing some code, please go through everything and finish what's still missing
@@ -42,14 +42,19 @@ export enum ModalTypes{
     Notifications="Notifications",
 }
 
-export function getModalTypesByStatus(status:Status){
+export type EventTypes = "shift"|"leave"|"unavailability"
+
+export function getModalTypesByStatus(status:Status, type:EventTypes="shift"){
     switch(status){
         case Status.Unassigned:
             return ModalTypes.UnassignedShiftDetails;
         case Status.Request:
             return ModalTypes.RequestDetails;
         case Status.Accepted:
-            return ModalTypes.ShiftDetails;
+            if (type==="shift")
+                return ModalTypes.ShiftDetails;
+            else
+                return ModalTypes.LeaveDetails;
         case Status.Pending:
             return ModalTypes.PendingDetails;
         case Status.Leave:
@@ -67,6 +72,7 @@ export function getModalTypesByStatus(status:Status){
 
 export type LeaveExtendedProps = {
     assignee_id: string;
+    assignee_name?: string;
     type: string;
     status: string;
     date: string;
@@ -288,6 +294,7 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
     {
         return (
             <>
+            {isAdmin && createDetail("Employee: ", castedDetails.assignee_name ? castedDetails.assignee_name : "")}
             {createDetail("Every: ", castedDetails.day ? castedDetails.day : "")}
             {createDetail("Time: ", castedDetails.time)}
             </>
@@ -297,6 +304,7 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
     {
         return (
             <>
+            {isAdmin && createDetail("Employee: ", castedDetails.assignee_name ? castedDetails.assignee_name : "")}
             {createDetail("Date: ", castedDetails.date)}
             {createDetail("Time: ", castedDetails.time)}
             {castedDetails.recurrence && createDetail("Recurrence: ", castedDetails.recurrence)}
@@ -520,6 +528,58 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         }
         
     }
+    
+    else if (formValues && formValues.type === "leave" && type === ModalTypes.PendingDetails)
+    {
+        if (isAdmin){
+            const handleAccept = async () => {
+                const result = await updateLeaveStatus(event?.extendedProps?.id as string, (formValues as LeaveExtendedProps).assignee_id, true);
+
+                if (result){
+                    if (event) {
+                        const updatedEvent = {
+                            ...event,
+                            extendedProps: {
+                                ...event.extendedProps,
+                                status: Status.Accepted
+                            },
+                            title: buildShiftEventTitle(Status.Leave, event.extendedProps?.time, event.extendedProps?.location_name),
+                            backgroundColor: getStatusColor(Status.Leave)
+                        };
+
+                        setEvents!(updatedEvent, "update");
+
+                        closeModal!();
+                        displayToast!(`Accepted leave successfully!`, 'success');
+                    }
+                }
+                else{
+                    displayToast!('Failed to accept leave!', 'error');
+                }
+                
+            }
+            const handleDecline = async () => {
+                const confirmation = window.confirm("This action cannot be undone. Are you sure you want to decline this leave request?");
+                const result = await updateLeaveStatus(event?.extendedProps?.id as string, (formValues as LeaveExtendedProps).assignee_id, false);;
+
+                if (!confirmation) return;
+
+                if (result){
+                    if (event) setEvents!(event, "delete"); 
+                    closeModal!();
+                    displayToast!('Leave declined!', 'success');
+                }
+                else{
+                    displayToast!('Failed to decline leave!', 'error');
+                }
+                
+            }
+            buttons = (<>
+        <Button type="cta" fontSize="0.8em" className="bg-[color:var(--success-color)] hover:bg-[color:var(--success-color-hover)]" onClick={handleAccept}>Accept</Button>
+        <Button type="cta" fontSize="0.8em" className="bg-[color:var(--danger-color)] hover:bg-[color:var(--danger-color-hover)]" onClick={handleDecline}>Decline</Button>
+        </>);
+        }   
+    }
     else if (type === ModalTypes.PendingDetails)
     {
         const handleAccept = async () => {
@@ -603,10 +663,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
     const [shown, setShown] = useState(startOpen ?? false);
     const [isEditing, setIsEditing] = useState(false);
     const [formValues, setFormValues] = useState<ShiftExtendedProps|LeaveExtendedProps|undefined>(details ? ('status' in details ? details as ShiftExtendedProps : details as LeaveExtendedProps) : undefined);
-    const user = useAuth().user;
-    if (!formValues?.assignee_id){
-        setFormValues((prev: any) => ({...prev, assignee_id: user?.id}))
-    }
+    
     const handleChange = (field: string, value: any) => {
         setFormValues((prev: any) => {
             if (value && formValues && "start_time" in formValues && (field === "start_time" || field === "end_time")){
@@ -648,7 +705,9 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
         
             <div className="mt-3 w-full sm:mt-0 sm:text-left">
                 <div className="flex items-center justify-between align-middle mb-2">
-                    <h1 id="dialog-title" className="text-lg font-semibold text-gray-900">{type !== undefined ? type : title??"Please set the tag 'title'"}</h1>
+                    <h1 id="dialog-title" className="text-lg font-semibold text-gray-900">
+                        {type !== undefined ? (formValues?.type && type?.replace("shift", formValues?.type)) : title??"Please set the tag 'title'"}
+                    </h1>
                     
                     {!props.noOverlay && 
                     <Icon
