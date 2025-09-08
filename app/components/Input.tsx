@@ -13,9 +13,11 @@ interface InputIconProps{
   showErrors?: boolean;
   error?: string;
   className?: string;
+  value?: string;
+  onChange?: (e:any) => void;
 }
 
-export function InputIcon({ type = "search", placeholder, size = "base", icon = "?", validate, showErrors, error, className, ...props } : InputIconProps) {
+export function InputIcon({ type = "search", placeholder, size = "base", icon = "?", validate, showErrors, error, className, value, onChange, ...props } : InputIconProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const fontSize = "text-" + size;
@@ -40,12 +42,23 @@ export function InputIcon({ type = "search", placeholder, size = "base", icon = 
             width="1em"
             height="1em" />
         </div>
+        {(value!==undefined && onChange) ? 
+        <input
+          value={value}
+          onChange={onChange}
+          ref={inputRef}
+          placeholder={placeholder}
+          className={`p-0 outline-none w-full ${fontSize} my-4`}
+          {...props}
+        />
+        :
         <input
           ref={inputRef}
           placeholder={placeholder}
           className={`p-0 outline-none w-full ${fontSize} my-4`}
           {...props}
         />
+        }
       </div>
       {error && <p className="text-red-500 text-sm mt-1 text-left">{error}</p>}
     </div>

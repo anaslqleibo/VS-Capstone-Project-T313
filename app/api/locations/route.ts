@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
     try{
         const locations = await executeQuery(
-            `SELECT id, name, address FROM locations` 
+            `SELECT id, name, address, notes FROM locations ORDER BY name` 
         );
 
         const locationsArray = Array.isArray(locations) ? locations : [];

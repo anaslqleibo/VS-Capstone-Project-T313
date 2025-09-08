@@ -56,8 +56,9 @@ interface SelectableProps{
     disabled?:boolean;
     startActive?:boolean;
     children?: React.ReactNode;
+    className?:string;
 }
-export function Selectable({onClick, fontSize, startActive, ...props} : SelectableProps){
+export function Selectable({onClick, fontSize, startActive, className, ...props} : SelectableProps){
     const [active, setActive] = useState(startActive??false);
 
     useEffect(()=>{
@@ -75,11 +76,11 @@ export function Selectable({onClick, fontSize, startActive, ...props} : Selectab
         }
     }     
 
-    return (<button onClick={onToggleClick} className={`px-[1.3em] py-[0.8em] rounded-full border-1 transition-colors duration-200 hover:border-[color:var(--hover-color)] border-[color:var(--primary-color)] 
+    return (<button onClick={onToggleClick} className={`${(className && className.includes('px-')) ? '' : 'px-[1.3em]'} ${(className && className.includes('py-')) ? '' : 'py-[0.8em]'} rounded-full border-1 transition-colors duration-200 hover:border-[color:var(--hover-color)] border-[color:var(--primary-color)] 
     ${active
       ? 'bg-[color:var(--primary-color)] font-semibold text-white hover:text-white hover:bg-[color:var(--hover-color)]'
       : 'bg-transparent text-[color:var(--primary-color)] hover:text-[color:var(--hover-color)] active:text-[color:var(--active-color)] active:border-[color:var(--active-color)]'}
-    ${props.disabled ? 'pointer-events-none opacity-50 cursor-not-allowed' : ''}`}
+    ${props.disabled ? 'pointer-events-none opacity-50 cursor-not-allowed' : ''} ${className}`}
   disabled={props.disabled}
             style = {{fontSize}}>
                 {props.children}
@@ -182,7 +183,7 @@ export default function Button({ type = 'cta', fontSize = '1em', onClick, items,
 
     // Selectable Button Setup
     if (type==="selectable"){
-        return <Selectable onClick={props.onToggleClick} fontSize={fontSize} disabled={disabled} startActive={props.startActive}>
+        return <Selectable onClick={props.onToggleClick} fontSize={fontSize} disabled={disabled} startActive={props.startActive} className={props.className}>
             {children}
         </Selectable>;
     }
@@ -206,11 +207,11 @@ export default function Button({ type = 'cta', fontSize = '1em', onClick, items,
 
     // General Button Setup
     return (
-        <button onClick={onClick} className={`flex ${!props.className?.includes('p-') && 'px-6 py-4'} justify-center items-center gap-2.5 shrink-0 text-[#FFFFFF] text-center font-[family-name:var(--font-family)] font-normal border-0 outline-0
+        <button onClick={onClick} className={`flex ${(!props.className?.includes('p-') && !props.className?.includes('py-') && !props.className?.includes('px-'))  && 'px-6 py-4'} justify-center items-center gap-2.5 shrink-0 text-[#FFFFFF] text-center font-[family-name:var(--font-family)] font-normal border-0 outline-0
     ${type === 'cta' ? `rounded-xl font-semibold transition-colors duration-200 ${!props.className?.includes('bg-') && "bg-[color:var(--primary-color)] hover:bg-[color:var(--hover-color)] active:bg-[color:var(--active-color)]"}` : ""}
     ${type === 'text' ? 'rounded-[75px] px-6 bg-[#3259AD] hover:bg-[color:var(--hover-color)] active:bg-[#274689]' : ''}
     ${type === 'outline' ? 'px-[1.3em] py-[0.8em] rounded-xl border-2 border-[color:var(--primary-color)] bg-transparent text-[color:var(--primary-color)] hover:bg-[color:var(--primary-color)] hover:text-white active:bg-transparent active:text-[color:var(--primary-color)]' : ''}
-    ${type === 'fab' ? "rounded-full border-[0.2rem] border-[color:var(--primary-color)] bg-white shadow-md p-2 text-[color:var(--primary-color)] text-[0.75rem] transition-colors duration-200 hover:bg-[color:var(--hover-color)] hover:border-[color:var(--hover-color)] hover:text-white active:bg-[color:var(--active-color)] active:border-[color:var(--active-color)] active:text-white disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed" : ''}
+    ${type === 'fab' ? "rounded-full bg-[color:var(--primary-color)] shadow-[0_5px_10px_rgba(0,0,0,0.25)] p-2 text-white text-[0.75rem] transition-colors duration-200 hover:bg-[color:var(--hover-color)] hover:border-[color:var(--hover-color)] hover:text-white active:bg-[color:var(--active-color)] active:border-[color:var(--active-color)] active:text-white disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed" : ''}
     ${props.className ? props.className : ''}
     ${disabled ? 'pointer-events-none opacity-50 cursor-not-allowed bg-gray-400' : ''}`} disabled={disabled}
         style = {{fontSize}} type={htmlType || "button"} >

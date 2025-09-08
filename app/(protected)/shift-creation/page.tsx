@@ -77,13 +77,6 @@ export default function ShiftCreationPage() {
     ) {
       // alert("Please fill all fields.");
       displayToast("Please fill all fields", "error")
-      console.log("Assignee ID:", assignee?.id);
-      console.log("Location ID:", location.id);
-      console.log("Location Name:", location.name);
-      console.log("Location Address:", location.address);
-      console.log("Date:", date ? dayjs(date).format("YYYY-MM-DD") : "null");
-      console.log("Start Time:", start ? dayjs(start).format("HH:mm:ss") : "null");
-      console.log("End Time:", end ? dayjs(end).format("HH:mm:ss") : "null");
       return;
     }
 
@@ -109,8 +102,6 @@ export default function ShiftCreationPage() {
       type: "shift",
     };
 
-    console.log("Sending shift data:", shift);
-
     let proceed = true;
     if (status === "error"){
       displayToast("The assignee is not able to take this shift.", 'error');
@@ -120,10 +111,11 @@ export default function ShiftCreationPage() {
       const res = window.confirm("Are you sure you want to continue creating this shift despite the warnings?");
       proceed = res;
     }
-
     
     if (!proceed) return;
     try {
+      console.log("Sending shift data:", shift);
+
       await createShift(shift);
       // alert("Shift created successfully!");
       displayToast("Shift created successfully!", "success");

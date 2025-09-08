@@ -2,6 +2,7 @@ export type Location = {
   id: string;
   name: string;
   address: string;
+  notes?: string;
 };
 
 // Fetches the full list of locations from the API
