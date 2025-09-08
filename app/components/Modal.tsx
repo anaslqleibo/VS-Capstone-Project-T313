@@ -226,27 +226,9 @@ function createDetailEditor(label: string, field: keyof ShiftExtendedProps, deta
             }
             else if (label.toLowerCase().includes('time')){
                 editJSX = <>
-                    <TimePicker label="From" format="hh:mm A" slotProps={{ textField: { sx: pickerSetup} } } value={castedFormValues.start_time ? dayjs(castedFormValues.start_time, "HH:mm") : null} onChange={(e)=>{
-                    if (!e) return;
-                    const end = castedFormValues?.end_time ? dayjs(castedFormValues.end_time, "HH:mm:ss") : null;
-
-                    if (end && e.isAfter(end)) {
-                        displayToast!("Start time cannot be after end time", "error");
-                        return;
-                    }
-                        
-                    handleChange!("start_time", e?.format('HH:mm:ss'))}}/>
+                    <TimePicker label="From" format="hh:mm A" slotProps={{ textField: { sx: pickerSetup} } } value={castedFormValues.start_time ? dayjs(castedFormValues.start_time, "HH:mm") : null} onChange={(e)=>{handleChange!("start_time", e?.format('HH:mm:ss'))}}/>
                     <span className="text-[color:var(--primary-color)] font-bold">–</span>
-                    <TimePicker label="To" format="hh:mm A" slotProps={{ textField: { sx: pickerSetup } }}  value={castedFormValues.end_time ? dayjs(castedFormValues.end_time, "HH:mm") : null} onChange={(e)=>{
-                        if (!e) return;
-                        const start = castedFormValues?.start_time ? dayjs(castedFormValues.start_time, "HH:mm:ss") : null;
-
-                        if (start && e.isBefore(start)) {
-                            displayToast!("End time cannot be before start time", "error");
-                            return;
-                        }
-                            
-                        handleChange!("end_time", e?.format('HH:mm:ss'))}}/>
+                    <TimePicker label="To" format="hh:mm A" slotProps={{ textField: { sx: pickerSetup } }}  value={castedFormValues.end_time ? dayjs(castedFormValues.end_time, "HH:mm") : null} onChange={(e)=>{handleChange!("end_time", e?.format('HH:mm:ss'))}}/>
                 </>;
             }
             else if (label.toLowerCase().includes('location')){
@@ -375,27 +357,9 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
             <div className="flex flex-wrap items-center gap-2">
                 <p className="text-md font-semibold text-gray-600 mt-1 mb-1">Time:</p>
                 <div className="flex gap-2 items-center w-full md:w-auto">
-                    <TimePicker label="From" format="hh:mm A" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} value={castedFormValues.start_time ? dayjs(castedFormValues.start_time, "HH:mm") : null} onChange={(e)=>{
-                        if (!e) return;
-                        const end = castedFormValues?.end_time ? dayjs(castedFormValues.end_time, "HH:mm:ss") : null;
-
-                        if (end && e.isAfter(end)) {
-                            displayToast!("Start time cannot be after end time", "error");
-                            return;
-                        }
-                            
-                        handleChange!("start_time", e?.format('HH:mm:ss'))}}/>
+                    <TimePicker label="From" format="hh:mm A" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} value={castedFormValues.start_time ? dayjs(castedFormValues.start_time, "HH:mm") : null} onChange={(e)=>{handleChange!("start_time", e?.format('HH:mm:ss'))}}/>
                     <span className="text-[color:var(--primary-color)] font-bold">–</span>
-                    <TimePicker label="To" format="hh:mm A" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }}  value={castedFormValues.end_time ? dayjs(castedFormValues.end_time, "HH:mm") : null} onChange={(e)=>{
-                        if (!e) return;
-                        const start = castedFormValues?.start_time ? dayjs(castedFormValues.start_time, "HH:mm:ss") : null;
-
-                        if (start && e.isBefore(start)) {
-                            displayToast!("End time cannot be before start time", "error");
-                            return;
-                        }
-                            
-                        handleChange!("end_time", e?.format('HH:mm:ss'))}}/>
+                    <TimePicker label="To" format="hh:mm A" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }}  value={castedFormValues.end_time ? dayjs(castedFormValues.end_time, "HH:mm") : null} onChange={(e)=>{handleChange!("end_time", e?.format('HH:mm:ss'))}}/>
                 </div>
             </div>
             {!castedFormValues.unavailability && <>
@@ -751,7 +715,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
     }
     
     useEffect(()=>{
-        if (user){
+        if (user && user?.role === 'user'){
             setFormValues((prev: any) => ({
                 ...prev,
                 assignee_id: user.id

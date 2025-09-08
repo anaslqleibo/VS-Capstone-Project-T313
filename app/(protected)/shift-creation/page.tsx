@@ -225,16 +225,7 @@ export default function ShiftCreationPage() {
                 <TimePicker
                   format="hh:mm A"
                   value={start}
-                  onChange={(newValue) =>{ 
-                    if (!newValue) return;
-                    const endTime = end ? end : null;
-
-                    if (endTime && newValue.isAfter(endTime)) {
-                        displayToast!("Start time cannot be after end time", "error");
-                        return;
-                    }
-                    
-                    setStart(newValue)}}
+                  onChange={(newValue) =>{setStart(newValue)}}
                   slotProps={{ textField: { sx: pickerSetup } }}
                   className="w-36"
                 />
@@ -242,16 +233,7 @@ export default function ShiftCreationPage() {
                 <TimePicker
                   format="hh:mm A"
                   value={end}
-                  onChange={(newValue) => {
-                    if (!newValue) return;
-                    const startTime = start ? start : null;
-
-                    if (startTime && newValue.isBefore(startTime)) {
-                        displayToast!("End time cannot be before start time", "error");
-                        return;
-                    }
-                    
-                    setEnd(newValue)}}
+                  onChange={(newValue) => {setEnd(newValue)}}
                   slotProps={{ textField: { sx: pickerSetup } }}
                   className="w-36"
                 />
