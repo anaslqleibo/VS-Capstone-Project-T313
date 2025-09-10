@@ -20,6 +20,7 @@ import { fetchLocations } from '@/app/controllers/Location';
 import { getEventInputLeaves, getEventInputUnavailabilities } from '@/app/controllers/Unavailabilities';
 import { useAuth } from '@/app/contexts/AuthContext';
 import Toast from '@/app/components/Toast';
+import Spinner from '@/app/components/Spinner';
 
 export default function EmployeeDashboardPage() {
   const modalContainer = useRef<HTMLDivElement>(null);
@@ -111,54 +112,42 @@ export default function EmployeeDashboardPage() {
           <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
           <div className='p-6 h-full flex flex-col'>
             
-            <h2 className="text-2xl mb-[30px]">Welcome, <span className="text-[color:var(--primary-color)] font-semibold">{(account?account.first_name:'')+ ' ' + (account?account.last_name:'')}</span></h2>
+            {account && <h2 className="text-2xl mb-[30px]">Welcome, <span className="text-[color:var(--primary-color)] font-semibold">{account.first_name+ ' ' + account.last_name}</span></h2>}
+           
+            {events.length === 0 ? <Spinner/> :
+            <>
+              <div className='flex justify-between items-end mb-4 md:mb-0 gap-5'>
+                <div className="flex flex-col items-start md:flex-row flex-wrap gap-3 ">
+                
+                  <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} className='md:rounded-b-none' initialSelectedItem='All locations'/>
 
-            <div className='flex justify-between items-end mb-4 md:mb-0 gap-5'>
-              <div className="flex flex-col items-start md:flex-row flex-wrap gap-3 ">
-              
-                <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} className='md:rounded-b-none' initialSelectedItem='All locations'/>
+                  <Dropdown items={['All shifts', ...Object.values(Status)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} className='md:rounded-b-none' initialSelectedItem='All shifts'/>
 
-                <Dropdown items={['All shifts', ...Object.values(Status)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} className='md:rounded-b-none' initialSelectedItem='All shifts'/>
+                  <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='md:rounded-b-none' custom customSelected={monthSelectedDropdown}>
+                    <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
 
-                <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='md:rounded-b-none' custom customSelected={monthSelectedDropdown}>
-                  <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
-
+                    
+                    <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)}/>
                   
-                  <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)}/>
-                
-                </Dropdown>
-              </div>
+                  </Dropdown>
+                </div>
 
+                
+                <div className='flex flex-col items-end md:items-center gap-2 md:flex-row md:gap-4 mt-3 md:mt-0'>
+                  <Checkbox checked={showUnavailability} onChange={setShowUnavailability} label='Show unavailability'/>
+
+                  <Button onClick={() => setOpenModal(true)} className='md:rounded-b-none md:rounded-t-md text-sm md:h-full p-3' fontSize='0.8em'>Add Leave</Button>
+                </div>
+                
+
+              </div>
               
-              <div className='flex flex-col items-end md:items-center gap-2 md:flex-row md:gap-4 mt-3 md:mt-0'>
-                <Checkbox checked={showUnavailability} onChange={setShowUnavailability} label='Show unavailability'/>
+              <Calendar key={isOverMd ? 'month' : 'list'}  events={events} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'}></Calendar>
 
-                <Button onClick={() => setOpenModal(true)} className='md:rounded-b-none md:rounded-t-md text-sm md:h-full p-3' fontSize='0.8em'>Add Leave</Button>
-              </div>
-              
-
-            </div>
-
-            {/* <Accordion text="Show color code info" className='md:hidden mt-3'>
-              <div className='flex flex-col gap-2 justify-start'>
-
-                { (Object.values(Status) as Status[]).map((item, index) => (
-                 <div key={index} className='flex gap-4 items-center'>
-                  <div className="rounded-md w-6 h-4" style={{backgroundColor: `${getStatusColor(item)}`}}></div>
-                  {item + " shift"}
-                 </div>
-                ))
-                }
-                
-                
-              </div>
-            </Accordion> */}
+              {openModal && modalContainer.current && createModal(ModalTypes.AddLeave, true, modalContainer.current, {recurrence: ''}, setOpenModal,undefined, undefined, displayToast)}
+              {/* The key 'recurrence' here plays an important role as it is used to check what type of details it sent, so either keep it or implement a safety measure to replace it*/}
             
-            
-            <Calendar key={isOverMd ? 'month' : 'list'}  events={events} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'}></Calendar>
-
-            {openModal && modalContainer.current && createModal(ModalTypes.AddLeave, true, modalContainer.current, {recurrence: ''}, setOpenModal,undefined, undefined, displayToast)}
-            {/* The key 'recurrence' here plays an important role as it is used to check what type of details it sent, so either keep it or implement a safety measure to replace it*/}
+            </>}
             
           </div>
         </div>

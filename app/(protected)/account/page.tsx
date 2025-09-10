@@ -1,20 +1,42 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Layout from "@/app/components/Layout";
 import Form from "@/app/components/Form";
 import Input from "@/app/components/Input";
 import Button, { Toggle } from "@/app/components/Button";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/contexts/AuthContext";
+import Spinner from "@/app/components/Spinner";
+import { updateUser, User } from "@/app/controllers/User";
+import Toast from "@/app/components/Toast";
 
 const AccountPage = () => {
   const modalContainer = useRef<HTMLDivElement>(null);
-  // Retrieve from db
-  const initialProfile = {
-    firstName: "Test",
-    lastName: "Testington",
-    email: "Test@example.com",
-    phone: "0123 456 789",
-    role: "Casual Instructor",
-  }
+  const router = useRouter();
+  const user = useAuth().user;
+  const[initialProfile, setInitialProfile] = useState({
+    firstName: '',
+    lastName:'',
+    email: '',
+    phone: '',
+  });
+
+  useEffect(()=>{
+    if (user){
+      setInitialProfile({
+        firstName: user?.first_name,
+        lastName: user?.last_name,
+        email: user?.email,
+        phone: user?.phone ?? "",
+      });
+      setProfile({
+        firstName: user?.first_name,
+        lastName: user?.last_name,
+        email: user?.email,
+        phone: user?.phone ?? "",
+      });;
+    }
+  }, [user])
 
   const [profile, setProfile] = useState(initialProfile);
 
@@ -39,10 +61,29 @@ const AccountPage = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // demo-only
-    // TODO: persist to Firebase here 
-    // Note: or can be saved through cookies
-    setIsEditing(false);
+    e.preventDefault();
+
+    if (initialProfile === profile){
+      setIsEditing(false);
+      return;
+    }
+
+    const updatedUser: User = {
+      id: user?.id ?? 0,
+      first_name: profile.firstName !== initialProfile.firstName ? profile.firstName : '',
+      last_name: profile.lastName !== initialProfile.lastName ? profile.lastName : '',
+      email: profile.email !== initialProfile.email ? profile.email : '',
+      phone: profile.phone !== initialProfile.phone ? profile.phone : '',
+      role: user?.role ?? 'user',
+    }
+    const res = await updateUser(updatedUser);
+    if (res){
+      displayToast("Succesfully updated user profile!", 'success');
+      setIsEditing(false);
+    }
+    else{
+      displayToast("Failed to update user profile!", 'error');
+    }
   };
 
   const handleCancel = () => {
@@ -50,14 +91,32 @@ const AccountPage = () => {
     setProfile(initialProfile);
   }
 
+  const [showToast, setToastShown] = useState(false);
+  const [message, setMessage] = useState("");
+  const [toastType, setToastType] = useState<"success"|"error">("success");
+
+  const displayToast = (message: string, toastType: "success"|"error") => {
+      setMessage(message);
+      setToastType(toastType);
+      setToastShown(true);
+  }
+
   return (
     <Layout modalContainer={modalContainer}>
       <div className="flex min-h-screen bg-gray-100">
+        <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
+        
         <main className="flex-1 p-6 md:p-10">
-          <h1 className="text-3xl font-bold mb-6 text-blue-900">Account</h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold text-blue-900 ">Account</h1>
+
+            {user?.role === 'admin' && <Button onClick={() => router.push("/user-management")} className="px-6 py-4">User Management</Button>}
+            
+          </div>
 
           {/* CARD */}
-          <div className="bg-white p-6 rounded-xl shadow">
+          {!user ? <Spinner /> :
+            <div className="bg-white p-6 rounded-xl shadow">
             {/* VIEW MODE */}
             {!isEditing && (
               <div className="flex flex-col gap-6">
@@ -80,10 +139,6 @@ const AccountPage = () => {
                   <div>
                     <div className="text-xs text-gray-500">Phone Number</div>
                     <div className="font-medium">{profile.phone}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-500">Role</div>
-                    <div className="font-medium">{profile.role}</div>
                   </div>
                 </div>
 
@@ -119,7 +174,7 @@ const AccountPage = () => {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button onClick={() => setIsEditing(true)} className="px-6">Edit profile & settings</Button>
+                  <Button onClick={() => setIsEditing(true)} className="px-6 py-4">Edit profile & settings</Button>
                 </div>
               </div>
             )}
@@ -137,8 +192,6 @@ const AccountPage = () => {
                          value={profile.email} onChange={handleChange} validateMode="onSubmit" />
                   <Input label="Phone Number" name="phone" type="tel" placeholder="04xx xxx xxx"
                          value={profile.phone} onChange={handleChange} />
-                  <Input label="Role" name="role" type="text" placeholder="Role"
-                         value={profile.role} onChange={handleChange} />
                 </div>
 
                 <div>
@@ -175,6 +228,8 @@ const AccountPage = () => {
               </Form>
             )}
           </div>
+          }
+          
         </main>
       </div>
     </Layout>

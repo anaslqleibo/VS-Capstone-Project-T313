@@ -77,12 +77,12 @@ export default function Sidebar({modalContainer} : PageProps){
           <Image src={logo} alt="2 Bent Rods logo" className="w-12 m-auto md:m-2 md:w-36" />
         </div>
 
-        {role === "staff" && <div className="p-2 hover:bg-[#1e2266] rounded-full md:flex items-center justify-center ml-auto mb-2 hidden" ref={toggleButtonRef} onClick={()=>{setOpen(true)}}>
+        {role === "user" && <div className="p-2 hover:bg-[#1e2266] rounded-full md:flex items-center justify-center ml-auto mb-2 hidden" ref={toggleButtonRef} onClick={()=>{setOpen(true)}}>
           <Image src={notification} alt="Notifications" className="w-6 object-contain" />
         </div>}
         
 
-        {open && modalContainer.current && role==="staff" && createModal(ModalTypes.Notifications, true, modalContainer.current, null, setOpen)}
+        {open && modalContainer.current && role==="user" && createModal(ModalTypes.Notifications, true, modalContainer.current, undefined, setOpen)}
         
         <nav className='relative hidden w-full md:flex flex-col items-center h-full [&>button]:w-full [&>button]:flex [&>button]:items-center [&>button]:p-[10px] [&>button]:text-white [&>button]:font-bold [&>button]:mb-[15px] [&>button]:rounded-[10px] [&>button]:transition-colors [&>button]:duration-200 [&>button]:hover:bg-[#1e2266] [&>button]:gap-5'>
           
@@ -97,7 +97,7 @@ export default function Sidebar({modalContainer} : PageProps){
         <div className={`fixed top-0 left-0 h-full w-fit max-w-[250px] z-50 p-2 bg-[color:var(--primary-color)] transform transition-transform duration-400 ease-in-out ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"} md:hidden`} ref={mobileMenuRef}>
         <Icon id="x" className="text-white float-end" width="2em" height="2em" onClick={()=>setIsMobileMenuOpen(false)}></Icon>
         <Image src={logo} alt="2 Bent Rods logo" className="w-36 m-auto my-7 clear-end"/>
-        {role === "staff" && <div className="w-12 h-12 hover:bg-[#1e2266] rounded-full md:flex items-center justify-center ml-auto mb-2 hidden" ref={toggleButtonRef} onClick={()=>{setOpen(true)}}>
+        {role === "user" && <div className="w-12 h-12 hover:bg-[#1e2266] rounded-full md:flex items-center justify-center ml-auto mb-2 hidden" ref={toggleButtonRef} onClick={()=>{setOpen(true)}}>
           <Image src={notification} alt="Notifications" className="w-6 object-contain" />
         </div>}
           <nav className='flex flex-col w-fit p-4 gap-4 md:hidden [&>button]:flex [&>button]:items-center [&>button]:gap-4 [&>button]:text-white [&>button]:font-semibold [&>button]:hover:bg-[#1e2266] [&>button]:p-2 [&>button]:rounded-md [&>button]:aria-[current]:bg-[color:var(--active-color)] items-stretch justify-center'>

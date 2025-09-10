@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     // Get user data from database
     const users = await executeQuery(
-      "SELECT id, first_name, last_name, email, role FROM users WHERE id = ?",
+      "SELECT id, first_name, last_name, phone, email, role FROM users WHERE id = ?",
       [payload.userId]
     ) as any[];
 
@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
+        phone: user.phone,
         role: user.role,
       }
     });

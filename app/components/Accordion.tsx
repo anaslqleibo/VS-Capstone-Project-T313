@@ -9,14 +9,14 @@ interface AccordionProps{
     componentClassName?: string;
     dropdownContainerLastName?: string;
     startOpen?: boolean;
-    preventResizeOtherElemenetsOnOpen?:boolean;
+    preventResizeOtherElementsOnOpen?:boolean;
 }
 
 export default function Accordion({text, dropdownContainerLastName, ...props}: AccordionProps){
     const [open, setOpen] = useState(props.startOpen??false);
     return (
         <div className={props.className}>
-            <div onClick={()=>setOpen((prev)=>!prev)} className={`border-b-1 border-[color:var(--primary-color)] text-[color:var(--primary-color)] font-semibold px-4 py-2 rounded-md flex items-center justify-between ${props.preventResizeOtherElemenetsOnOpen && (open ? "h-fit": "h-full")} ${props.componentClassName} `}>
+            <div onClick={()=>setOpen((prev)=>!prev)} className={`border-b-1 border-[color:var(--primary-color)] text-[color:var(--primary-color)] font-semibold px-4 py-2 rounded-md flex items-center justify-between ${props.preventResizeOtherElementsOnOpen && (open ? "h-fit": "h-full")} ${props.componentClassName} `}>
 
                 {text}
 

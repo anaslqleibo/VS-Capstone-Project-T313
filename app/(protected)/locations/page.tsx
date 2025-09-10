@@ -11,6 +11,7 @@ import Icon from '@/public/icons/Icons';
 import useIsOverMd from '@/app/components/utils/useIsOverMd';
 import Modal, { createModal } from '@/app/components/Modal';
 import AddressAutocomplete from '@/app/components/AddressAutocomplete';
+import Spinner from '@/app/components/Spinner';
 
 const LocationsPage = () => {
   const modalContainer = useRef<HTMLDivElement>(null);
@@ -103,11 +104,11 @@ const LocationsPage = () => {
 
       <InputIcon placeholder="Search locations..." type="search" icon="search" className='w-full mt-1 mb-4' value={search} onChange={(e)=>setSearch(e.target.value)}/>
   
-
+      {locations ? 
         <div className='h-full overflow-y-auto flex-1'>
           <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
             { locations && locations.map((loc) => (
-              <Accordion text={loc.name} key={loc.id} className='w-full h-full' componentClassName="w-full px-2 py-4 text-sm rounded-lg bg-gray-200 cursor-pointer ease-in duration-200 text-black hover:bg-[color:var(--hover-color)] hover:text-white gap-4" dropdownContainerLastName='text-sm -translate-y-1 bg-gray-100' preventResizeOtherElemenetsOnOpen={true}>
+              <Accordion text={loc.name} key={loc.id} className='w-full h-full' componentClassName="w-full px-2 py-4 text-sm rounded-lg bg-gray-200 cursor-pointer ease-in duration-200 text-black hover:bg-[color:var(--hover-color)] hover:text-white gap-4" dropdownContainerLastName='text-sm -translate-y-1 bg-gray-100'>
                 <div className='flex flex-col'>
                   <span><span className='font-semibold'>Address:</span> {loc.address}</span>
                   {loc.notes && <span><span className='font-semibold'>Notes:</span> {loc.notes}</span>}
@@ -117,7 +118,8 @@ const LocationsPage = () => {
 
             }
           </div>
-        </div>
+        </div>: <Spinner/>}
+        
 
         {openModal && modalContainer.current && 
         <Modal details={{}} startOpen={true} modalContainer={modalContainer.current} setParentOpen={setOpenModal} displayToast={displayToast} title='Add new location'>
