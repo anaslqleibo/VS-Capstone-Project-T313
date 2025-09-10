@@ -1,13 +1,13 @@
 import { ShiftStatus } from "@/app/controllers/Shifts";
 
 export enum Status {
-    Pending = 'Pending',
-    Unassigned = 'Unassigned',
     Accepted = 'Accepted',
-    Leave = 'Leave',
+    Pending = 'Pending',
+    DeclinedShift = 'Declined',
+    Unassigned = 'Unassigned',
     OpenShift = 'Open',
     Request = 'Request',
-    DeclinedShift = 'Declined',
+    Leave = 'Leave',
     Unavailable = 'Unavailable',
 }
 

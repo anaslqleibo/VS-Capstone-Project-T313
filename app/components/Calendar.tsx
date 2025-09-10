@@ -89,10 +89,11 @@ function constructEventsArray(events: EventInput[], role: Role) {
 
 function filterEventsArray(events: EventInput[], showSelectedFilter: CalendarFilter | AdminCalendarFilter) {
   return events.filter(e => {
-    const { status, location_name, assignee_name } = e.extendedProps || {};
+    const { status, type, location_name, assignee_name } = e.extendedProps || {};
     
     const matchStatus = showSelectedFilter.status.includes("All shifts") ||
-      showSelectedFilter.status.includes(status);
+      showSelectedFilter.status.includes(type==='leave'?'Leave':status);
+
     const matchLocation = showSelectedFilter.location.includes("All locations") || showSelectedFilter.location.includes(location_name);
 
     if (((showSelectedFilter as AdminCalendarFilter).employee)){

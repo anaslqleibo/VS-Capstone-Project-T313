@@ -119,11 +119,11 @@ export default function EmployeeDashboardPage() {
               <div className='flex justify-between items-end mb-4 md:mb-0 gap-5'>
                 <div className="flex flex-col items-start md:flex-row flex-wrap gap-3 ">
                 
-                  <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} className='md:rounded-b-none' initialSelectedItem='All locations'/>
+                  <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} className='md:rounded-b-none' initialSelectedItem='All locations min-w-32'/>
 
-                  <Dropdown items={['All shifts', ...Object.values(Status)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} className='md:rounded-b-none' initialSelectedItem='All shifts'/>
+                  <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-1)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} className='md:rounded-b-none min-w-32' initialSelectedItem='All shifts'/>
 
-                  <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='md:rounded-b-none' custom customSelected={monthSelectedDropdown}>
+                  <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='md:rounded-b-none min-w-32' custom customSelected={monthSelectedDropdown}>
                     <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
 
                     
@@ -134,7 +134,7 @@ export default function EmployeeDashboardPage() {
 
                 
                 <div className='flex flex-col items-end md:items-center gap-2 md:flex-row md:gap-4 mt-3 md:mt-0'>
-                  <Checkbox checked={showUnavailability} onChange={setShowUnavailability} label='Show unavailability'/>
+                  {/* <Checkbox checked={showUnavailability} onChange={setShowUnavailability} label='Show unavailability'/> */}
 
                   <Button onClick={() => setOpenModal(true)} className='md:rounded-b-none md:rounded-t-md text-sm md:h-full p-3' fontSize='0.8em'>Add Leave</Button>
                 </div>
