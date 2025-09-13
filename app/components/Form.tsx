@@ -1,6 +1,7 @@
 "use client";
-import { useState, cloneElement, isValidElement, Dispatch, SetStateAction } from "react";
+import { useState, cloneElement, isValidElement, Dispatch, SetStateAction, ReactNode, ReactElement } from "react";
 import { validateInput } from "./utils/validateInput";
+import React from "react";
 
 interface FormProps {
   children: React.ReactNode;
@@ -22,7 +23,7 @@ interface ValidatableProps {
 function Form({ children, onSubmit, scrollToError = true, className, showAllErrorOnToast=false, ...props } : FormProps) {
   const [errors, setErrors] = useState<{ [key: number]: string }>({});
   const [externalTrigger, setExternalTrigger] = useState(0);
-  const childArray = Array.isArray(children) ? children : [children];
+  const childArray : ReactNode[] = [];
 
   // Validate one child, returns error string or null
   const validateChild = (child : React.ReactNode) => {
@@ -82,18 +83,54 @@ function Form({ children, onSubmit, scrollToError = true, className, showAllErro
     // }
   };
 
-  const enhancedChildren = childArray.map((child, index) => {
-    if (!child || typeof child !== "object") return child;
+  function isInputLike(child: any): boolean {
+  if (!child || typeof child !== "object" || !("type" in child)) return false;
 
-    const error = errors[index] ?? null;
+  const type = child.type;
 
-    return cloneElement(child, {
-      key: index,
-      error,
-      "data-error-index": error ? index : undefined,
-      // externalTrigger: externalTrigger
+
+  // Custom components
+  const compName = type.displayName || type.name;
+  return ["Input", "Textarea", "Select"].includes(compName);
+}
+
+  function enhanceChildren(
+  children: ReactNode,
+  errors: Record<number, any>,
+  parentIndex: number | null = null
+  ): ReactNode {
+    return React.Children.map(children, (child, index) => {
+      if (!isValidElement(child)) return child;
+
+      const el = child as ReactElement<any>;
+      const currentIndex = parentIndex !== null ? parentIndex : index;
+
+      // Detect input-like components
+     
+      if (isInputLike(el)) {
+        childArray.push(el);
+        const error = errors[currentIndex] ?? null;
+        return cloneElement(el, {
+          key: currentIndex,
+          error,
+          "data-error-index": error ? currentIndex : undefined,
+          externalTrigger: externalTrigger
+        });
+      }
+
+      // Recurse into nested children if they exist
+      if (el.props.children) {
+        return cloneElement(el, {
+          key: currentIndex,
+          children: enhanceChildren(el.props.children, errors, currentIndex),
+        });
+      }
+
+      return el;
     });
-  });
+  }
+  const enhancedChildren = enhanceChildren(children, errors);
+
 
   return (
     <form onSubmit={handleSubmit} noValidate className={className}>
