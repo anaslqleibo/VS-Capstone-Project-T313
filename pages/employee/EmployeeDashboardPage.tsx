@@ -119,7 +119,7 @@ export default function EmployeeDashboardPage() {
               <div className='flex justify-between items-end mb-4 md:mb-0 gap-5'>
                 <div className="flex flex-col items-start md:flex-row flex-wrap gap-3 ">
                 
-                  <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} className='md:rounded-b-none' initialSelectedItem='All locations min-w-32'/>
+                  <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} className='md:rounded-b-none min-w-32' initialSelectedItem='All locations'/>
 
                   <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-1)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} className='md:rounded-b-none min-w-32' initialSelectedItem='All shifts'/>
 
@@ -127,7 +127,12 @@ export default function EmployeeDashboardPage() {
                     <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
 
                     
-                    <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)}/>
+                    <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)} className='' sx={{
+                      "& .MuiMonthCalendar-button.Mui-selected": {
+                        backgroundColor: "var(--primary-color)",
+                        color: "#fff",
+                      },
+                    }}/>
                   
                   </Dropdown>
                 </div>

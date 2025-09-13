@@ -7,7 +7,23 @@ export type User = {
     email: string;
     phone?: string;
     role: Role;
+
+    // Details field
+    preferred_name?:string;
+    gender?:string;
+    date_of_birth?:string;
+    address?:string;
+    emergency_person?:string;
+    emergency_contact?:string;
+    pay_rate_id?:string;
 };
+
+export type PayRate = {
+  id?: string;
+  job_title?: string;
+  day_type?: string;
+  amount?: number;
+}
 
 export async function fetchLoggedInAccount(){
   const res = await fetch(`/api/verify`);
@@ -39,6 +55,17 @@ export async function fetchAllEmployees() {
   }
   const data = await res.json();
   return data as User[];
+}
+
+
+export async function fetchPayRates(pay_rate_id: string) {
+  const res = await fetch('/api/payrates/'+pay_rate_id);
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch pay rates data');
+  }
+  const data = await res.json();
+  return data as PayRate[];
 }
 
 export async function updateUser(user: User) {

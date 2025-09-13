@@ -7,38 +7,37 @@ import Button, { Toggle } from "@/app/components/Button";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import Spinner from "@/app/components/Spinner";
-import { updateUser, User } from "@/app/controllers/User";
+import { fetchAccount, fetchPayRates, PayRate, updateUser, User } from "@/app/controllers/User";
 import Toast from "@/app/components/Toast";
+import dayjs from "dayjs";
 
 const AccountPage = () => {
   const modalContainer = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const user = useAuth().user;
-  const[initialProfile, setInitialProfile] = useState({
-    firstName: '',
-    lastName:'',
-    email: '',
-    phone: '',
-  });
+  const [initialProfile, setInitialProfile] = useState<Partial<User>>({});
+  const [profile, setProfile] = useState<Partial<User>>({});
+  const [payRate, setPayRate] = useState<PayRate[]>([]);
 
   useEffect(()=>{
-    if (user){
-      setInitialProfile({
-        firstName: user?.first_name,
-        lastName: user?.last_name,
-        email: user?.email,
-        phone: user?.phone ?? "",
-      });
-      setProfile({
-        firstName: user?.first_name,
-        lastName: user?.last_name,
-        email: user?.email,
-        phone: user?.phone ?? "",
-      });;
+    const fetchAccountDetails = async () => {
+      if (user){
+        const completeUser = await fetchAccount(user.id.toString());
+        setInitialProfile(completeUser);
+        setProfile(completeUser);
+
+        if (completeUser.pay_rate_id){
+          const payRate = await fetchPayRates(completeUser.pay_rate_id);
+          setPayRate(payRate);
+        }
+        
+      }
     }
+    fetchAccountDetails();  
+    
   }, [user])
 
-  const [profile, setProfile] = useState(initialProfile);
+  
 
   // Retrieve from db
   const initialSettings = {
@@ -63,16 +62,16 @@ const AccountPage = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (initialProfile === profile){
+    if (!profile || !initialProfile || initialProfile === profile ){
       setIsEditing(false);
       return;
     }
 
     const updatedUser: User = {
       id: user?.id ?? 0,
-      first_name: profile.firstName !== initialProfile.firstName ? profile.firstName : '',
-      last_name: profile.lastName !== initialProfile.lastName ? profile.lastName : '',
-      email: profile.email !== initialProfile.email ? profile.email : '',
+      first_name: profile.first_name !== initialProfile.first_name && profile.first_name ? profile.first_name : '',
+      last_name: profile.last_name !== initialProfile.last_name && profile.last_name ? profile.last_name : '',
+      email: profile.email !== initialProfile.email && profile.email ? profile.email : '',
       phone: profile.phone !== initialProfile.phone ? profile.phone : '',
       role: user?.role ?? 'user',
     }
@@ -103,10 +102,10 @@ const AccountPage = () => {
 
   return (
     <Layout modalContainer={modalContainer}>
-      <div className="flex min-h-screen bg-gray-100">
+      <div className="flex h-full bg-gray-100">
         <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
         
-        <main className="flex-1 p-6 md:p-10">
+        <main className="flex-1 p-6 md:p-10 overflow-y-auto">
           <div className="flex items-center justify-between mb-6">
             <h1 className="text-3xl font-bold text-blue-900 ">Account</h1>
 
@@ -115,31 +114,71 @@ const AccountPage = () => {
           </div>
 
           {/* CARD */}
-          {!user ? <Spinner /> :
+          {!profile ? <Spinner /> :
             <div className="bg-white p-6 rounded-xl shadow">
             {/* VIEW MODE */}
             {!isEditing && (
               <div className="flex flex-col gap-6">
-                <h2 className="text-xl font-semibold text-center">Profile</h2>
+                <h2 className="text-xl font-semibold">Personal Details</h2>
 
                 {/* key/value grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                <div className="flex flex-col md:flex-row gap-16 bg-gray-100 p-4 rounded-md -mt-2 ease-in-out duration-400 hover:bg-[color:#dce6fc]">
                   <div>
-                    <div className="text-xs text-gray-500">First Name</div>
-                    <div className="font-medium">{profile.firstName}</div>
+                    <div className="text-xs text-gray-500">Name</div>
+                    <div className="font-medium">{profile&&profile.first_name&& profile.last_name&& (profile.first_name + ' ' + profile.last_name)}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500">Last Name</div>
-                    <div className="font-medium">{profile.lastName}</div>
+                    <div className="text-xs text-gray-500">Preferred Name</div>
+                    <div className="font-medium">{profile && profile.preferred_name}</div>
                   </div>
+                  <div>
+                    <div className="text-xs text-gray-500">Gender</div>
+                    <div className="font-medium">{profile && profile.gender}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">Date of birth</div>
+                    <div className="font-medium">{profile && profile.date_of_birth && (profile.date_of_birth + ` (${dayjs().year()-Number(profile.date_of_birth?.split('/')[2])} years old)`)}</div>
+                  </div>
+                </div>
+
+                <h2 className="text-xl font-semibold">Contact</h2>
+
+                {/* key/value grid */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-4 bg-gray-100 p-4 rounded-md -mt-2 ease-in-out duration-400 hover:bg-[color:#dce6fc]">
                   <div>
                     <div className="text-xs text-gray-500">Email</div>
                     <div className="font-medium">{profile.email}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-500">Phone Number</div>
+                    <div className="text-xs text-gray-500">Mobile</div>
                     <div className="font-medium">{profile.phone}</div>
                   </div>
+                  <div>
+                    <div className="text-xs text-gray-500">Address</div>
+                    <div className="font-medium">{profile.address}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">Emergency contact</div>
+                    <div className="font-medium">{profile.emergency_person}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">Contact details</div>
+                    <div className="font-medium">{profile.emergency_contact}</div>
+                  </div>
+                </div>
+
+                <h2 className="text-xl font-semibold">Pay Details</h2>
+                {payRate && <h5 className="font-semibold text-sm -mt-4"><span className="text-xs text-gray-500">Active job title:</span> {(payRate[0] && 'job_title' in payRate[0]) ? payRate[0].job_title : "-"}</h5>}
+
+                {/* key/value grid */}
+                <div className="flex flex-col md:flex-row gap-16 bg-gray-100 p-4 rounded-md -mt-4 ease-in-out duration-400 hover:bg-[color:#dce6fc]">
+                  
+                  {payRate.length>0 ? payRate.map((rate, index) => (
+                    <div key={index}>
+                      <div className="text-xs text-gray-500">{rate.day_type}</div>
+                      <div className="font-medium">${(rate.amount?.toPrecision(4))}</div>
+                    </div>
+                  )): "Your pay rates has not been setup by the admin."}
                 </div>
 
                 {/* Settings summary */}
@@ -184,14 +223,14 @@ const AccountPage = () => {
               <Form onSubmit={handleSubmit} className="flex flex-col gap-6">
                 <h2 className="text-xl font-semibold text-center">Edit Profile</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input label="First Name" name="firstName" type="text" placeholder="First name"
-                         value={profile.firstName} onChange={handleChange} />
-                  <Input label="Last Name"  name="lastName"  type="text" placeholder="Last name"
-                         value={profile.lastName}  onChange={handleChange} />
+                  <Input label="First Name" name="first_name" type="text" placeholder="First name"
+                         value={profile ? profile.first_name : undefined} onChange={handleChange} />
+                  <Input label="Last Name"  name="last_name"  type="text" placeholder="Last name"
+                         value={profile ? profile.last_name : undefined}  onChange={handleChange} />
                   <Input label="Email" name="email" type="email" placeholder="email@company.com"
-                         value={profile.email} onChange={handleChange} validateMode="onSubmit" />
+                         value={profile ? profile.email : undefined} onChange={handleChange} validateMode="onSubmit" />
                   <Input label="Phone Number" name="phone" type="tel" placeholder="04xx xxx xxx"
-                         value={profile.phone} onChange={handleChange} />
+                         value={profile ? profile.phone : undefined} onChange={handleChange} />
                 </div>
 
                 <div>
