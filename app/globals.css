@@ -1,51 +1,76 @@
 @import "tailwindcss";
+@theme{
+  --color-unpublished: #B19F90;
 
-:root {
-  
-}
+  --color-primary: #2D3AA0;
+  --color-secondary: #3259AD;
+  --color-active: #26307F;
+  --color-hover: #6591f0;
+  --color-secondary-hover: #577DCE;
 
-@theme {
-  --primary-color: #2D3AA0;
-  --primary-color-rgb: 45, 58, 160;
+  --color-text: #f4f4f4;
 
-  --secondary-color: #3259AD;
-  --secondary-color-rgb: 50, 89, 173;
+  --color-dark-grey: #676767;
+  --color-light-grey: #c0c0c0;
 
-  --active-color: #26307F;
-  --active-color-rgb: 38, 48, 127;
+  --color-active-light: #e2e9f5;
 
-  --hover-color: #6591f0;
-  --hover-color-rgb: 101, 145, 240;
+  --color-warning: #FF7A45;
+  --color-danger: #FF4545;
+  --color-danger-hover: #cc3737;
 
-  --secondary-hover-color: #577DCE;
-  --secondary-hover-color-rgb: 87, 125, 206;
-
-  --text-color: #f4f4f4;
-  --text-color-rgb: 244, 244, 244;
-
-  --dark-grey: #676767;
-  --dark-grey-rgb: 103, 103, 103;
-
-  --light-grey: #c0c0c0;
-  --light-grey-rgb: 192, 192, 192;
-
-  --active-light-color: #e2e9f5;
-  --active-light-color-rgb: 226, 233, 245;
-
-  --warning-color: #FF7A45;
-  --warning-color-rgb: 255, 122, 69;
-
-  --danger-color: #FF4545;
-  --danger-color-hover: #cc3737;
-  --danger-color-rgb: 255, 69, 69;
-
-  --success-color: #41ba68;
-  --success-color-hover: #369a56;
-  --success-color-rgb: 65, 186, 104;
+  --color-success: #41ba68;
+  --color-success-hover: #369a56;
 
   --font-display: "Inter", "sans-serif";
 }
 
+@layer base {
+  :root {
+    --unpublished-color: #B19F90;
+    --unpublished-color: 177, 159, 144;
+    
+    --primary-color: #2D3AA0;
+    --primary-color-rgb: 45, 58, 160;
+
+    --secondary-color: #3259AD;
+    --secondary-color-rgb: 50, 89, 173;
+
+    --active-color: #26307F;
+    --active-color-rgb: 38, 48, 127;
+
+    --hover-color: #6591f0;
+    --hover-color-rgb: 101, 145, 240;
+
+    --secondary-hover-color: #577DCE;
+    --secondary-hover-color-rgb: 87, 125, 206;
+
+    --text-color: #f4f4f4;
+    --text-color-rgb: 244, 244, 244;
+
+    --dark-grey: #676767;
+    --dark-grey-rgb: 103, 103, 103;
+
+    --light-grey: #c0c0c0;
+    --light-grey-rgb: 192, 192, 192;
+
+    --active-light-color: #e2e9f5;
+    --active-light-color-rgb: 226, 233, 245;
+
+    --warning-color: #FF7A45;
+    --warning-color-rgb: 255, 122, 69;
+
+    --danger-color: #FF4545;
+    --danger-color-hover: #cc3737;
+    --danger-color-rgb: 255, 69, 69;
+
+    --success-color: #41ba68;
+    --success-color-hover: #369a56;
+    --success-color-rgb: 65, 186, 104;
+
+    --font-display: "Inter", "sans-serif";
+  }
+}
 
 /* === GENERAL STYLES === */
 body {

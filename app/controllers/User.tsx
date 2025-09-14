@@ -19,10 +19,13 @@ export type User = {
 };
 
 export type PayRate = {
-  id?: string;
-  job_title?: string;
-  day_type?: string;
-  amount?: number;
+  id: string;
+  job_title: string;
+  day_type: string;
+  amount: number;
+  age_group: string;
+  level: number;
+  specialty?:string;
 }
 
 export async function fetchLoggedInAccount(){
@@ -73,12 +76,27 @@ export async function updateUser(user: User) {
     const res = await fetch(`/api/users/${user.id}`,  {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ first_name: user.first_name===''?undefined:user.first_name, last_name: user.last_name===''?undefined:user.last_name, email: user.email===''?undefined:user.email, phone: user.phone===''?undefined:user.phone }),
+      body: JSON.stringify(user),
     });
 
     return res.ok;
   } catch (err) {
     console.error('Failed to update shift status:', err);
+    return false;
+  }
+}
+
+export async function updatePassword(user_id: string, password: string) {
+  try{
+    const res = await fetch(`/api/users/${user_id}/password`,  {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({password}),
+    });
+
+    return res.ok;
+  } catch (err) {
+    console.error('Failed to update user password:', err);
     return false;
   }
 }

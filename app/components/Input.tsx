@@ -3,6 +3,8 @@ import { useRef, useState, useEffect, SetStateAction, Dispatch } from "react";
 import Icon from '@/public/icons/Icons';
 import { validateInput } from './utils/validateInput';
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { DatePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
 
 interface InputIconProps{
   type: string;
@@ -106,21 +108,27 @@ function Input({
   const isPassword = type === "password";
   const inputType = isPassword ? (isPasswordShown ? "text" : "password") : type;
 
-  const handleChange = (e : React.ChangeEvent<HTMLTextAreaElement> | React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
+  const handleChange = (e : React.ChangeEvent<HTMLTextAreaElement> | React.ChangeEvent<HTMLInputElement> | string) => {
+    if (typeof e !== "string"){
+      const newValue = e.target.value;
 
-    if (!isControlled) {
-      setInternalValue(newValue);
+      if (!isControlled) {
+        setInternalValue(newValue);
+      }
+
+      onChange?.(e); // call parent handler if present
+
+      if (validateMode === "onChange" && !touched) {
+        setTouched(true);
+      }
+
+      if (validateMode === "onChange") {
+        runValidation(newValue);
+      }
     }
-
-    onChange?.(e); // call parent handler if present
-
-    if (validateMode === "onChange" && !touched) {
-      setTouched(true);
-    }
-
-    if (validateMode === "onChange") {
-      runValidation(newValue);
+    else{
+      const event = {target: {name, value: e}}; 
+      onChange?.(event);
     }
   };
 
@@ -175,6 +183,38 @@ function Input({
 
   const Text = (
   <div className="relative">
+    {type === "date" ? 
+    <DatePicker format="DD-MM-YYYY" className="w-full" name={name} value={controlled ? dayjs(value) : dayjs(internalValue)} 
+    onChange={(e) => {
+      handleChange(e?.format("DD-MM-YYYY")??'');
+    }}
+    onOpen={() => {
+      if (validateMode === "onBlur") {
+        setTouched(true);
+        runValidation();
+      }
+    }}
+     slotProps={{
+      textField: {
+        variant: "standard",
+        InputProps: {
+          disableUnderline: true,
+          className: `w-full rounded-md border-[1.5px] text-sm !outline-none 
+            border-dark-grey transition-colors
+            hover:border-hover hover:border-[1.5px] 
+            focus:border-primary`,
+          sx: {
+            "& .MuiPickersSectionList-root": {
+              px: "0.5rem",        
+              py: "0.5rem",         
+              fontSize: "0.875rem"
+            },
+          },
+        },
+      }
+    }}/>
+                      :
+    <>
     <input id={id || name} name={name} type={inputType} required={required} ref={internalRef}
           value={controlled ? value : internalValue}
           onChange={(e) => {
@@ -201,6 +241,9 @@ function Input({
         {props.allowViewPassword &&
           (isPasswordShown ? <FaEyeSlash className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-[color:var(--primary-color)]" onClick={()=>{setPasswordShown(false)}}/> : <FaEye className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-[color:var(--primary-color)]" onClick={()=>{setPasswordShown(true)} }/>)
         }
+        </>
+    }
+    
         
   </div>
   
@@ -208,7 +251,7 @@ function Input({
 
   
   return (
-    <div className={`flex flex-col gap-1 group ${props.containerClassName?props.containerClassName:""} ${props.arrow && "flex-row items-center"}`}>
+    <div className={`flex flex-col gap-1 group ${props.containerClassName?props.containerClassName:""} ${props.arrow ? "flex-row items-center":""}`}>
       {label && (
         <label htmlFor={id || name} className={`text-sm font-medium text-left group-has-focus:text-[color:var(--primary-color)] ${required && "after:ml-0.5 after:text-red-500 after:content-['*']"}`}>
           {label}

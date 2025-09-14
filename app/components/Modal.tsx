@@ -314,10 +314,10 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
       
         return (
            <div className="flex flex-col gap-4 mt-4">
-            <div className="flex flex-wrap items-center gap-2">
+            {/* <div className="flex flex-wrap items-center gap-2">
                 <Button type='selectable' fontSize="0.8em" startActive={castedFormValues.unavailability?!castedFormValues.unavailability:true} onToggleClick={onToggleLeave}>Leave</Button>
                 <Button type='selectable' fontSize="0.8em" startActive={castedFormValues.unavailability??false} onToggleClick={onToggleUnavail}>Unavailability</Button>
-            </div>
+            </div> */}
             
 
             {castedFormValues.unavailability && <div className="flex items-center gap-2">

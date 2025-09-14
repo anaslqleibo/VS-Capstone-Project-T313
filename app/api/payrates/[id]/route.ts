@@ -6,7 +6,7 @@ export async function GET(request: Request, { params }: { params: { id: string }
   try {
     const { id } = await params;
 
-    const payrates = await executeQuery(`SELECT id, job_title, day_type, amount FROM pay_rates WHERE id = ?`, [id]);
+    const payrates = await executeQuery(`SELECT id, job_title, age_group, level, specialty, day_type, amount FROM pay_rates WHERE id = ?`, [id]);
 
     if (!payrates || (Array.isArray(payrates) && payrates.length === 0)) {
       return NextResponse.json(
