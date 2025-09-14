@@ -15,7 +15,7 @@ export default function Checkbox({ label, checked, onChange, className }: Checkb
           type="checkbox"
           checked={checked}
           onChange={(e)=>onChange(e.target.checked)}
-          className="form-checkbox h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          className="form-checkbox h-4 w-4 text-[color:var(--primary-color)] border-gray-300 rounded focus:ring-blue-500 accent-[color:var(--primary-color)]"
         />
         <span className="text-gray-700">{label}</span>
       </label>

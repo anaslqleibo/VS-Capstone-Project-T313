@@ -4,24 +4,21 @@ import { executeQuery } from "@/app/lib/db";
 export async function PATCH(req: Request, {params}: { params: {id: string}}) {
   try {
     const { id } = await params;
-    const body = await req.json();
-    const { status } = body;
-
-    if (!status) {
+    if ( !id) {
       return NextResponse.json(
-        { error: "Status is required" },
+        { error: "Shift id not provided" },
         { status: 400 }
       );
     }
     
     const result = await executeQuery(
-      `UPDATE shifts SET status = ? WHERE id = ?`,
-      [status, id]
+      `UPDATE shifts SET published = 1 WHERE id = ?`,
+      [id]
     ) as any;
 
     if (result.affectedRows === 0) {
       return NextResponse.json(
-        { error: "Shift not found or not owned by user" },
+        { error: "Shift not found" },
         { status: 404 }
       );
     }

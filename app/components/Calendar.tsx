@@ -38,6 +38,7 @@ interface CalendarProps{
     modalContainer: React.RefObject<HTMLDivElement|null>;
     rootRef ?: RefObject<ReturnType<typeof createRoot> | null>;
     hideHeader?: boolean;
+    updateEventData?:(event:EventInput, mode:string)=>void;
     // onClicks ?: ((...e:any) => void)[];
 }
 
@@ -45,13 +46,14 @@ function constructEventsArray(events: EventInput[], role: Role) {
   const newEvents: EventInput[] = [];
   
   events.forEach(e => {
-    const { status, type, assignee_id, assignee_name, date, start_time, end_time, time, location_id, location_name, address, notes, repeat} = e.extendedProps || {};
+    const { status, original_status, type, assignee_id, assignee_name, date, start_time, end_time, time, location_id, location_name, address, notes, repeat, published} = e.extendedProps || {};
 
     const shiftExtProps : ShiftExtendedProps = {
         id: e.id,
         assignee_id,
         assignee_name,
         status,
+        original_status,
         type,
         date,
         start_time,
@@ -61,6 +63,7 @@ function constructEventsArray(events: EventInput[], role: Role) {
         location_name,
         address,
         notes,
+        published,
         day:repeat,
         recurrence:repeat
     }
@@ -75,7 +78,7 @@ function constructEventsArray(events: EventInput[], role: Role) {
         startRecur: e.startRecur ?? undefined,
         endRecur: e.endRecur ?? undefined,
         rrule: e.rrule ?? undefined,
-        backgroundColor: getStatusColor(type === "leave" && status === Status.Accepted ? Status.Leave : status),
+        backgroundColor: getStatusColor(type === "leave" && status === Status.Accepted ? Status.Leave : (!published && type=="shift" ?  Status.Unpublished :  status)),
         display: 'block',
         textColor: e.textColor ?? "#FFFFFF",
         extendedProps: shiftExtProps
@@ -106,7 +109,7 @@ function filterEventsArray(events: EventInput[], showSelectedFilter: CalendarFil
   });
 }
 
-export function Calendar({initialView = "dayGridMonth", selectable = true, events, showSelectedFilter, modalContainer, hideHeader=false, ...props} : CalendarProps){
+export function Calendar({initialView = "dayGridMonth", selectable = true, events, showSelectedFilter, modalContainer, hideHeader=false, updateEventData, ...props} : CalendarProps){
     const role : Role = useAuth().user?.role || 'user';
 
     const initialEvents = useMemo(() => constructEventsArray(events, role), [events, role]);
@@ -124,10 +127,11 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
     }, [events, role]);
 
     const updateEvent: setEventType = (event, mode="update") => {
+        let updatedEvent = event;
+
         if (mode==='create'){
             setOriginalEvents(prev => [event, ...prev]);
             setEvents(prev => [event, ...prev]);
-        
         }
         else if (mode==='delete'){
             setOriginalEvents(prev => prev.filter(e => e.id !== event.id ));
@@ -137,6 +141,8 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
             if (event.extendedProps){
                 const start = event.extendedProps.date+'T'+event.extendedProps.start_time;
                 const end = event.extendedProps.date+'T'+event.extendedProps.end_time;
+                
+                updatedEvent = {...event, start: start?start:event.start, end: end?end:event.end};
 
                 setOriginalEvents(prev =>
                     prev.map(e => e.id === event.id ? {...event, start: start?start:event.start, end: end?end:event.end} : e)
@@ -156,6 +162,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
             );
         }
         
+        updateEventData?.(updatedEvent, mode);
     }
 
     const [activeModal, setActiveModal] = useState<{
@@ -209,8 +216,11 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
             const parentDiv = document.createElement('div');
             parentDiv.className =  `w-full rounded md:size-full h-full flex items-stretch`;
 
-            const statusColor = getStatusColor(arg.event.extendedProps.status, false);
-            parentDiv.style.boxShadow = `0 4px 6px -1px rgba(${statusColor}, 0.2), 0 2px 4px -2px rgba(${statusColor}, 0.2)`;
+            if (arg.event.extendedProps.status !== Status.Unpublished){
+                const statusColor = getStatusColor(arg.event.extendedProps.status, false);
+                parentDiv.style.boxShadow = `0 4px 6px 1px rgba(${statusColor}, 0.3)`;
+            }
+            
 
             if (initialView === 'listMonth'){
                 const statusIndicator = document.createElement('div');

@@ -51,33 +51,33 @@ export async function checkAvailability(user_id: number, date: string, start_tim
 }
 
 export function getEventInputLeaves(user_id: number){
-  const shifts = fetchLeaves(user_id).then((unavailabilities) => {
-    return unavailabilities.map((unavailability) => {
-      const recurrence = unavailability.recurrence?.toLowerCase() || "never";
+  const shifts = fetchLeaves(user_id).then((leaves) => {
+    return leaves.map((leave) => {
+      const recurrence = leave.recurrence?.toLowerCase() || "never";
       let rrule: any = null;
 
       switch (recurrence) {
         case "daily":
           rrule = {
             freq: "daily",
-            dtstart: unavailability.date,  
-            until: unavailability.end_date, 
+            dtstart: leave.date,  
+            until: leave.end_date, 
           };
           break;
 
         case "weekly":
           rrule = {
             freq: "weekly",
-            dtstart: unavailability.date,
-            until: unavailability.end_date,
+            dtstart: leave.date,
+            until: leave.end_date,
           };
           break;
 
         case "monthly":
           rrule = {
             freq: "monthly",
-            dtstart: unavailability.date,
-            until: unavailability.end_date,
+            dtstart: leave.date,
+            until: leave.end_date,
           };
           break;
 
@@ -88,23 +88,23 @@ export function getEventInputLeaves(user_id: number){
 
       
       return {
-      id: unavailability.id,
-      start: unavailability.date,
-      end: unavailability.end_date,
+      id: leave.id,
+      start: leave.date,
+      end: leave.end_date,
       rrule,
       allDay: true,
       extendedProps: {
-        assignee_id: unavailability.assignee_id,
-        status: stringToStatus(unavailability.status),
-        type: unavailability.type,
-        date: unavailability.date.split('T')[0],
-        start_time: unavailability.start_time.slice(0, 5),
-        end_time: unavailability.end_time.slice(0, 5),
-        time: `${unavailability.start_time.slice(0, 5)}–${unavailability.end_time.slice(0, 5)}`,
-        assignee_name: unavailability.employee,
+        assignee_id: leave.assignee_id,
+        status: leave.status === "Accepted" ? Status.Leave : stringToStatus(leave.status),
+        type: leave.type,
+        date: leave.date.split('T')[0],
+        start_time: leave.start_time.slice(0, 5),
+        end_time: leave.end_time.slice(0, 5),
+        time: `${leave.start_time.slice(0, 5)}–${leave.end_time.slice(0, 5)}`,
+        assignee_name: leave.employee,
         repeat: recurrence.charAt(0).toUpperCase() + recurrence.slice(1).toLowerCase()
       },
-      color: getStatusColor(stringToStatus(unavailability.status)),
+      color: getStatusColor(stringToStatus(leave.status)),
     } as EventInput});
   });
   return shifts;

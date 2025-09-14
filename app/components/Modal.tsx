@@ -11,7 +11,7 @@ import { createNotifications } from "./utils/notification";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import Dropdown, { DayPicker, LocationDropdownWithAddress } from "./Dropdown";
 import { EventInput } from "@fullcalendar/core";
-import { buildShiftEventTitle, deleteShift, Shift, updateShift, updateShiftStatus } from "../controllers/Shifts";
+import { buildShiftEventTitle, deleteShift, publishShift, Shift, updateShift, updateShiftStatus } from "../controllers/Shifts";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { FaBell, FaEdit, FaRegBell, FaSave, FaTrash } from "react-icons/fa";
 import Input from "./Input";
@@ -39,6 +39,7 @@ export enum ModalTypes{
     UnassignedShiftDetails = "Unassigned shift details",
     AddShift = "Add shift",
     AddLeave = "Add leave",
+    UnpublishedShiftDetails = "Unpublished shift details",
     Notifications="Notifications",
 }
 
@@ -65,6 +66,8 @@ export function getModalTypesByStatus(status:Status, type:EventTypes="shift"){
             return ModalTypes.DeclinedDetails;
         case Status.Unavailable:
             return ModalTypes.UnavailabilityDetails;
+        case Status.Unpublished:
+            return ModalTypes.UnpublishedShiftDetails;
         default:
             return null;
     }
@@ -90,6 +93,7 @@ export type ShiftExtendedProps = {
     assignee_id: string;
     assignee_name?: string;
     status: Status;
+    original_status: Status;
     type: string;
     date: string;
     time: string;
@@ -99,6 +103,7 @@ export type ShiftExtendedProps = {
     location_id: string;
     address: string;
     notes: string;
+    published?: boolean;
     day?: string;
     recurrence?: string;
 }
@@ -143,7 +148,7 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
 
     const handleSave = async () => {
         if (castedFormValues){
-            if (castedFormValues === initialDetails){
+            if (castedFormValues.date === initialDetails?.date && castedFormValues.time === initialDetails.time && castedFormValues.location_id === initialDetails.location_id && castedFormValues.address === initialDetails.address && castedFormValues.status === initialDetails.status && castedFormValues.assignee_id === initialDetails.assignee_id && castedFormValues.notes === initialDetails.notes){
                 if (setEditing) setEditing(false);
                 return;
             }
@@ -191,7 +196,7 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
         </div>
     </div>
     
-    {employee ? <p className="text-sm font-semibold text-gray-600 mt-1">Employee: <span className="text-[color:var(--secondary-color)] font-normal"> {employee}</span></p> : ""}    
+    {employee ? <p className="text-sm font-semibold text-gray-600 mt-2">Employee: <span className="text-[color:var(--secondary-color)] font-normal"> {employee}</span></p> : ""}    
 
 
     </>);
@@ -213,7 +218,7 @@ function createDetailEditor(label: string, field: keyof ShiftExtendedProps, deta
     if (castedFormValues === -1) return;
 
     if (type === "textarea")
-        return (<><p className="text-sm font-semibold text-gray-600 mt-1 mb-1">{label}</p>
+        return (<><p className="text-sm font-semibold text-gray-600 mt-2 mb-1">{label}</p>
     <textarea readOnly={!isEditing} className="text-gray-500 font-normal text-sm border-2 border-gray-500 bg-gray-100 rounded-md min-w-full p-2 min-h-[72px] resize-none focus:outline-0" value={castedFormValues.notes} onChange={(e)=>handleChange!("notes", e.target.value)}></textarea></>);
     else{
         if (isEditing){
@@ -233,10 +238,10 @@ function createDetailEditor(label: string, field: keyof ShiftExtendedProps, deta
             }
             else if (label.toLowerCase().includes('location')){
                 return (
-                <div className="flex items-center gap-2 text-sm mt-2 w-full">
-                    <div className="font-semibold text-gray-600">
-                        <div>Location:</div><br/>
-                        <div>Address:</div>
+                <div className="flex items-stretch gap-2 text-sm mt-3 w-full h-fit">
+                    <div className="font-semibold text-gray-600 flex flex-col justify-center gap-3">
+                        <div className="flex items-center py-2">Location:</div>
+                        <div className="flex items-center py-2">Address:</div>
                     </div>
                     
                     <LocationDropdownWithAddress detail={detail} setUpdatedLocation={handleChange}/>
@@ -252,7 +257,7 @@ function createDetailEditor(label: string, field: keyof ShiftExtendedProps, deta
             if (label.startsWith("Address")) return;
 
             return (
-                <div className="flex items-center gap-2 text-sm mt-2 w-full">
+                <div className="flex items-center gap-2 text-sm mt-3 w-full">
                     <div className="font-semibold text-gray-600">
                         {label}
                     </div>
@@ -263,7 +268,7 @@ function createDetailEditor(label: string, field: keyof ShiftExtendedProps, deta
             );
         }
         else 
-            return (<p className="text-sm font-semibold text-gray-600 mt-1">{label}
+            return (<p className="text-sm font-semibold text-gray-600 mt-2">{label}
     <span className="text-[color:var(--secondary-color)] font-normal">{detail}</span></p>);
     }
 }
@@ -485,7 +490,7 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
     {
         const handleAssign = () => {};
         const handlePickup = async () => {
-            const result = await updateShiftStatus(event?.extendedProps?.id as string, event?.extendedProps?.assignee_id as string, Status.Accepted);
+            const result = await updateShiftStatus(event?.extendedProps?.id as string, Status.Accepted);
             
             if (result){
                 if (event) {
@@ -596,7 +601,7 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
     else if (type === ModalTypes.PendingDetails)
     {
         const handleAccept = async () => {
-            const result = await updateShiftStatus(event?.extendedProps?.id as string,event?.extendedProps?.assignee_id as string, Status.Accepted);
+            const result = await updateShiftStatus(event?.extendedProps?.id as string, Status.Accepted);
 
             if (result){
                 if (event) {
@@ -623,7 +628,7 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         }
         const handleDecline = async () => {
             const confirmation = window.confirm("This action cannot be undone. Are you sure you want to decline this shift?");
-            const result = await updateShiftStatus(event?.extendedProps?.id as string,event?.extendedProps?.assignee_id as string, Status.DeclinedShift);;
+            const result = await updateShiftStatus(event?.extendedProps?.id as string, Status.DeclinedShift);;
 
             if (!confirmation) return;
 
@@ -664,7 +669,42 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
             buttons = <Button fontSize="0.8em" onClick={onView}>Reassign</Button>
         else buttons = <Button fontSize="0.8em" onClick={onView}>Mark as viewed</Button>
     }
-    
+    else if (type === ModalTypes.UnpublishedShiftDetails)
+    {
+        const handlePublish = async () => {
+            const result = await publishShift(event?.extendedProps?.id as string);
+            
+            if (result){
+                if (event) {
+                    const updatedEvent = {
+                        ...event,
+                        extendedProps: {
+                            ...event.extendedProps,
+                            published: true,
+                            status: event.extendedProps?.original_status
+                        },
+                        title: buildShiftEventTitle(event.extendedProps?.original_status, event.extendedProps?.time, event.extendedProps?.location_name),
+                        backgroundColor: getStatusColor(event.extendedProps?.original_status)
+                    };
+
+                    setEvents!(updatedEvent, "update");
+
+                    closeModal!();
+                    displayToast!(`Published shift at ${event.extendedProps?.location_name}, ${event.extendedProps?.time} successfully!`, 'success');
+                }
+            }
+            else{
+                displayToast!('Failed to publish shift!', 'error');
+            }
+            
+        }
+
+        if (isAdmin){
+            buttons = (<>
+        <Button type="cta" fontSize="0.8em" onClick={handlePublish}>Publish</Button>
+        </>);
+        }
+    }
     return buttons;
 }
 
@@ -746,7 +786,6 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                     
                 </div>
                 
-
                 {type && details && type !== ModalTypes.Notifications && createDetails(type, details, admin, props.setEvents, props.event, props.displayToast, closeModal, isEditing, setEditing, formValues, handleChange, "location_id" in details ? details as ShiftExtendedProps : undefined)}
                 
 
@@ -754,7 +793,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
             </div>
         </div>  
     </div>
-    {(buttons!=null || props.customButtons) && <div className=" py-3 flex flex-row px-6 gap-3 rounded-lg">
+    {(buttons!=null || props.customButtons) && <div className="py-3 flex flex-row-reverse px-6 gap-3 rounded-lg">
         {type!==undefined ? buttons : props.customButtons}
     </div>}    
     </div>);

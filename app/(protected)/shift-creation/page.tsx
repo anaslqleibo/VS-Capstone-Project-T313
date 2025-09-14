@@ -211,7 +211,7 @@ export default function ShiftCreationPage() {
               <h1 className="text-3xl mb-2 font-semibold text-[color:var(--primary-color)]">Create shift</h1>
 
               <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-gray-600 mt-1 mb-1">Date:</p>
+                <p className="text-sm font-semibold text-gray-600">Date:</p>
                 <DatePicker
                   format="DD-MM-YYYY"
                   value={date}
@@ -221,7 +221,7 @@ export default function ShiftCreationPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-gray-600 mt-1 mb-1">Time:</p>
+                <p className="text-sm font-semibold text-gray-600">Time:</p>
                 <TimePicker
                   format="hh:mm A"
                   value={start}
@@ -278,7 +278,7 @@ export default function ShiftCreationPage() {
               </div>
 
               <div>
-                <p className="text-sm font-semibold text-gray-600 mt-1 mb-1">Notes:</p>
+                <p className="text-sm font-semibold text-gray-600">Notes:</p>
                 <textarea
                   className="font-normal text-sm text-black border-2 border-gray-500 bg-gray-50 rounded-md min-w-full p-2 min-h-[72px] resize-none focus:outline-0"
                   value={notes}

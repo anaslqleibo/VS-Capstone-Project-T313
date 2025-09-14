@@ -121,7 +121,7 @@ export default function EmployeeDashboardPage() {
                 
                   <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} className='md:rounded-b-none min-w-32' initialSelectedItem='All locations'/>
 
-                  <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-1)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} className='md:rounded-b-none min-w-32' initialSelectedItem='All shifts'/>
+                  <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-2)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} className='md:rounded-b-none min-w-32' initialSelectedItem='All shifts'/>
 
                   <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='md:rounded-b-none min-w-32' custom customSelected={monthSelectedDropdown}>
                     <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>

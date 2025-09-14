@@ -1,6 +1,6 @@
 import { executeQuery } from "@/app/lib/db";
 import { isAdmin } from "../users/[id]/is_admin";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -47,3 +47,40 @@ export async function POST(req: NextRequest) {
     return new Response("Failed to create shift", { status: 500 });
   }
 }
+
+export async function PATCH(req: Request) {
+  try {
+    const {month, year} = await req.json();
+    
+    const conditions = [];
+    const vals = [];
+
+    if (month) {
+      conditions.push('MONTH(date) = ?');
+      vals.push(month);
+    }
+    if (year) {
+      conditions.push('YEAR(date) = ?');
+      vals.push(year);
+    }
+    console.log(month,year);
+    const result = await executeQuery(
+      `UPDATE shifts SET published = 1 ${conditions.length>0?'WHERE':''} ${conditions.join(' AND ')}`, vals
+    ) as any;
+
+    if (result.affectedRows === 0) {
+      return NextResponse.json(
+        { error: "Shifts not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error publishing bulk shifts", error);
+    return NextResponse.json(
+      { error: "Failed to publish bulk shifts" },
+      { status: 500 }
+    );
+  }
+};

@@ -210,7 +210,7 @@ export function LocationDropdownWithAddress({
   };
 
   return (
-    <div className="flex flex-col gap-2 w-full">
+    <div className="flex flex-col gap-3 w-full">
       <Dropdown
         items={locations.map((l) => l.name)}
         placeholder="Select location"
@@ -222,7 +222,7 @@ export function LocationDropdownWithAddress({
 
       <Input
         value={selectedLocation?.address ?? ""}
-        className="py-1 px-3 border-1"
+        className="py-2 px-3 border-1"
         containerClassName="w-full"
         readonly
       />

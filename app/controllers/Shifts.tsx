@@ -1,8 +1,8 @@
 import { EventInput } from '@fullcalendar/core';
 import getStatusColor, { stringToStatus } from '../components/utils/getStatusColor';
 import { ShiftExtendedProps } from '../components/Modal';
-
-export type ShiftStatus = 'Pending' | 'Unassigned' | 'Accepted' | 'Open' | 'Request' | 'Declined';
+import { Status } from '../components/utils/getStatusColor';
+export type ShiftStatus = 'Pending' | 'Unassigned' | 'Accepted' | 'Open' | 'Request' | 'Declined' | 'Unpublished';
 
 export type Shift = {
   id?: string; 
@@ -15,7 +15,8 @@ export type Shift = {
   location_id: string; 
   location_name: string;
   address: string;
-  assignee_name ?: string
+  assignee_name ?: string;
+  published ?: boolean;
 };
 
 export async function fetchShifts(user_id: number) {
@@ -57,17 +58,46 @@ export async function updateShift(shift: Shift) {
   }
 }
 
-export async function updateShiftStatus(shift_id: string, user_id: string, status: ShiftStatus) {
+export async function updateShiftStatus(shift_id: string, status: ShiftStatus) {
   try {
     const res = await fetch(`/api/shifts/${shift_id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id, status }),
+      body: JSON.stringify({ status }),
     });
 
     return res.ok;
   } catch (err) {
     console.error('Failed to update shift status:', err);
+    return false;
+  }
+}
+
+export async function publishShift(shift_id: string) {
+  try {
+    const res = await fetch(`/api/shifts/${shift_id}/publish`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    return res.ok;
+  } catch (err) {
+    console.error('Failed to publish shift:', err);
+    return false;
+  }
+}
+
+export async function publishBulkShift(month?: string, year?: string) {
+  try {
+    const res = await fetch(`/api/shifts/`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ month, year }),
+    });
+
+    return res.ok;
+  } catch (err) {
+    console.error('Failed to publish shifts in bulk:', err);
     return false;
   }
 }
@@ -89,19 +119,20 @@ export function getEventInputShifts(user_id: number) {
   return fetchShifts(user_id).then((shifts) =>
     shifts.map((shift) => {
       const shiftExtProps : ShiftExtendedProps = {
-        status: stringToStatus(shift.status),
+        status: shift.published ? stringToStatus(shift.status) : Status.Unpublished,
+        original_status: stringToStatus(shift.status),
         type: 'shift',
         date: shift.date.split('T')[0],
-        start_time: shift.start_time.slice(0, 5), // Updated to use start_time
-        end_time: shift.end_time.slice(0, 5),     // Updated to use end_time
+        start_time: shift.start_time.slice(0, 5), 
+        end_time: shift.end_time.slice(0, 5),  
         time: `${shift.start_time.slice(0, 5)}–${shift.end_time.slice(0, 5)}`,
         location_id: shift.location_id,
-        location_name: shift.location_name,           // Updated to use location
+        location_name: shift.location_name,         
         address: shift.address,
         notes: shift.notes,
         assignee_id: shift.assignee_id,
-        assignee_name: shift.assignee_name
-        // employee field removed since it's not in the database
+        assignee_name: shift.assignee_name,
+        published: shift.published,
       };
 
       return {

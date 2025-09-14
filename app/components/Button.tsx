@@ -207,7 +207,7 @@ export default function Button({ type = 'cta', fontSize = '1em', onClick, items,
 
     // General Button Setup
     return (
-        <button onClick={onClick} className={`flex ${(!props.className?.includes('p-') && !props.className?.includes('py-') && !props.className?.includes('px-'))  && 'px-6 py-4'} justify-center items-center gap-2.5 shrink-0 text-[#FFFFFF] text-center font-[family-name:var(--font-family)] font-normal border-0 outline-0
+        <button onClick={onClick} className={`flex ${(!props.className?.includes('p-') && !props.className?.includes('py-') && !props.className?.includes('px-')) && 'px-6 py-4'} justify-center items-center gap-2.5 shrink-0 text-[#FFFFFF] text-center font-[family-name:var(--font-family)] font-normal border-0 outline-0
     ${type === 'cta' ? `rounded-xl font-semibold transition-colors duration-200 ${!props.className?.includes('bg-') && "bg-[color:var(--primary-color)] hover:bg-[color:var(--hover-color)] active:bg-[color:var(--active-color)]"}` : ""}
     ${type === 'text' ? 'rounded-[75px] px-6 bg-[#3259AD] hover:bg-[color:var(--hover-color)] active:bg-[#274689]' : ''}
     ${type === 'outline' ? 'px-[1.3em] py-[0.8em] rounded-xl border-2 border-[color:var(--primary-color)] bg-transparent text-[color:var(--primary-color)] hover:bg-[color:var(--primary-color)] hover:text-white active:bg-transparent active:text-[color:var(--primary-color)] duration-200 ease-in' : ''}
