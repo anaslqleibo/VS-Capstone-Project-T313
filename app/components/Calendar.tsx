@@ -133,7 +133,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
             setOriginalEvents(prev => prev.filter(e => e.id !== event.id ));
             setEvents(prev => prev.filter(e => e.id !== event.id ));
         }
-        else if (mode==='updateDate'){
+        else 
             if (event.extendedProps){
                 const start = event.extendedProps.date+'T'+event.extendedProps.start_time;
                 const end = event.extendedProps.date+'T'+event.extendedProps.end_time;
@@ -146,15 +146,6 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
                 );
             }
             
-        }
-        else{
-            setOriginalEvents(prev =>
-                prev.map(e => e.id === event.id ? event : e)
-            );
-            setEvents(prev =>
-                prev.map(e => e.id === event.id ? event : e)
-            );
-        }
         
     }
 

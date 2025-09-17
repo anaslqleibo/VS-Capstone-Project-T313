@@ -9,6 +9,7 @@ export enum Status {
     Request = 'Request',
     Leave = 'Leave',
     Unavailable = 'Unavailable',
+    Unpublished = 'Unpublished',
 }
 
 export function stringToStatus(status: string): Status {
@@ -27,6 +28,8 @@ export function stringToStatus(status: string): Status {
             return Status.Request;
         case 'Declined':
             return Status.DeclinedShift;
+        case 'Unpublished':
+            return Status.Unpublished;
         default:
             return Status.Unavailable;
     }
@@ -46,6 +49,8 @@ export function statusToString(status: Status): ShiftStatus {
             return 'Request';
         case Status.DeclinedShift:
             return 'Declined';
+        case Status.Unpublished:
+            return 'Unpublished';
         default:
             return 'Pending';
     }
@@ -56,19 +61,21 @@ function getStatusColor(status:Status, returnHex:boolean=true){
         switch(status){
             case Status.Pending:
             case Status.Unassigned:
-                return "var(--warning-color)";
+                return "var(--color-warning)";
             case Status.Request:
-                return "var(--secondary-color)";
+                return "var(--color-secondary)";
             case Status.Accepted:
-                return "var(--primary-color)";
+                return "var(--color-primary)";
             case Status.Leave:
-                return "var(--dark-grey)";
+                return "var(--color-dark-grey)";
             case Status.OpenShift:
-                return "var(--hover-color)";
+                return "var(--color-hover)";
             case Status.DeclinedShift:
-                return "var(--danger-color)";
+                return "var(--color-danger)";
+            case Status.Unpublished:
+                return "var(--color-unpublished)";
             default:
-                return "var(--light-grey)";
+                return "var(--color-light-grey)";
         }
     }
     else{

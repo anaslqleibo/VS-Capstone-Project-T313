@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import { fetchLocations, Location } from '../controllers/Location';
 import Input from './Input';
 import { fetchAllEmployees, User } from '../controllers/User';
+import getStatusColor, { Status, stringToStatus } from './utils/getStatusColor';
 
 interface DropdownProps{
   items?:string[];
@@ -23,6 +24,9 @@ interface DropdownProps{
   props?:{[key:string] : any};
   onChange ?: (e:any) => void;
   disabled?:boolean;
+  colorBasedOnValue?:boolean;
+  startOpen?:boolean;
+  syncCurrentWithInitialSelected?:boolean;
 }
 
 type DayPickerProps = {
@@ -42,9 +46,13 @@ const Dropdown = ({
   showCheckbox,
   placeholder = 'Select an option',
   maxVisibleItems = 3,
-  className, ...props
+  className,
+  colorBasedOnValue, 
+  startOpen,
+  syncCurrentWithInitialSelected,
+  ...props
 } : DropdownProps) => {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [isOpen, setIsOpen] = useState<boolean>(startOpen || false);
   const [search, setSearch] = useState<string>('');
   const [selected, setSelected] = useState<string[]>(props.initialSelectedItem?[props.initialSelectedItem]:[]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -93,6 +101,10 @@ const Dropdown = ({
       setAdvSelected(selected.slice(0, -1));
     }
   };
+   
+  const clearSelect = () => {
+    setSelected([]);
+  }
 
   useEffect(() => {
     const handleClickOutside = (event : MouseEvent) => {
@@ -105,13 +117,25 @@ const Dropdown = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   
+  useEffect(()=>{
+    if (syncCurrentWithInitialSelected) {
+      if (props.initialSelectedItem)
+        handleSelect(props.initialSelectedItem);
+      else {
+        clearSelect()
+        setIsOpen(true);
+      };
+    }
+  }, [props.initialSelectedItem])
+  
+  const activeColor = (colorBasedOnValue&&selected[0]) ? getStatusColor(stringToStatus(selected[0])) : 'var(--color-primary)';
   return (
     <div className={`relative w-fit min-w-fit text-sm ${className} ${props.disabled ? "pointer-events-none" : ""}`} ref={containerRef}>
-      <div className={` ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : "border-1 border-[color:var(--primary-color)] text-[color:var(--primary-color)]"} rounded-md ${className} px-3 py-2 flex items-center justify-between cursor-pointer ${props.disabled ? "bg-gray-200 text-gray-400" : ""}`} onClick={toggleDropdown}>
+      <div className={` ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : 'border-1 border-[color:var(--color-primary)] text-[color:var(--color-primary)]'} rounded-md ${className} px-3 py-2 flex items-center justify-between cursor-pointer ${props.disabled ? "bg-gray-200 text-gray-400" : ""}`} onClick={toggleDropdown} style={colorBasedOnValue ? {borderColor: activeColor, color:activeColor} : {}}>
         <div className="flex flex-wrap items-center gap-1 flex-1 min-w-fit">
           {!props.disabled && (props.custom ? <span>{props.customSelected}</span> : ((!multiple && selected.length>0) || 
           (multiple && selected.length == 1 && (!isOpen))) ? <span>{selected.at(0)}</span> : selected.map((item, index) => (
-            <span key={index} className="flex items-center gap-1 bg-gray-100 border border-[color:var(--primary-color)] text-[color:var(--primary-color)] px-2 py-1 rounded whitespace-nowrap text-sm">
+            <span key={index} className="flex items-center gap-1 bg-gray-100 border border-primary text-primary px-2 py-1 rounded whitespace-nowrap text-sm">
               {item}
               <Icon id="x" className="cursor-pointer" onClick={(e) => {
                 e.stopPropagation();
@@ -165,15 +189,12 @@ const Dropdown = ({
 
 export default Dropdown;
 
-export function LocationDropdownWithAddress({
-  detail,
-  setUpdatedLocation,
-  onSelect,
-}: {
+type CustomDropdownProps = {
   detail?: string;
-  setUpdatedLocation?: (field: string, value: string) => void;
+  setUpdatedDetail?: (field: string, value: string) => void;
   onSelect?: (loc: Location) => void;
-}) {
+}
+export function LocationDropdownWithAddress({detail, setUpdatedDetail, onSelect,}: CustomDropdownProps) {
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
 
@@ -185,9 +206,9 @@ export function LocationDropdownWithAddress({
       const found = locs.find((l) => l.name === detail);
       if (found) {
         setSelectedLocation(found);
-        setUpdatedLocation?.("location_id", found.id);
-        setUpdatedLocation?.("location", found.name);
-        setUpdatedLocation?.("address", found.address);
+        setUpdatedDetail?.("location_id", found.id);
+        setUpdatedDetail?.("location_name", found.name);
+        setUpdatedDetail?.("address", found.address);
         onSelect?.(found);
       }
     }
@@ -203,29 +224,69 @@ export function LocationDropdownWithAddress({
       };
 
     setSelectedLocation(loc);
-    setUpdatedLocation?.("location_id", loc.id);
-    setUpdatedLocation?.("location", loc.name);
-    setUpdatedLocation?.("address", loc.address);
+    setUpdatedDetail?.("location_id", loc.id);
+    setUpdatedDetail?.("location_name", loc.name);
+    setUpdatedDetail?.("address", loc.address);
     onSelect?.(loc);
   };
 
   return (
-    <div className="flex flex-col gap-2 w-full">
+    <div className="flex flex-col gap-3 w-full">
       <Dropdown
         items={locations.map((l) => l.name)}
         placeholder="Select location"
         maxVisibleItems={6}
         initialSelectedItem={detail ?? undefined}
-        className="text-black border-gray-400"
+        className="text-black border-gray-400 min-w-32 max-w-64"
         onChange={handleChange}
       />
 
       <Input
         value={selectedLocation?.address ?? ""}
-        className="py-1 px-3 border-1"
+        className="py-2 px-3 border-1"
         containerClassName="w-full"
         readonly
       />
     </div>
   );
+}
+
+
+export function DropdownUser({detail, setUpdatedDetail}: CustomDropdownProps){
+  // const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
+  const [employees, setEmployees] = useState<User[]>([]);
+  useEffect(() => {
+    async function load() {
+      const employees = await fetchAllEmployees();
+      const found = employees.find((e) => (e.first_name + ' ' + e.last_name) === detail);
+      if (found) {
+        // setSelectedEmployee(found);
+        setUpdatedDetail?.("assignee_id", found.id.toString());
+        setUpdatedDetail?.("assignee_name", found.first_name + ' ' + found.last_name);
+      }
+      
+      setEmployees(employees);
+    }
+    
+     load();
+  }, [detail]);
+
+  const handleChange = (name: string) => {
+    if (employees.length === 0) return; 
+    const employee: User =
+      employees.find((e) => (e.first_name + " " + e.last_name) === name) || {
+        id: -1,
+        first_name: "Not found",
+        last_name: "",
+        email: '',
+        role: 'user',
+      };
+
+    // setSelectedEmployee(employee);
+    setUpdatedDetail?.("assignee_id", employee.id.toString());
+    setUpdatedDetail?.("assignee_name", employee.first_name + ' ' + employee.last_name);
+    setUpdatedDetail?.("status", 'Pending');
+  };
+
+  return (<Dropdown items={employees.map((employee) => (employee.first_name + ' ' + employee.last_name))} placeholder="Select employee" maxVisibleItems={6} className=' font-normal text-black border-gray-400 min-w-32 max-w-64' initialSelectedItem={detail === '' ?  undefined : detail} onChange={handleChange} startOpen={detail === ''} syncCurrentWithInitialSelected={true}/>);
 }

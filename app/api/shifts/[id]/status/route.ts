@@ -5,7 +5,7 @@ export async function PATCH(req: Request, {params}: { params: {id: string}}) {
   try {
     const { id } = await params;
     const body = await req.json();
-    const { status, user_id } = body;
+    const { status } = body;
 
     if (!status) {
       return NextResponse.json(
@@ -15,8 +15,8 @@ export async function PATCH(req: Request, {params}: { params: {id: string}}) {
     }
     
     const result = await executeQuery(
-      `UPDATE shifts SET status = ? WHERE id = ? AND assignee_id = ?`,
-      [status, id, user_id]
+      `UPDATE shifts SET status = ? WHERE id = ?`,
+      [status, id]
     ) as any;
 
     if (result.affectedRows === 0) {
@@ -26,7 +26,7 @@ export async function PATCH(req: Request, {params}: { params: {id: string}}) {
       );
     }
 
-    return NextResponse.json({ success: true, status });
+    return NextResponse.json({ success: true});
   } catch (error) {
     console.error("Error updating shift status:", error);
     return NextResponse.json(

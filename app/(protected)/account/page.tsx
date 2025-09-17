@@ -168,7 +168,7 @@ const AccountPage = () => {
           </div>
 
           {/* CARD */}
-          {profile === undefined || loading ? <Spinner /> :
+          {profile === undefined || loading ? <Spinner custom simplified /> :
             <div className="bg-white p-6 rounded-xl shadow">
             {/* VIEW MODE */}
             {!isEditing && (

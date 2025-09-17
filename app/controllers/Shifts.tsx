@@ -2,7 +2,7 @@ import { EventInput } from '@fullcalendar/core';
 import getStatusColor, { stringToStatus } from '../components/utils/getStatusColor';
 import { ShiftExtendedProps } from '../components/Modal';
 
-export type ShiftStatus = 'Pending' | 'Unassigned' | 'Accepted' | 'Open' | 'Request' | 'Declined';
+export type ShiftStatus = 'Pending' | 'Unassigned' | 'Accepted' | 'Open' | 'Request' | 'Declined' | 'Unpublished';
 
 export type Shift = {
   id?: string; 
@@ -17,6 +17,11 @@ export type Shift = {
   address: string;
   assignee_name ?: string
 };
+
+export type ShiftAssignee = {
+  id?: string;
+  assignee_id: string; 
+}
 
 export async function fetchShifts(user_id: number) {
   const res = await fetch(`/api/shifts/${user_id}`);
@@ -42,7 +47,7 @@ export async function createShift(shift: Shift) {
   return await res.json();
 }
 
-export async function updateShift(shift: Shift) {
+export async function updateShift(shift: Shift | ShiftAssignee) {
   try {
     const res = await fetch(`/api/shifts/${shift.id}`, {
       method: 'PUT',
@@ -57,12 +62,12 @@ export async function updateShift(shift: Shift) {
   }
 }
 
-export async function updateShiftStatus(shift_id: string, user_id: string, status: ShiftStatus) {
+export async function updateShiftStatus(shift_id: string, status: ShiftStatus) {
   try {
     const res = await fetch(`/api/shifts/${shift_id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id, status }),
+      body: JSON.stringify({ status }),
     });
 
     return res.ok;
