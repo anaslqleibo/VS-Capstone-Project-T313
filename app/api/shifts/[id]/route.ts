@@ -74,8 +74,48 @@ export async function PUT(req: Request, {params}: { params: {id: string }}){
   try {
     const { id, assignee_id, status, date, start_time, end_time, notes, location_id} : Shift = await req.json();
 
-    const result = await executeQuery(`
-      UPDATE shifts SET status = ?, date = ?, start_time = ?, end_time = ?, assignee_id = ?, location_id = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND assignee_id = ?`, [status, date, start_time, end_time, assignee_id, location_id, notes, id, assignee_id ]) as any;
+    const updates = [];
+    const vals = [];
+    
+    if (!assignee_id && !status && !date && !start_time && !end_time && !notes && !location_id){
+      return NextResponse.json(
+      { error: "Please provide atleast one field to update!" },
+      { status: 401 }
+      );
+    }
+
+    
+    if (status) {
+      updates.push('status = ?');
+      vals.push(status);
+    }
+    if (assignee_id) {
+      updates.push('assignee_id = ?');
+      vals.push((status && (status==="Open"||status==="Unassigned")) ? null : assignee_id);
+    }
+    if (date) {
+      updates.push('date = ?');
+      vals.push(date);
+    }
+    if (start_time) {
+      updates.push('start_time = ?');
+      vals.push(start_time);
+    }
+    if (end_time) {
+      updates.push('end_time = ?');
+      vals.push(end_time);
+    }
+    if (notes) {
+      updates.push('notes = ?');
+      vals.push(notes);
+    }
+    if (location_id) {
+      updates.push('location_id = ?');
+      vals.push(location_id);
+    }
+    vals.push(id);
+
+    const result = await executeQuery(`UPDATE shifts SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, vals) as any;
 
     if (result.affectedRows === 0) {
       return NextResponse.json(

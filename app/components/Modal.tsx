@@ -1,5 +1,5 @@
 "use client";
-import {  ReactNode, SetStateAction, use, useEffect, useRef, useState } from "react";
+import {  Dispatch, ReactNode, SetStateAction, use, useEffect, useRef, useState } from "react";
 import Icon from "@/public/icons/Icons";
 import Button from "./Button";
 import { overlayAnimation, useClickOutside } from "./utils/useClickOutside";
@@ -9,7 +9,7 @@ import { createPortal } from "react-dom";
 import ListView from "./ListView";
 import { createNotifications } from "./utils/notification";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
-import Dropdown, { DayPicker, LocationDropdownWithAddress } from "./Dropdown";
+import Dropdown, { DayPicker, DropdownUser, LocationDropdownWithAddress } from "./Dropdown";
 import { EventInput } from "@fullcalendar/core";
 import { buildShiftEventTitle, deleteShift, publishShift, Shift, updateShift, updateShiftStatus } from "../controllers/Shifts";
 import { useAuth } from "@/app/contexts/AuthContext";
@@ -24,6 +24,8 @@ import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
 import { createLeave, deleteLeave, Unavailability, updateLeaveStatus } from "../controllers/Unavailabilities";
+import Checkbox from "./Checkbox";
+import Spinner from "./Spinner";
 
 
 // TODO: Still missing some code, please go through everything and finish what's still missing
@@ -108,7 +110,7 @@ export type ShiftExtendedProps = {
     recurrence?: string;
 }
 
-export type setEventType = (event: EventInput, mode:"create"|"update"|"delete"|"updateDate")=>void;
+export type setEventType = (event: EventInput, mode:"create"|"update"|"delete")=>void;
 interface ModalProps{
     type?: ModalTypes|null;
     startOpen ?: boolean;
@@ -126,7 +128,7 @@ interface ModalProps{
     noOverlay?:boolean;
 }
 
-function createAdminComponent(status: Status, employee?:string, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isEditing=false, setEditing?:(e:boolean)=>void, formValues?: Record<string, any>, initialDetails?:ShiftExtendedProps){
+function createAdminComponent(status: Status, employee?:string, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isEditing=false, setEditing?:(e:boolean)=>void, formValues?: Record<string, any>, handleChange?: (field: string, value: any) => void, initialDetails?:ShiftExtendedProps, setLoading?:(e:boolean)=>void){
     const castedFormValues =  formValues ? ("location_id" in formValues ? formValues as ShiftExtendedProps : -1) : -1;
     if (castedFormValues === -1) return;
 
@@ -148,47 +150,74 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
 
     const handleSave = async () => {
         if (castedFormValues){
+            if (castedFormValues.assignee_name === '') castedFormValues.assignee_name = initialDetails?.assignee_name;
             if (castedFormValues.date === initialDetails?.date && castedFormValues.time === initialDetails.time && castedFormValues.location_id === initialDetails.location_id && castedFormValues.address === initialDetails.address && castedFormValues.status === initialDetails.status && castedFormValues.assignee_id === initialDetails.assignee_id && castedFormValues.notes === initialDetails.notes){
                 if (setEditing) setEditing(false);
                 return;
             }
 
-            const updatedShift : Shift = { ...castedFormValues, status: statusToString(castedFormValues.status) };
-            const result = await updateShift(updatedShift);
+            try{
+                setLoading && setLoading(true);
+                const updatedShift : Shift = { ...castedFormValues, status: statusToString(castedFormValues.status) };
+                const result = await updateShift(updatedShift);
 
-            if (result){
-                displayToast!(`Updated shift successfully!`, 'success');
+                if (result){
+                    displayToast!(`Updated shift successfully!`, 'success');
 
-                const updatedEvent = {
-                    ...event,
-                    extendedProps: castedFormValues,
-                    title: buildShiftEventTitle(castedFormValues.status, castedFormValues.time, castedFormValues.location_name, castedFormValues.assignee_name),
-                    backgroundColor: getStatusColor(castedFormValues.status)
-                };
 
-                setEvents!(updatedEvent, "update");
-                setEvents!(updatedEvent, "updateDate");
-                
-                if (setEditing) setEditing(false);
-                
+                    const isOpenOrUnassigned = castedFormValues.status === Status.OpenShift || castedFormValues.status === Status.Unassigned;
+                    if (isOpenOrUnassigned){
+                        handleChange!('assignee_id', '');
+                        handleChange!('assignee_name', undefined);
+                    }
+
+                    const updatedEvent = {
+                        ...event,
+                        extendedProps: {...castedFormValues, assignee_id: isOpenOrUnassigned ? '' : castedFormValues.assignee_id, assignee_name: isOpenOrUnassigned ? undefined : castedFormValues.assignee_name},
+                        title: buildShiftEventTitle(castedFormValues.status, castedFormValues.time, castedFormValues.location_name, castedFormValues.status==='Open' ? '' : castedFormValues.assignee_name),
+                        backgroundColor: getStatusColor(castedFormValues.status)
+                    };
+                    
+                    console.log(updatedEvent);
+
+                    setEvents!(updatedEvent, "update");
+                    
+                    if (setEditing) {
+                        setEditing(false);
+                    }
+                }
+                else{
+                    displayToast!(`Failed to update shift!`, 'error');
+                }
             }
-            else{
-                displayToast!(`Failed to update shift!`, 'error');
+            finally{
+                setLoading && setLoading(false);
             }
+            
         }
     }
-    
     return (
         <>
-    <div className = "flex justify-between">
-        <p className="text-sm font-semibold text-gray-600 mt-1">Status: 
-        <span className="font-bold" style={{color: getStatusColor(status)}}> {status}</span></p>
-
+    <div className="flex justify-between items-center">
+        <div className={`text-sm font-semibold text-gray-600 mt-1 flex items-center ${isEditing ? 'gap-2' : 'gap-1'}`}>Status: 
+            {isEditing ? 
+             <>
+                <Dropdown items={[ ...Object.values(Status).filter(((status)=>status!=='Declined'&&status!=='Leave'&&status!=='Unavailable'&&status!=='Unpublished'))]} placeholder="Select shift" maxVisibleItems={6} className='min-w-32' initialSelectedItem={formValues?.status ?? 'Select a status'} onChange={(e)=>handleChange!('status', e)} colorBasedOnValue syncCurrentWithInitialSelected={true}/>
+                {/* <Checkbox label="Set unpublished" checked={false} onChange={(e)=>{}} className="text-xs md:text-sm"/> */}
+             </>
+            : 
+            <span className="font-bold" style={{color: getStatusColor(status)}}>{status}</span>}
+        </div>
+        
+        
         <div className="flex gap-3 text-[color:var(--primary-color)] [&>*]:hover:text-[color:var(--hover-color)]">
-            {isEditing ? <FaSave onClick={()=>{handleSave()}}/> :
+            {isEditing ? <div id="btnSave" onClick={()=>{handleSave()}}><FaSave /></div> :
             <>
             <FaRegBell/>
-            <FaEdit onClick={()=>setEditing && setEditing(true)}/>
+            <FaEdit onClick={()=>{setEditing && setEditing(true); 
+            castedFormValues.assignee_id === null && handleChange!('assignee_name',' ')
+
+             }}/>
             <FaTrash onClick={handleDelete}/>
             </>
             }
@@ -196,7 +225,9 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
         </div>
     </div>
     
-    {employee ? <p className="text-sm font-semibold text-gray-600 mt-2">Employee: <span className="text-[color:var(--secondary-color)] font-normal"> {employee}</span></p> : ""}    
+    {(employee!==undefined && employee!==null && employee !== ' ') ? <div className={`text-sm font-semibold text-gray-600 ${isEditing ? 'mt-3 gap-2' : 'mt-1 gap-1'} flex items-center`}>Employee: {isEditing ?  
+    <DropdownUser detail={castedFormValues.assignee_name} setUpdatedDetail={handleChange}/>
+    : <span className="text-[color:var(--secondary-color)] font-normal"> {employee}</span>}</div> : ""}    
 
 
     </>);
@@ -244,7 +275,7 @@ function createDetailEditor(label: string, field: keyof ShiftExtendedProps, deta
                         <div className="flex items-center py-2">Address:</div>
                     </div>
                     
-                    <LocationDropdownWithAddress detail={detail} setUpdatedLocation={handleChange}/>
+                    <LocationDropdownWithAddress detail={detail} setUpdatedDetail={handleChange} />
                 </div>
                 
                 );
@@ -273,10 +304,10 @@ function createDetailEditor(label: string, field: keyof ShiftExtendedProps, deta
     }
 }
 
-function createDetails(type: string|null, details?: Record<string, any>, isAdmin?:boolean, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isEditing?: boolean, setEditing?:((e:boolean)=>void), formValues?: Record<string, any>, handleChange?: (field: string, value: any) => void, initialDetails?:ShiftExtendedProps){
-    if (type===null || details === undefined) return;
+function createDetails(type: string|null, details?: Record<string, any>, isAdmin?:boolean, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isEditing?: boolean, setEditing?:((e:boolean)=>void), formValues?: Record<string, any>, handleChange?: (field: string, value: any) => void, initialDetails?:ShiftExtendedProps, setLoading?:(e:boolean)=>void){
+    if (type===null || details === undefined || formValues === undefined) return;
 
-    const castedDetails = 'location_id' in details ? details as ShiftExtendedProps : details as LeaveExtendedProps;
+    const castedDetails = 'location_id' in formValues ? formValues as ShiftExtendedProps : formValues as LeaveExtendedProps;
 
     if ('day' in castedDetails && (castedDetails.type === "leave" || type === ModalTypes.UnavailabilityDetails))
     {
@@ -319,10 +350,10 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
       
         return (
            <div className="flex flex-col gap-4 mt-4">
-            <div className="flex flex-wrap items-center gap-2">
+            {/* <div className="flex flex-wrap items-center gap-2">
                 <Button type='selectable' fontSize="0.8em" startActive={castedFormValues.unavailability?!castedFormValues.unavailability:true} onToggleClick={onToggleLeave}>Leave</Button>
                 <Button type='selectable' fontSize="0.8em" startActive={castedFormValues.unavailability??false} onToggleClick={onToggleUnavail}>Unavailability</Button>
-            </div>
+            </div> */}
             
 
             {castedFormValues.unavailability && <div className="flex items-center gap-2">
@@ -385,7 +416,7 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
 
         return (
             <>
-            {isAdmin && setEditing && createAdminComponent(castedDetails.status, castedDetails.assignee_name, setEvents, event, displayToast, closeModal, isEditing, setEditing, formValues, initialDetails)}
+            {isAdmin && setEditing && createAdminComponent(castedDetails.status, castedDetails.assignee_name, setEvents, event, displayToast, closeModal, isEditing, setEditing, formValues, handleChange, initialDetails, setLoading)}
             {createDetailEditor("Date: ", 'date', sqlDateFormatToRegularFormat(castedDetails.date), "", isEditing, formValues, handleChange, displayToast)}
             {createDetailEditor("Time: ", 'time' , castedDetails.time, "", isEditing, formValues, handleChange, displayToast)}
             {createDetailEditor("Location: ", 'location_name' ,castedDetails.location_name, "", isEditing, formValues, handleChange, displayToast)}
@@ -396,7 +427,7 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
     }
 }
 
-function createButtons(type: string|null, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isAdmin?:boolean, formValues?: Record<string, any>){
+function createButtons(type: string|null, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isAdmin?:boolean, formValues?: Record<string, any>, handleChange?: (field: string, value: any) => void, isEditing?: boolean, setEditing?:(e:boolean)=>void){
     
     let buttons = null;
     if (type === ModalTypes.LeaveDetails){
@@ -444,7 +475,6 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         const castedFormValues =  formValues ? ("recurrence" in formValues ? formValues as LeaveExtendedProps : -1) : -1;
         if (castedFormValues === -1) return;
 
-        console.log(castedFormValues);
         
         const handleSubmit = async () => {
             if (!("date" in castedFormValues)){
@@ -486,9 +516,9 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         }
         buttons = <Button type="cta" fontSize="0.8em" onClick={()=>handleSubmit()}>Submit {castedFormValues.unavailability ? "unavailability" : "leave"}</Button>
     }
-    else if (type === ModalTypes.OpenShiftDetails)
+    else if (type === ModalTypes.OpenShiftDetails || type === ModalTypes.UnassignedShiftDetails)
     {
-        const handleAssign = () => {};
+        const handleAssign = () => {handleChange!('assignee_name', ''); setEditing && setEditing(true)};
         const handlePickup = async () => {
             const result = await updateShiftStatus(event?.extendedProps?.id as string, Status.Accepted);
             
@@ -628,7 +658,7 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         }
         const handleDecline = async () => {
             const confirmation = window.confirm("This action cannot be undone. Are you sure you want to decline this shift?");
-            const result = await updateShiftStatus(event?.extendedProps?.id as string, Status.DeclinedShift);;
+            const result = await updateShiftStatus(event?.extendedProps?.id as string, Status.DeclinedShift);
 
             if (!confirmation) return;
 
@@ -650,7 +680,7 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         </>);
     }
     else if (type === ModalTypes.DeclinedDetails){
-        const onView = () => {
+        const handleView = () => {
             // delete from db and check if succesful, if yes then proceed
             // viewDeclined();
             const result = true;
@@ -662,12 +692,17 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
             else{
                 displayToast!('An unknown error occured', 'error');
             }
-            
+        }
+
+        const handleReassign =  () => {
+            handleChange!('assignee_name','');  
+           
+            setEditing!(true);
         }
 
         if (isAdmin)
-            buttons = <Button fontSize="0.8em" onClick={onView}>Reassign</Button>
-        else buttons = <Button fontSize="0.8em" onClick={onView}>Mark as viewed</Button>
+            buttons = <Button fontSize="0.8em" onClick={handleReassign} className="mb-2">Reassign</Button>
+        else buttons = <Button fontSize="0.8em" onClick={handleView}>Mark as viewed</Button>
     }
     else if (type === ModalTypes.UnpublishedShiftDetails)
     {
@@ -705,6 +740,11 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         </>);
         }
     }
+    const handleSave = () => {
+        const btnSave = document.getElementById('btnSave');
+        btnSave?.click();
+    }
+    if (isEditing && isAdmin) buttons = <div className="flex items-center flex-1 justify-between">{buttons}<Button fontSize="0.8em" onClick={handleSave}>Save</Button></div>;
     return buttons;
 }
 
@@ -718,7 +758,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
     const [formValues, setFormValues] = useState<ShiftExtendedProps|LeaveExtendedProps|undefined>(details ? ('status' in details ? details as ShiftExtendedProps : details as LeaveExtendedProps) : undefined);
     
     const handleChange = (field: string, value: any) => {
-        setFormValues((prev: any) => {
+        setFormValues((prev : any) => {
             if (value && formValues && "start_time" in formValues && (field === "start_time" || field === "end_time") && !(!formValues?.start_time || !formValues?.end_time)){
 
                 return {
@@ -727,6 +767,22 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                     time: (field === "start_time" ? value.slice(0,5) : formValues?.start_time.slice(0,5)) + "-" + (field === "end_time"?value.slice(0,5):formValues?.end_time.slice(0,5))
                 };
 
+            }
+
+            if (prev && ((prev.status === Status.OpenShift || prev.status === Status.Unassigned) && (field==="status" && value!==prev.status))){
+                return {
+                    ...prev,
+                    [field]: value,
+                    'assignee_name':''
+                };
+            }
+
+            if ((field==="status" && (value===Status.OpenShift || value===Status.Unassigned))){
+                return {
+                    ...prev,
+                    [field]: value,
+                    'assignee_name':undefined
+                };
             }
 
             return {
@@ -738,7 +794,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
     const containerRef = useRef<HTMLDivElement>(null);
     useClickOutside(containerRef, ()=> props.setShown ? props.setShown(false) : setShown(false));
-    
+
     const [rendered, setRendered] = useState(false);
     const [visible, setVisible] = useState(false);
 
@@ -748,11 +804,11 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
     const user = useAuth().user;
     const admin = user?.role === "admin";
-    const buttons = type!==undefined && createButtons(type, props.setEvents, props.event, props.displayToast, closeModal, admin, formValues);
-
     const setEditing = (edit:boolean) => {
         setIsEditing(admin && edit);
     }
+
+    const buttons = type!==undefined && createButtons(type, props.setEvents, props.event, props.displayToast, closeModal, admin, formValues, handleChange, isEditing, setEditing);
     
     useEffect(()=>{
         if (user && user?.role === 'user'){
@@ -764,7 +820,11 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
     }, [user])
     
+    const [loading, setLoading] = useState(false);
+
     const ModalJSX = (<div className={`${props.noOverlay ? ' ': 'fixed -translate-y-1/2 top-1/2'} md:translate-none md:relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto w-80 sm:w-full sm:max-w-lg`} ref={containerRef}>
+    {loading && <div className="absolute rounded-lg top-0 left-0 w-full h-full bg-[#ffffff8d]"> <Spinner custom showWater backgroundGradient/> </div>}
+
     <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg">
         <div className="sm:flex sm:items-start">
         
@@ -786,10 +846,13 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                     
                 </div>
                 
-                {type && details && type !== ModalTypes.Notifications && createDetails(type, details, admin, props.setEvents, props.event, props.displayToast, closeModal, isEditing, setEditing, formValues, handleChange, "location_id" in details ? details as ShiftExtendedProps : undefined)}
-                
+
+                {type && details && type !== ModalTypes.Notifications && createDetails(type, details, admin, props.setEvents, props.event, props.displayToast, closeModal, isEditing, setEditing, formValues, handleChange, "location_id" in details ? details as ShiftExtendedProps : undefined, setLoading)}
+                    
 
                 {props.children}
+
+               
             </div>
         </div>  
     </div>

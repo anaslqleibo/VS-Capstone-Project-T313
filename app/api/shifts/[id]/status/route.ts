@@ -26,7 +26,7 @@ export async function PATCH(req: Request, {params}: { params: {id: string}}) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true});
   } catch (error) {
     console.error("Error updating shift status:", error);
     return NextResponse.json(

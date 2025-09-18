@@ -16,7 +16,8 @@ import Accordion from "@/app/components/Accordion";
 import getStatusColor, { Status, stringToStatus } from "@/app/components/utils/getStatusColor";
 import Icon from "@/public/icons/Icons";
 import { checkAvailability } from "@/app/controllers/Unavailabilities";
-import { color } from "@mui/system";
+import Modal from "@/app/components/Modal";
+import Spinner from "@/app/components/Spinner";
 
 export default function ShiftCreationPage() {
   const modalContainer = useRef<HTMLDivElement>(null);
@@ -65,8 +66,9 @@ export default function ShiftCreationPage() {
       end: end ? dayjs(end).format("HH:mm:ss") : null,
     });
 
+    
+
     if (
-      !assignee?.id ||
       !location.id ||
       location.id === -1 ||
       !location.name ||
@@ -76,9 +78,11 @@ export default function ShiftCreationPage() {
       !end
     ) {
       // alert("Please fill all fields.");
-      displayToast("Please fill all fields", "error")
+      displayToast("Please fill all required fields", "error")
       return;
     }
+
+    
 
     const isValidTime = dayjs(start).isValid() && dayjs(end).isValid();
     const isValidDate = dayjs(date).isValid();
@@ -89,9 +93,19 @@ export default function ShiftCreationPage() {
       return;
     }
 
+    if (!assignee?.id){
+      if (modalConfirmation){
+        setModalConfirmation(false);
+      }
+      else{
+        setOpenModal(true);
+        return;
+      }
+    }
+
     const shift = {
-      assignee_id: assignee.id.toString() ?? 0,
-      status: openShift ? "Open" as ShiftStatus : "Pending" as ShiftStatus,
+      assignee_id: assignee?.id.toString() ?? '',
+      status: openShift ? "Open" as ShiftStatus : (assignee?.id ? "Pending" as ShiftStatus : "Unassigned" as ShiftStatus),  
       date: dayjs(date).format("YYYY-MM-DD"),
       start_time: dayjs(start).format("HH:mm:ss"),
       end_time: dayjs(end).format("HH:mm:ss"),
@@ -114,6 +128,7 @@ export default function ShiftCreationPage() {
     
     if (!proceed) return;
     try {
+      setLoading(true);
       console.log("Sending shift data:", shift);
 
       await createShift(shift);
@@ -130,12 +145,17 @@ export default function ShiftCreationPage() {
       console.error("Shift creation failed:", err);
       alert("Something went wrong. Check console for details.");
     }
+    finally{
+      setLoading(false);
+    }
   };
 
   const pickerSetup = {
     "& .MuiPickersInputBase-sectionsContainer": { padding: "8px 4px" },
   };
 
+  const [openModal, setOpenModal] = useState(false);
+  const [modalConfirmation, setModalConfirmation] = useState(false);
   const [showToast, setToastShown] = useState(false);
   const [message, setMessage] = useState("");
   const [toastType, setToastType] = useState<"success"|"error">("success");
@@ -193,10 +213,16 @@ export default function ShiftCreationPage() {
     } 
   }, [openShift])
 
+  const [loading, setLoading] = useState(false);
+
   return (
     <Layout modalContainer={modalContainer}>
+       {loading && <div className="absolute z-200 rounded-lg top-0 left-0 w-full h-full bg-[#ffffff8d]"> <Spinner custom backgroundGradient/> </div>}
+
       <div className="relative flex-[1] h-full bg-[#f4f4f4]">
         <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
+       
+
         <div className="p-6 h-full md:flex md:flex-col">
           <h2 className="text-2xl mb-[30px]">
             Welcome,{" "}
@@ -267,7 +293,7 @@ export default function ShiftCreationPage() {
                 </div>
                 <LocationDropdownWithAddress
                   onSelect={handleLocationSelect} // Add this prop
-                  setUpdatedLocation={(field, value) => {
+                  setUpdatedDetail={(field, value) => {
                     console.log(`Setting location ${field} to:`, value);
                     setLocation((prev) => ({
                       ...prev,
@@ -334,6 +360,18 @@ export default function ShiftCreationPage() {
           
         </div>
       </div>
+         { modalContainer.current &&       
+              <Modal details={{}} shown={openModal} setShown={setOpenModal} modalContainer={modalContainer.current} setParentOpen={setOpenModal} displayToast={displayToast} title="Create unassigned shift confirmation">
+                <div className='mt-4'>You are about to create an unassigned shift. To assign an employee, click 'Cancel' and choose one from the dropdown. Do you want to proceed?</div>
+                 <div className='flex items-center justify-end gap-4 -mb-4 mt-6'> 
+                  <Button type="outline" fontSize="0.8em"  className="py-3 px-5" onClick={()=>setOpenModal(false)}>Cancel</Button>
+                  <Button type="cta" htmlType='submit' fontSize="0.8em" className="py-3 px-5" onClick={()=>{setModalConfirmation(true); handleCreateShift(); setOpenModal(false)}}>Continue</Button>
+                  
+                </div>
+              </Modal>
+            }
+
+      
     </Layout>
   );
 }

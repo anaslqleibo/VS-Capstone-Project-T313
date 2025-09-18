@@ -65,7 +65,6 @@ function Form({ children, onSubmit, scrollToError = true, className, showAllErro
       setExternalTrigger(1); // set the trigger to remove any error message on each input
       // errorOnSubmit = onSubmit?.(e);
       
-
       onSubmit?.(e);
 
     } else if (scrollToError) {

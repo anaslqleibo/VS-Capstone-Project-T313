@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     await executeQuery(
       `INSERT INTO shifts (assignee_id, status, location_id, date, start_time, end_time, notes)
        VALUES (?, ?, ?, ?, ?, ?, ?)`, // added status field
-      [status !== "Open" ? assignee_id : null, (status !== "Open" && admin) ? "Accepted" : status, location_id, date, start_time, end_time, notes]
+      [(status !== "Open" && status !== "Unassigned") ? assignee_id : null, (status !== "Open" && status !== "Unassigned" && admin) ? "Accepted" : status, location_id, date, start_time, end_time, notes]
     );
 
     return new Response(JSON.stringify({ message: "Shift created successfully" }), {

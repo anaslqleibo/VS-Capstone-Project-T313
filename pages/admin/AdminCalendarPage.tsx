@@ -164,7 +164,7 @@ export default function AdminCalendarPage() {
             {account && <h2 className="text-2xl mb-4">Welcome, <span className="text-primary font-semibold">{account.first_name+ ' ' + account.last_name}</span></h2>}
            
 
-            {events === undefined ? <Spinner/> :
+            {events.length === 0 ? <Spinner custom showWater backgroundGradient borderSpinner/> :
             <>
               <div className={`flex justify-between ${showUnpublished ? 'items-end' : 'items-center'}  mb-4 md:mb-0`}>
                 <div className="flex flex-col items-start md:flex-row flex-wrap gap-3">

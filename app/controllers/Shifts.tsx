@@ -19,6 +19,11 @@ export type Shift = {
   published ?: boolean;
 };
 
+export type ShiftAssignee = {
+  id?: string;
+  assignee_id: string; 
+}
+
 export async function fetchShifts(user_id: number) {
   const res = await fetch(`/api/shifts/${user_id}`);
 
@@ -43,7 +48,7 @@ export async function createShift(shift: Shift) {
   return await res.json();
 }
 
-export async function updateShift(shift: Shift) {
+export async function updateShift(shift: Shift | ShiftAssignee) {
   try {
     const res = await fetch(`/api/shifts/${shift.id}`, {
       method: 'PUT',

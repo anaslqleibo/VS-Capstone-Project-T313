@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { executeQuery } from "@/app/lib/db";
+import { executeQuery, executeTransaction } from "@/app/lib/db";
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -30,12 +30,16 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   try {
     const { id } = await params;
     const body = await request.json();
-    const { first_name, last_name, email, phone } = body;
+    const { first_name, last_name, email, phone, preferred_name, gender, date_of_birth, address, emergency_person, emergency_contact } = body;
 
     const updates = [];
     const vals = [];
 
-    if (!first_name && !last_name && !email && !phone){
+    const queries = [];
+    let query = '';
+    
+    
+    if (!first_name && !last_name && !email && !phone && !preferred_name && !gender && !date_of_birth && !address && !emergency_person && !emergency_contact){
       return NextResponse.json(
       { error: "Please provide atleast one field to update!" },
       { status: 401 }
@@ -58,16 +62,60 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       updates.push('phone = ?');
       vals.push(phone);
     }
-    vals.push(id);
-
-    const result = await executeQuery(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, vals) as any;
-
-    if (result.affectedRows === 0) {
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+    
+    if (updates.length>0){
+      vals.push(id);
+      query = `UPDATE users SET ${updates.join(', ')} WHERE id = ?`;
+      queries.push({query, params: [...vals]});
+      updates.length = 0;
+      vals.length = 0;
     }
+
+    if (preferred_name) {
+      updates.push('preferred_name = ?');
+      vals.push(preferred_name);
+    }
+    if (gender) {
+      updates.push('gender = ?');
+      vals.push(gender);
+    }
+    if (date_of_birth) {
+      updates.push('date_of_birth = ?');
+      vals.push(date_of_birth);
+    }
+    if (address) {
+      updates.push('address = ?');
+      vals.push(address);
+    }
+    if (emergency_person) {
+      updates.push('emergency_person = ?');
+      vals.push(emergency_person);
+    }
+    if (emergency_contact) {
+      updates.push('emergency_contact = ?');
+      vals.push(emergency_contact);
+    }
+  
+    if (updates.length > 0){
+      vals.push(id);
+      query = `UPDATE employee_details SET ${updates.join(', ')} WHERE user_id = ?`;
+      queries.push({query, params: vals});
+    }
+  
+    if (queries.length > 0){
+      const result = await executeTransaction(queries) as any;
+
+      if (result.affectedRows === 0) {
+        return NextResponse.json(
+          { error: "User not found" },
+          { status: 404 }
+        );
+      }
+    }
+    else return NextResponse.json(
+          { error: "No queries constructed" },
+          { status: 402 }
+        );
 
     return NextResponse.json({ success: true });
   } catch (error) {

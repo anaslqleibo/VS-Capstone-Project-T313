@@ -218,7 +218,7 @@ const LocationsPage = () => {
 
             }
           </div>
-        </div>: <Spinner/>}
+        </div>: <Spinner custom showWater backgroundGradient/>}
         
 
         { modalContainer.current && 

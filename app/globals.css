@@ -1,5 +1,4 @@
 @import "tailwindcss";
-
 @theme{
   --color-unpublished: #B19F90;
 
@@ -72,8 +71,6 @@
     --font-display: "Inter", "sans-serif";
   }
 }
-
-
 
 /* === GENERAL STYLES === */
 body {
