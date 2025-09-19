@@ -10,15 +10,16 @@ import Layout from "@/app/components/Layout";
 import Spinner from "@/app/components/Spinner";
 import Icon from "@/public/icons/Icons";
 import Toast from "@/app/components/Toast";
+import Dropdown from "@/app/components/Dropdown";
+import { fetchAllUsers, User } from "@/app/controllers/User";
+import { FaDollarSign, FaEdit } from "react-icons/fa";
+import dayjs from "dayjs";
+import Modal from "@/app/components/Modal";
 
-type User = {
-  id: number;
-  first_name: string;
-  last_name: string;
-  email: string;
-  role: string;
-  is_active?: number;
-};
+
+type UserExtended = User & {
+  job_title: string
+}
 
 export default function UsersPage() {
 const modalContainer = useRef<HTMLDivElement>(null);
@@ -35,7 +36,8 @@ const modalContainer = useRef<HTMLDivElement>(null);
   });
   const [loading, setLoading] = useState(true);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [selectedUser, setUserSelected] = useState<User | null>(null);
+  const [activeFilter, setActiveFilter] = useState<string[]>(['Name','Preferred name','Email','Phone']);
 
   // Check if user is authenticated and has admin role
   useEffect(() => {
@@ -53,9 +55,8 @@ const modalContainer = useRef<HTMLDivElement>(null);
   useEffect(() => {
     // Only fetch users if user is admin
     if (user?.role === 'admin') {
-      fetch("/api/users")
-        .then(res => res.json())
-        .then(data => {
+
+      fetchAllUsers().then(data => {
           setUsers(Array.isArray(data) ? data : []);
           setLoading(false);
         });
@@ -100,8 +101,10 @@ const modalContainer = useRef<HTMLDivElement>(null);
     setShowDeleteDialog(false);
     displayToast('Succesfully deleted account with email ' + email + '!', 'success');
 
-    setUserToDelete(null);
+    setUserSelected(null);
   };
+  const [modalType, setModalType] = useState<'create'|'update'|'delete'|'view'>('create');
+  const [openModal, setOpenModal] = useState(false);
   const [showToast, setToastShown] = useState(false);
   const [message, setMessage] = useState("");
   const [toastType, setToastType] = useState<"success"|"error">("success");
@@ -112,45 +115,93 @@ const modalContainer = useRef<HTMLDivElement>(null);
       setToastShown(true);
   }
 
+  const filterItems = ['Name','Preferred name','Email','Phone','Date of birth','Age','Address','Gender','Emergency Contact Person','Emergency Contact Number', 'Job Title'];
+  const fieldMap: Record<string, keyof User> = {
+    "Name": "first_name",
+    "Preferred name": "preferred_name",
+    "Email": "email",
+    "Phone": "phone",
+    "Date of birth": "date_of_birth",
+    "Address": "address",
+    "Gender": "gender",
+    "Emergency Contact Person": "emergency_person",
+    "Emergency Contact Number": "emergency_contact",
+    "Job Title": "job_title"
+  };
+
+  
+  const sortedFilters = [...activeFilter].sort(
+    (a, b) => filterItems.indexOf(a) - filterItems.indexOf(b)
+  );
+
+
+
   return (
     <Layout modalContainer={modalContainer}>
        <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
               
     <div className="p-4 h-full flex flex-col">
-      <h1 className="text-3xl font-bold mb-6">User Management</h1>
-      <Button onClick={() => setShowAddDialog(true)} className="w-fit">Add User</Button>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">User Management</h1>
+      <Button onClick={() => setShowAddDialog(true)} className="w-fit">Add new user</Button>
 
+      </div>
+      
+    <div className="flex gap-2 items-center w-full mt-6">
+      Filter column: 
+      <Dropdown items={filterItems} multiple placeholder="Select columns" className="min-w-48 max-w-200" showCheckbox actAsFilter setFilter={(e:string[])=>setActiveFilter(e)} initialSelectedItem={['Name', 'Email', 'Phone']} preventEmptySelection={true}></Dropdown>
+    </div>
       {loading ? <Spinner/> :
-        <div className="min-h-64 mt-6 overflow-y-auto">
+        <div className="min-h-64 mt-4 overflow-y-auto">
       <table className="w-full border-x border-b border-separate border-spacing-0">
         <thead>
-          <tr className="bg-gray-200 ">
-            <th className="bg-gray-200 p-2 sticky top-0 z-10 border-y">Name</th>
-            <th className="bg-gray-200 p-2 sticky top-0 z-10 border-y">Email</th>
-            <th className="bg-gray-200 p-2 sticky top-0 z-10 border-y">Role</th>
-            <th className="bg-gray-200 p-2 sticky top-0 z-10 border-y">Active</th>
-            <th className="bg-gray-200 p-2 sticky top-0 z-10 border-y">Actions</th>
+          <tr className="bg-gray-200">
+            {sortedFilters.map((field, index) => (
+            <th key={index} className="bg-gray-200 p-2 sticky top-0 z-10 border-y">{field}</th>
+              
+            ))}
+            <th className="bg-gray-200 p-2 sticky top-0 z-10 border-y">Action</th>
+
           </tr>
         </thead>
         <tbody>
           {users.map(u => (
-            <tr key={u.id} className="border-t">
-              <td className="p-2">{u.first_name} {u.last_name}</td>
-              <td className="p-2">{u.email}</td>
-              <td className="p-2">{u.role}</td>
-              <td className="p-2">{u.is_active ? "Yes" : "No"}</td>
-              <td className="p-2 flex gap-2 justify-center">
+            <tr key={u.id} className="border-t odd:bg-gray-100 even:bg-gray-200">
+              {sortedFilters.map((field) => {
+                if (field === "Name") {
+                  return (
+                    <td key={field} className="p-2">
+                      {u.first_name} {u.last_name}
+                    </td>
+                  );
+                }
+
+                if (field === "Age"){
+                  return (
+                    <td key={field.toString()} className="p-2">
+                      {u.date_of_birth ? dayjs().year()-Number(u.date_of_birth.split('/')[2]) : '-'}
+                    </td>
+                  );
+                }
+
+                const key = fieldMap[field];
+                return (
+                  <td key={field} className="p-2">
+                    {u[key] ?? "-"}
+                  </td>
+                );
+              })}
+              <td className="p-2 flex gap-2 justify-center items-center">
                 {/* <Button type="outline" size="sm" onClick={() => handleDisableUser(u.id)}>
                   Disable
                 </Button> */}
-                <Button
-                  size="sm"
-                  className="bg-[color:var(--danger-color)]  hover:bg-[color:var(--danger-color-hover)]"
-                  onClick={() => {
-                    setUserToDelete(u);
-                    setShowDeleteDialog(true);
-                  }}
-                >
+                <Button className="bg-success hover:bg-success-hover p-3 h-fit" onClick={() => { setUserSelected(u); setModalType('view'); setOpenModal(true)}}>
+                  <FaDollarSign/>
+                </Button>
+                <Button className="bg-secondary hover:bg-secondary-hover p-3 h-fit" onClick={() => { setUserSelected(u); setModalType('update'); setOpenModal(true)}}>
+                  <FaEdit/>
+                </Button>
+                <Button className="bg-danger hover:bg-danger-hover p-3 h-fit" onClick={() => { setUserSelected(u); setModalType('delete'); setOpenModal(true)}}>
                   <Icon id='trash'/>
                 </Button>
               </td>
@@ -160,24 +211,35 @@ const modalContainer = useRef<HTMLDivElement>(null);
       </table>
       </div>
       }
-      
 
-      {/* Delete Confirmation Dialog */}
-      {showDeleteDialog && userToDelete && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded shadow max-w-md w-full">
-            <h2 className="text-xl font-bold mb-4">Delete User</h2>
-            <p className="mb-6">
-              Are you sure you want to delete <span className="font-semibold">{userToDelete.first_name} {userToDelete.last_name}</span> ({userToDelete.email})?
+      { modalContainer.current && 
+        <Modal details={{}} shown={openModal} setShown={setOpenModal} modalContainer={modalContainer.current} setParentOpen={setOpenModal} displayToast={displayToast} title={modalType==="delete"?'Delete user confirmation':modalType==="create"?'Create new user':modalType==='update'?"Modify user details":'View pay rates'}>
+          {selectedUser && modalType === 'delete' && 
+          <div>
+          <p className="mb-6">
+              Are you sure you want to delete <span className="font-semibold">{selectedUser.first_name} {selectedUser.last_name}</span> ({selectedUser.email})?
             </p>
             <div className="flex justify-end gap-2">
               <Button type="outline" onClick={() => setShowDeleteDialog(false)}>No</Button>
               <Button
-                onClick={() => handleDeleteUser(userToDelete.email)}
+                onClick={() => handleDeleteUser(selectedUser.email)}
               >
                 Yes
               </Button>
             </div>
+          </div>
+          }
+
+        </Modal>
+      }
+      
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteDialog && selectedUser && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded shadow max-w-md w-full">
+            <h2 className="text-xl font-bold mb-4">Delete User</h2>
+            
           </div>
         </div>
       )}

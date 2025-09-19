@@ -72,7 +72,7 @@ export async function DELETE(req: Request, {params}: { params: {id: string }}) {
 
 export async function PUT(req: Request, {params}: { params: {id: string }}){
   try {
-    const { id, assignee_id, status, date, start_time, end_time, notes, location_id} : Shift = await req.json();
+    const { id, assignee_id, status, date, start_time, end_time, notes, location_id, published} : Shift = await req.json();
 
     const updates = [];
     const vals = [];
@@ -112,6 +112,10 @@ export async function PUT(req: Request, {params}: { params: {id: string }}){
     if (location_id) {
       updates.push('location_id = ?');
       vals.push(location_id);
+    }
+    if (published !== undefined) {
+      updates.push('published = ?');
+      vals.push(published);
     }
     vals.push(id);
 

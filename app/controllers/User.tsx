@@ -16,6 +16,7 @@ export type User = {
     emergency_person?:string;
     emergency_contact?:string;
     pay_rate_id?:string;
+    job_title?:string;
 };
 
 export type PayRate = {
@@ -58,6 +59,16 @@ export async function fetchAllEmployees() {
   }
   const data = await res.json();
   return data as User[];
+}
+
+export async function fetchAllUsers() {
+  const res = await fetch('/api/users');
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch users data');
+  }
+  const data = await res.json();
+  return data;
 }
 
 

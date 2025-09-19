@@ -393,7 +393,7 @@ const AccountPage = () => {
             <Modal details={{}} shown={openModal} setShown={setOpenModal} modalContainer={modalContainer.current} setParentOpen={setOpenModal} displayToast={displayToast} title="Change password">
               <Form onSubmit={(e)=>{handleUpdatePassword(); return''}}>
                 <div className="mt-4 flex flex-col gap-4">
-                  <Input label="New Password" type="password" required allowViewPassword placeholder="Enter your new password here..." minLength={8} maxLength={255} value={newPassword} onChange={(e)=>setNewPassword(e.target.value)}
+                  <Input label="New Password" type="password" required allowViewPassword placeholder="Enter your new password..." minLength={8} maxLength={255} value={newPassword} onChange={(e)=>setNewPassword(e.target.value)}
                   customValidate={(val : string) => {
                     if (!/[a-z]/.test(val)) return "Password must contain at least one lowercase letter.";
                     if (!/[A-Z]/.test(val)) return "Password must contain at least one uppercase letter.";
@@ -402,7 +402,7 @@ const AccountPage = () => {
                     return '';
                     }
                     }/>
-                  <Input label="Confirm Password" type="password" required allowViewPassword placeholder="Enter to confirm your password here..." value={confirmPassword} onChange={(e)=>setConfirmPassword(e.target.value)} customValidate={(val:string) => val===newPassword ? '' : "Passwords do not match."} validateMode="onChange"/>
+                  <Input label="Confirm Password" type="password" required allowViewPassword placeholder="Enter to confirm your password..." value={confirmPassword} onChange={(e)=>setConfirmPassword(e.target.value)} customValidate={(val:string) => val===newPassword ? '' : "Passwords do not match."} validateMode="onChange"/>
                 </div>
 
                 <div className="flex flex-col gap-1">

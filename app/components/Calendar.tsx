@@ -46,10 +46,10 @@ function constructEventsArray(events: EventInput[], role: Role) {
   const newEvents: EventInput[] = [];
   
   events.forEach(e => {
-    const { status, original_status, type, assignee_id, assignee_name, date, start_time, end_time, time, location_id, location_name, address, notes, repeat, published} = e.extendedProps || {};
+    const {id, status, original_status, type, assignee_id, assignee_name, date, start_time, end_time, time, location_id, location_name, address, notes, repeat, published} = e.extendedProps || {};
 
     const shiftExtProps : ShiftExtendedProps = {
-        id: e.id,
+        id: id,
         assignee_id,
         assignee_name,
         status,
@@ -239,7 +239,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
                 // onClicks?.at(index);
                 const {id, status} = arg.event.extendedProps;
                 const activeEvent = newEvents.find( event => String(event.extendedProps?.id) === String(id));
-                
+            
                 setActiveModal({
                     isOpen: true,
                     status,

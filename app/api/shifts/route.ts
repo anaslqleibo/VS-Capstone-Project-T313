@@ -12,7 +12,8 @@ export async function POST(req: NextRequest) {
       date,
       start_time,     
       end_time,       
-      notes
+      notes,
+      published
     } = await req.json();
 
     console.log("Received shift data:", {
@@ -33,9 +34,9 @@ export async function POST(req: NextRequest) {
     const admin = await isAdmin(assignee_id);
 
     await executeQuery(
-      `INSERT INTO shifts (assignee_id, status, location_id, date, start_time, end_time, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`, // added status field
-      [(status !== "Open" && status !== "Unassigned") ? assignee_id : null, (status !== "Open" && status !== "Unassigned" && admin) ? "Accepted" : status, location_id, date, start_time, end_time, notes]
+      `INSERT INTO shifts (assignee_id, status, location_id, date, start_time, end_time, notes, published)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, // added status field
+      [(status !== "Open" && status !== "Unassigned") ? assignee_id : null, (status !== "Open" && status !== "Unassigned" && admin) ? "Accepted" : status, location_id, date, start_time, end_time, notes, published ? 1 : 0]
     );
 
     return new Response(JSON.stringify({ message: "Shift created successfully" }), {

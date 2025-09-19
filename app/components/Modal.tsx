@@ -151,7 +151,7 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
     const handleSave = async () => {
         if (castedFormValues){
             if (castedFormValues.assignee_name === '') castedFormValues.assignee_name = initialDetails?.assignee_name;
-            if (castedFormValues.date === initialDetails?.date && castedFormValues.time === initialDetails.time && castedFormValues.location_id === initialDetails.location_id && castedFormValues.address === initialDetails.address && castedFormValues.status === initialDetails.status && castedFormValues.assignee_id === initialDetails.assignee_id && castedFormValues.notes === initialDetails.notes){
+            if (castedFormValues.date === initialDetails?.date && castedFormValues.time === initialDetails.time && castedFormValues.location_id === initialDetails.location_id && castedFormValues.address === initialDetails.address && castedFormValues.status === initialDetails.status && castedFormValues.assignee_id === initialDetails.assignee_id && castedFormValues.notes === initialDetails.notes && castedFormValues.published == initialDetails.published){
                 if (setEditing) setEditing(false);
                 return;
             }
@@ -177,8 +177,6 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
                         title: buildShiftEventTitle(castedFormValues.status, castedFormValues.time, castedFormValues.location_name, castedFormValues.status==='Open' ? '' : castedFormValues.assignee_name),
                         backgroundColor: getStatusColor(castedFormValues.status)
                     };
-                    
-                    console.log(updatedEvent);
 
                     setEvents!(updatedEvent, "update");
                     
@@ -202,8 +200,9 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
         <div className={`text-sm font-semibold text-gray-600 mt-1 flex items-center ${isEditing ? 'gap-2' : 'gap-1'}`}>Status: 
             {isEditing ? 
              <>
-                <Dropdown items={[ ...Object.values(Status).filter(((status)=>status!=='Declined'&&status!=='Leave'&&status!=='Unavailable'&&status!=='Unpublished'))]} placeholder="Select shift" maxVisibleItems={6} className='min-w-32' initialSelectedItem={formValues?.status ?? 'Select a status'} onChange={(e)=>handleChange!('status', e)} colorBasedOnValue syncCurrentWithInitialSelected={true}/>
-                {/* <Checkbox label="Set unpublished" checked={false} onChange={(e)=>{}} className="text-xs md:text-sm"/> */}
+                <Dropdown items={[ ...Object.values(Status).filter(((status)=>status!=='Leave'&&status!=='Unavailable'&&status!=='Unpublished'))]} placeholder="Select shift" maxVisibleItems={6} className='min-w-32' initialSelectedItem={formValues?.original_status ?? 'Select a status'} onChange={(e)=>handleChange!('status', e)} colorBasedOnValue syncCurrentWithInitialSelected={true}/>
+                {initialDetails?.published ? <Checkbox label="Set unpublished" checked={!castedFormValues.published} onChange={(e)=>{handleChange!('published', e ? 0 : 1)}} className="text-xs md:text-sm"/> : ''}
+                
              </>
             : 
             <span className="font-bold" style={{color: getStatusColor(status)}}>{status}</span>}
@@ -214,9 +213,9 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
             {isEditing ? <div id="btnSave" onClick={()=>{handleSave()}}><FaSave /></div> :
             <>
             <FaRegBell/>
-            <FaEdit onClick={()=>{setEditing && setEditing(true); 
-            castedFormValues.assignee_id === null && handleChange!('assignee_name',' ')
-
+            <FaEdit onClick={()=>{
+                setEditing && setEditing(true); 
+                castedFormValues.assignee_id === null && handleChange!('assignee_name','')
              }}/>
             <FaTrash onClick={handleDelete}/>
             </>
@@ -225,8 +224,8 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
         </div>
     </div>
     
-    {(employee!==undefined && employee!==null && employee !== ' ') ? <div className={`text-sm font-semibold text-gray-600 ${isEditing ? 'mt-3 gap-2' : 'mt-1 gap-1'} flex items-center`}>Employee: {isEditing ?  
-    <DropdownUser detail={castedFormValues.assignee_name} setUpdatedDetail={handleChange}/>
+    {(employee!==undefined && employee!==null) ? <div className={`text-sm font-semibold text-gray-600 ${isEditing ? 'mt-3 gap-2' : 'mt-1 gap-1'} flex items-center`}>Employee: {isEditing ?  
+    <DropdownUser id='dropdown-user' detail={employee} setUpdatedDetail={handleChange}/>
     : <span className="text-[color:var(--secondary-color)] font-normal"> {employee}</span>}</div> : ""}    
 
 
@@ -249,7 +248,7 @@ function createDetailEditor(label: string, field: keyof ShiftExtendedProps, deta
     if (castedFormValues === -1) return;
 
     if (type === "textarea")
-        return (<><p className="text-sm font-semibold text-gray-600 mt-2 mb-1">{label}</p>
+        return (<><p className="text-sm font-semibold text-gray-600 mt-1 mb-1">{label}</p>
     <textarea readOnly={!isEditing} className="text-gray-500 font-normal text-sm border-2 border-gray-500 bg-gray-100 rounded-md min-w-full p-2 min-h-[72px] resize-none focus:outline-0" value={castedFormValues.notes} onChange={(e)=>handleChange!("notes", e.target.value)}></textarea></>);
     else{
         if (isEditing){
@@ -299,7 +298,7 @@ function createDetailEditor(label: string, field: keyof ShiftExtendedProps, deta
             );
         }
         else 
-            return (<p className="text-sm font-semibold text-gray-600 mt-2">{label}
+            return (<p className="text-sm font-semibold text-gray-600 mt-1">{label}
     <span className="text-[color:var(--secondary-color)] font-normal">{detail}</span></p>);
     }
 }
@@ -416,7 +415,7 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
 
         return (
             <>
-            {isAdmin && setEditing && createAdminComponent(castedDetails.status, castedDetails.assignee_name, setEvents, event, displayToast, closeModal, isEditing, setEditing, formValues, handleChange, initialDetails, setLoading)}
+            {isAdmin && setEditing && createAdminComponent(castedDetails.original_status, castedDetails.assignee_name, setEvents, event, displayToast, closeModal, isEditing, setEditing, formValues, handleChange, initialDetails, setLoading)}
             {createDetailEditor("Date: ", 'date', sqlDateFormatToRegularFormat(castedDetails.date), "", isEditing, formValues, handleChange, displayToast)}
             {createDetailEditor("Time: ", 'time' , castedDetails.time, "", isEditing, formValues, handleChange, displayToast)}
             {createDetailEditor("Location: ", 'location_name' ,castedDetails.location_name, "", isEditing, formValues, handleChange, displayToast)}
@@ -518,7 +517,14 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
     }
     else if (type === ModalTypes.OpenShiftDetails || type === ModalTypes.UnassignedShiftDetails)
     {
-        const handleAssign = () => {handleChange!('assignee_name', ''); setEditing && setEditing(true)};
+        const handleAssign = () => {
+            handleChange!('assignee_name','');  
+           
+            setEditing!(true);
+            // const dropdownUser = document.getElementById('dropdown-user');
+            // console.log(dropdownUser);
+            // dropdownUser?.click();
+        };
         const handlePickup = async () => {
             const result = await updateShiftStatus(event?.extendedProps?.id as string, Status.Accepted);
             
@@ -769,7 +775,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
             }
 
-            if (prev && ((prev.status === Status.OpenShift || prev.status === Status.Unassigned) && (field==="status" && value!==prev.status))){
+            if (prev && ((prev.status === Status.OpenShift || prev.status === Status.Unassigned) && (field==="status" && value!==prev.status)) && formValues?.assignee_name === undefined){
                 return {
                     ...prev,
                     [field]: value,
@@ -784,6 +790,8 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                     'assignee_name':undefined
                 };
             }
+             
+            console.log(formValues);
 
             return {
                 ...prev,
@@ -823,12 +831,12 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
     const [loading, setLoading] = useState(false);
 
     const ModalJSX = (<div className={`${props.noOverlay ? ' ': 'fixed -translate-y-1/2 top-1/2'} md:translate-none md:relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto w-80 sm:w-full sm:max-w-lg`} ref={containerRef}>
-    {loading && <div className="absolute rounded-lg top-0 left-0 w-full h-full bg-[#ffffff8d]"> <Spinner custom showWater backgroundGradient/> </div>}
+    {loading && <div className="absolute rounded-lg top-0 left-0 w-full h-full z-10 bg-[#ffffffa2]"> <Spinner custom showWater backgroundGradient/> </div>}
 
     <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg">
         <div className="sm:flex sm:items-start">
         
-            <div className="mt-3 w-full sm:mt-0 sm:text-left">
+            <div className="mt-3 w-full sm:mt-0 sm:text-left ">
                 <div className="flex items-center justify-between align-middle mb-2">
                     <h1 id="dialog-title" className="text-lg font-semibold text-gray-900">
                         
@@ -856,7 +864,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
             </div>
         </div>  
     </div>
-    {(buttons!=null || props.customButtons) && <div className="py-3 flex flex-row-reverse px-6 gap-3 rounded-lg">
+    {type && (buttons!=null || props.customButtons) && <div className="p-4 flex flex-row-reverse px-6 gap-3 rounded-lg bg-gray-50">
         {type!==undefined ? buttons : props.customButtons}
     </div>}    
     </div>);

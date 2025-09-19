@@ -8,7 +8,7 @@ import Dropdown, { LocationDropdownWithAddress } from "@/app/components/Dropdown
 import Button from "@/app/components/Button";
 import { fetchAllEmployees, User } from "@/app/controllers/User";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { createShift, ShiftStatus } from "@/app/controllers/Shifts";
+import { createShift, Shift, ShiftStatus } from "@/app/controllers/Shifts";
 import Checkbox from "@/app/components/Checkbox";
 import Toast from "@/app/components/Toast";
 import { error } from "console";
@@ -36,7 +36,22 @@ export default function ShiftCreationPage() {
     id: -1,
   });
   const [openShift, setOpenShift] = useState<boolean>(false);
+  const [markAccepted, setMarkAccepted] = useState<boolean>(false);
+  const [isPublished, setIsPublished] = useState<boolean>(false);
 
+  const handleMarkAcceptedChanged = (e:boolean) => {
+    console.log(assignee);
+    if (assignee?.id){
+
+      if (openShift){
+        setOpenShift(false);
+      }
+      setMarkAccepted(e);
+
+    }else{
+      e && displayToast('Please select the assignee first!', 'error');
+    }
+  }
   useEffect(() => {
     async function getEmployees() {
       const employees = await fetchAllEmployees();
@@ -93,8 +108,10 @@ export default function ShiftCreationPage() {
       return;
     }
 
+    console.log('1');
     if (!assignee?.id){
       if (modalConfirmation){
+        console.log('2');
         setModalConfirmation(false);
       }
       else{
@@ -103,9 +120,9 @@ export default function ShiftCreationPage() {
       }
     }
 
-    const shift = {
+    const shift : Shift= {
       assignee_id: assignee?.id.toString() ?? '',
-      status: openShift ? "Open" as ShiftStatus : (assignee?.id ? "Pending" as ShiftStatus : "Unassigned" as ShiftStatus),  
+      status: openShift ? "Open" as ShiftStatus : (assignee?.id ? (markAccepted ? "Accepted" as ShiftStatus :  "Pending" as ShiftStatus) : "Unassigned" as ShiftStatus),  
       date: dayjs(date).format("YYYY-MM-DD"),
       start_time: dayjs(start).format("HH:mm:ss"),
       end_time: dayjs(end).format("HH:mm:ss"),
@@ -113,7 +130,7 @@ export default function ShiftCreationPage() {
       location_id: location.id.toString(),
       location_name: location.name,
       address: location.address,
-      type: "shift",
+      published: isPublished
     };
 
     let proceed = true;
@@ -180,7 +197,7 @@ export default function ShiftCreationPage() {
 
   useEffect(()=>{
     async function getAvailability(){
-      if (assignee && date){
+      if (assignee && date && start && end){
         const res = await checkAvailability(assignee.id, date.format("YYYY-MM-DD"), start?.format("HH:mm"), end?.format("HH:mm"));
         console.log(res);
 
@@ -210,6 +227,8 @@ export default function ShiftCreationPage() {
     if (openShift){
       setStatus("default");
       setUnavailDetails(null);
+
+      setMarkAccepted(false);
     } 
   }, [openShift])
 
@@ -219,25 +238,25 @@ export default function ShiftCreationPage() {
     <Layout modalContainer={modalContainer}>
        {loading && <div className="absolute z-200 rounded-lg top-0 left-0 w-full h-full bg-[#ffffff8d]"> <Spinner custom backgroundGradient/> </div>}
 
-      <div className="relative flex-[1] h-full bg-[#f4f4f4]">
+      <div className="relative flex-[1] h-full bg-[#f4f4f 4]">
         <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
        
 
-        <div className="p-6 h-full md:flex md:flex-col">
-          <h2 className="text-2xl mb-[30px]">
+        <div className="px-6 pt-6 pb-2 h-full md:flex md:flex-col">
+          {/* <h2 className="text-2xl mb-[30px]">
             Welcome,{" "}
             <span className="text-[color:var(--primary-color)] font-semibold">
               {account?.first_name + " " + account?.last_name}
             </span>
-          </h2>
+          </h2> */}
 
-          <div className="flex flex-col justify-between md:flex-row gap-4">
-            <div className={`bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg md:w-fit md:flex-1/2 ${borderColor}`}>
-            <div className="mt-3 sm:mt-0 sm:text-left flex flex-col gap-2">
+          <div className="flex flex-col justify-between md:flex-row gap-4 h-full">
+            <div className={`bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg md:w-fit md:flex-1/2 ${borderColor}overflow-y-auto h-full`} >
+            <div className="mt-3 sm:mt-0 sm:text-left flex flex-col gap-3">
               <h1 className="text-3xl mb-2 font-semibold text-[color:var(--primary-color)]">Create shift</h1>
 
               <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-gray-600">Date:</p>
+                <p className="text-sm font-semibold text-gray-600 after:ml-0.5 after:text-red-500 after:content-['*']">Date:</p>
                 <DatePicker
                   format="DD-MM-YYYY"
                   value={date}
@@ -247,7 +266,7 @@ export default function ShiftCreationPage() {
               </div>
 
               <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-gray-600">Time:</p>
+                <p className="text-sm font-semibold text-gray-600 after:ml-0.5 after:text-red-500 after:content-['*']">Time:</p>
                 <TimePicker
                   format="hh:mm A"
                   value={start}
@@ -281,15 +300,14 @@ export default function ShiftCreationPage() {
                   }}
                   disabled={openShift}
                 />
-
-                <Checkbox label="Mark as open" checked={openShift} onChange={(e)=>setOpenShift(e)} className="text-xs md:text-sm"/>
+{/* 
+                <Checkbox label="Mark as open" checked={openShift} onChange={(e)=>setOpenShift(e)} className="text-xs md:text-sm"/> */}
               </div>
 
               <div className="flex items-center gap-2 text-sm text-gray-600 w-full">
-                <div className="font-semibold text-gray-600">
-                  <div>Location:</div>
-                  <br />
-                  <div>Address:</div>
+                <div className="flex flex-col gap-3 font-semibold text-gray-600">
+                  <div className="py-2 after:ml-0.5 after:text-red-500 after:content-['*']">Location:</div>
+                  {location.address && <div className="py-2">Address:</div>}
                 </div>
                 <LocationDropdownWithAddress
                   onSelect={handleLocationSelect} // Add this prop
@@ -300,7 +318,20 @@ export default function ShiftCreationPage() {
                       [field]: field === "location_id" ? Number(value) : value,
                     }));
                   }}
+                  hideAddressOnNoSelection = {true}
                 />
+              </div>
+
+              <div className="flex items-start gap-2 text-sm text-gray-600 w-full">
+                <div className="font-semibold">Settings:</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  <Checkbox label="Mark as open" checked={openShift} onChange={(e)=>setOpenShift(e)} className="text-xs md:text-sm"/>
+                  <Checkbox label="Set as published" checked={isPublished} onChange={(e)=>setIsPublished(e)} className="text-xs md:text-sm"/>
+                  <Checkbox label="Assign directly" checked={markAccepted} onChange={(e)=>handleMarkAcceptedChanged(e)} className="text-xs md:text-sm"/>
+                  {/* <Checkbox label="Allow request" checked={openShift} onChange={(e)=>setOpenShift(e)} className="text-xs md:text-sm"/> */}
+
+                </div>
+                
               </div>
 
               <div>
@@ -313,8 +344,8 @@ export default function ShiftCreationPage() {
                 />
               </div>
 
-              <div className="flex flex-col items-end">
-                <Button className="w-1/2" onClick={handleCreateShift}>
+              <div className="flex flex-col items-end sticky bottom-0 right-0">
+                <Button className="w-fit px-8 py-4 shadow-lg" onClick={handleCreateShift}>
                   Create
                 </Button>
               </div>
@@ -363,7 +394,7 @@ export default function ShiftCreationPage() {
          { modalContainer.current &&       
               <Modal details={{}} shown={openModal} setShown={setOpenModal} modalContainer={modalContainer.current} setParentOpen={setOpenModal} displayToast={displayToast} title="Create unassigned shift confirmation">
                 <div className='mt-4'>You are about to create an unassigned shift. To assign an employee, click 'Cancel' and choose one from the dropdown. Do you want to proceed?</div>
-                 <div className='flex items-center justify-end gap-4 -mb-4 mt-6'> 
+                 <div className='flex items-center justify-end gap-4 mt-6'> 
                   <Button type="outline" fontSize="0.8em"  className="py-3 px-5" onClick={()=>setOpenModal(false)}>Cancel</Button>
                   <Button type="cta" htmlType='submit' fontSize="0.8em" className="py-3 px-5" onClick={()=>{setModalConfirmation(true); handleCreateShift(); setOpenModal(false)}}>Continue</Button>
                   

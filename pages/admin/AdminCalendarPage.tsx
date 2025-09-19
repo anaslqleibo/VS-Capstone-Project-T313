@@ -121,12 +121,12 @@ export default function AdminCalendarPage() {
       
       }
       else if (mode==='delete'){
-          setAllEvents(allEvents.filter(e => e.id !== event.extendedProps?.id ));
-          setEvents(events.filter(e => e.id !== event.id ));
+          setAllEvents(allEvents.filter(e => e.extendedProps?.id !== event.extendedProps?.id ));
+          setEvents(events.filter(e => e.extendedProps?.id !== event.extendedProps?.id ));
       }
       else{
-          setAllEvents(allEvents.map(e => e.id === event.extendedProps?.id ? event : e));
-          setEvents(events.map(e => e.id === event.id ? event : e));
+          setAllEvents(allEvents.map(e => e.extendedProps?.id === event.extendedProps?.id ? event : e));
+          setEvents(events.map(e => e.extendedProps?.id === event.extendedProps?.id ? event : e));
       }
     }
   }
@@ -164,7 +164,7 @@ export default function AdminCalendarPage() {
             {account && <h2 className="text-2xl mb-4">Welcome, <span className="text-primary font-semibold">{account.first_name+ ' ' + account.last_name}</span></h2>}
            
 
-            {events.length === 0 ? <Spinner custom showWater backgroundGradient borderSpinner/> :
+            {allEvents === undefined ? <Spinner custom showWater backgroundGradient borderSpinner/> :
             <>
               <div className={`flex justify-between ${showUnpublished ? 'items-end' : 'items-center'}  mb-4 md:mb-0`}>
                 <div className="flex flex-col items-start md:flex-row flex-wrap gap-3">
@@ -201,7 +201,7 @@ export default function AdminCalendarPage() {
                 <div className='mt-4'>You are about to publish multiple shifts. Would you like to publish only the shifts scheduled for this month ({activeFilter.month.format("MMMM YYYY")}) or all upcoming shifts?</div>
                 
 
-                <div className='flex items-center justify-end gap-4 -mb-4 mt-6'> 
+                <div className='flex items-center justify-end gap-4 mt-6'> 
                   <Button type="cta" fontSize="0.8em"  className="py-3 px-5" onClick={()=>publishShift((activeFilter.month.month()+1).toString(), activeFilter.month.year().toString())}>This Month Only</Button>
                   <Button type="cta" htmlType='submit' fontSize="0.8em" className="py-3 px-5" onClick={()=>publishShift()}>All Shifts</Button>
                   

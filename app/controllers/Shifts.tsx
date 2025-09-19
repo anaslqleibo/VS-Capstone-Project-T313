@@ -124,6 +124,7 @@ export function getEventInputShifts(user_id: number) {
   return fetchShifts(user_id).then((shifts) =>
     shifts.map((shift) => {
       const shiftExtProps : ShiftExtendedProps = {
+        id: shift.id,
         status: shift.published ? stringToStatus(shift.status) : Status.Unpublished,
         original_status: stringToStatus(shift.status),
         type: 'shift',

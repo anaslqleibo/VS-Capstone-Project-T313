@@ -8,6 +8,7 @@ import { fetchAllEmployees, User } from '../controllers/User';
 import getStatusColor, { Status, stringToStatus } from './utils/getStatusColor';
 
 interface DropdownProps{
+  id?:string;
   items?:string[];
   multiple?:boolean;
   showCheckbox?:boolean;
@@ -17,7 +18,7 @@ interface DropdownProps{
   setFilter ?: Dispatch<SetStateAction<string[]>> | ((e:string[]) => void);
   setMonth ?: dayjs.Dayjs;
   className?:string;
-  initialSelectedItem ?: string;
+  initialSelectedItem ?: string | string[];
   custom ?: boolean;
   customSelected?:string;
   children ?: ReactNode;
@@ -27,6 +28,7 @@ interface DropdownProps{
   colorBasedOnValue?:boolean;
   startOpen?:boolean;
   syncCurrentWithInitialSelected?:boolean;
+  preventEmptySelection?:boolean;
 }
 
 type DayPickerProps = {
@@ -41,6 +43,7 @@ export function DayPicker({onChange, value}: DayPickerProps){
 }
 
 const Dropdown = ({
+  id,
   items = [],
   multiple = false,
   showCheckbox,
@@ -50,11 +53,12 @@ const Dropdown = ({
   colorBasedOnValue, 
   startOpen,
   syncCurrentWithInitialSelected,
+  preventEmptySelection,
   ...props
 } : DropdownProps) => {
   const [isOpen, setIsOpen] = useState<boolean>(startOpen || false);
   const [search, setSearch] = useState<string>('');
-  const [selected, setSelected] = useState<string[]>(props.initialSelectedItem?[props.initialSelectedItem]:[]);
+  const [selected, setSelected] = useState<string[]>(props.initialSelectedItem?(typeof props.initialSelectedItem==='string'?[props.initialSelectedItem]:props.initialSelectedItem):[]);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -82,6 +86,7 @@ const Dropdown = ({
 
     if (multiple) {
       if (selected.includes(item)) {
+        if (preventEmptySelection && selected.length === 1) return;
         setAdvSelected(selected.filter(i => i !== item));
       } else {
         setAdvSelected([...selected, item]);
@@ -93,11 +98,14 @@ const Dropdown = ({
   };
 
   const handleRemove = (item : string) => {
+    if (preventEmptySelection && selected.length === 1) return;
+
     setAdvSelected(selected.filter(i => i !== item));
   };
 
   const handleKeyDown = (e : React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace' && search === '' && selected.length > 0) {
+      if (preventEmptySelection && selected.length === 1) return;
       setAdvSelected(selected.slice(0, -1));
     }
   };
@@ -119,7 +127,7 @@ const Dropdown = ({
   
   useEffect(()=>{
     if (syncCurrentWithInitialSelected) {
-      if (props.initialSelectedItem)
+      if (props.initialSelectedItem && typeof props.initialSelectedItem === 'string')
         handleSelect(props.initialSelectedItem);
       else {
         clearSelect()
@@ -131,7 +139,7 @@ const Dropdown = ({
   const activeColor = (colorBasedOnValue&&selected[0]) ? getStatusColor(stringToStatus(selected[0])) : 'var(--color-primary)';
   return (
     <div className={`relative w-fit min-w-fit text-sm ${className} ${props.disabled ? "pointer-events-none" : ""}`} ref={containerRef}>
-      <div className={` ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : 'border-1 border-[color:var(--color-primary)] text-[color:var(--color-primary)]'} rounded-md ${className} px-3 py-2 flex items-center justify-between cursor-pointer ${props.disabled ? "bg-gray-200 text-gray-400" : ""}`} onClick={toggleDropdown} style={colorBasedOnValue ? {borderColor: activeColor, color:activeColor} : {}}>
+      <div id={id} className={` ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : 'border-1 border-[color:var(--color-primary)] text-[color:var(--color-primary)]'} rounded-md ${className} px-3 py-2 flex items-center justify-between cursor-pointer ${props.disabled ? "bg-gray-200 text-gray-400" : ""}`} onClick={toggleDropdown} style={colorBasedOnValue ? {borderColor: activeColor, color:activeColor} : {}}>
         <div className="flex flex-wrap items-center gap-1 flex-1 min-w-fit">
           {!props.disabled && (props.custom ? <span>{props.customSelected}</span> : ((!multiple && selected.length>0) || 
           (multiple && selected.length == 1 && (!isOpen))) ? <span>{selected.at(0)}</span> : selected.map((item, index) => (
@@ -168,13 +176,13 @@ const Dropdown = ({
           {!props.custom && (
             filteredItems.length > 0 ? 
             (filteredItems.map((item, index) => (
-              <div key={index} className={`flex items-center justify-between px-3 py-2 cursor-pointer text-left ${!showCheckbox&&selected.includes(item) ? "bg-gray-200": "hover:bg-gray-100"} `} onClick={(e) => {
+              <div key={index} className={`flex items-center justify-between px-3 py-2 gap-4 cursor-pointer text-left ${!showCheckbox&&selected.includes(item) ? "bg-gray-200": "hover:bg-gray-100"} `} onClick={(e) => {
                     setSearch("");
                     handleSelect(item);
                 }}>
                 <span>{item}</span>
                 {multiple && showCheckbox && (
-                  <input type="checkbox" checked={selected.includes(item)} readOnly />
+                  <input type="checkbox" checked={selected.includes(item)} readOnly className='accent-primary'/>
                 )}
               </div>
             )))
@@ -190,11 +198,13 @@ const Dropdown = ({
 export default Dropdown;
 
 type CustomDropdownProps = {
+  id?:string;
   detail?: string;
   setUpdatedDetail?: (field: string, value: string) => void;
   onSelect?: (loc: Location) => void;
+  hideAddressOnNoSelection?:boolean;
 }
-export function LocationDropdownWithAddress({detail, setUpdatedDetail, onSelect,}: CustomDropdownProps) {
+export function LocationDropdownWithAddress({detail, setUpdatedDetail, onSelect,hideAddressOnNoSelection}: CustomDropdownProps) {
   const [locations, setLocations] = useState<Location[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
 
@@ -230,6 +240,17 @@ export function LocationDropdownWithAddress({detail, setUpdatedDetail, onSelect,
     onSelect?.(loc);
   };
 
+  const AddressField = hideAddressOnNoSelection ? (selectedLocation ? <Input
+        value={selectedLocation?.address ?? ""}
+        className="py-2 px-3 border-1"
+        containerClassName="w-full"
+        readonly
+      /> : '') : <Input
+        value={selectedLocation?.address ?? ""}
+        className="py-2 px-3 border-1"
+        containerClassName="w-full"
+        readonly
+      />
   return (
     <div className="flex flex-col gap-3 w-full">
       <Dropdown
@@ -241,18 +262,14 @@ export function LocationDropdownWithAddress({detail, setUpdatedDetail, onSelect,
         onChange={handleChange}
       />
 
-      <Input
-        value={selectedLocation?.address ?? ""}
-        className="py-2 px-3 border-1"
-        containerClassName="w-full"
-        readonly
-      />
+      
+      {AddressField}
     </div>
   );
 }
 
 
-export function DropdownUser({detail, setUpdatedDetail}: CustomDropdownProps){
+export function DropdownUser({id, detail, setUpdatedDetail}: CustomDropdownProps){
   // const [selectedEmployee, setSelectedEmployee] = useState<User | null>(null);
   const [employees, setEmployees] = useState<User[]>([]);
   useEffect(() => {
@@ -288,5 +305,5 @@ export function DropdownUser({detail, setUpdatedDetail}: CustomDropdownProps){
     setUpdatedDetail?.("status", 'Pending');
   };
 
-  return (<Dropdown items={employees.map((employee) => (employee.first_name + ' ' + employee.last_name))} placeholder="Select employee" maxVisibleItems={6} className=' font-normal text-black border-gray-400 min-w-32 max-w-64' initialSelectedItem={detail === '' ?  undefined : detail} onChange={handleChange} startOpen={detail === ''} syncCurrentWithInitialSelected={true}/>);
+  return (<Dropdown id={id||'dropdown-user'} items={employees.map((employee) => (employee.first_name + ' ' + employee.last_name))} placeholder="Select employee" maxVisibleItems={6} className=' font-normal text-black border-gray-400 min-w-32 max-w-64' initialSelectedItem={detail === '' ?  undefined : detail} onChange={handleChange} syncCurrentWithInitialSelected={true}/>);
 }
