@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
 import { isAdmin } from "@/app/api/users/[id]/is_admin";
 
-export async function GET(request : Request, {params}: { params: {id: string }}) {
+export async function GET(request : NextRequest, context: RouteContext<'/api/unavailabilities/leaves/[id]'>) {
     try{
-        const p = await params;
+        const p = await context.params;
         const admin = await isAdmin(p.id);
 
         let leaves;

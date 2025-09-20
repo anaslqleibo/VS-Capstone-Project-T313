@@ -1,7 +1,12 @@
+import { RefObject } from 'react';
 import { ModalProvider, useModal } from './ModalContext';
 import Sidebar from './Sidebar';
-import { injectModalOverlay, PageProps } from '@/app/layout';
+import { PageProps } from '@/app/layout';
 
+
+function injectModalOverlay(modalContainer: RefObject<HTMLDivElement|null>){
+  return <div className="absolute z-100 inset-0 m-auto pointer-events-none w-full" ref={modalContainer}></div>;
+}
 
 function Layout({modalContainer, children}:PageProps){
   // const { modalShown } = useModal();

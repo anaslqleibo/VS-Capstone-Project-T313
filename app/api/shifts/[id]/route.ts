@@ -5,9 +5,9 @@ import { User } from "@/app/controllers/User";
 import { isAdmin } from "../../users/[id]/is_admin";
 
 
-export async function GET(request : Request, {params}: { params: {id: string }}) {
+export async function GET(request : NextRequest, context: RouteContext<'/api/shifts/[id]'>) {
     try{
-        const p = await params;
+        const p = await context.params;
         const admin = await isAdmin(p.id);
         let shifts;
         
@@ -32,15 +32,15 @@ export async function GET(request : Request, {params}: { params: {id: string }})
     }
 };
 
-export async function DELETE(req: Request, {params}: { params: {id: string }}) {
+export async function DELETE(req: NextRequest, context: RouteContext<'/api/shifts/[id]'>) {
   try {
-    const p = await params;
+    const p = await context.params;
 
     const id = p.id;
     // const id = p.id.split('-')[0];
     // const assignee_id = p.id.split('-')[1];
 
-    // If decided to use composite key betwee id and assignee id
+    // If decided to use composite key between id and assignee id
     // const result = await executeQuery(`
     //   DELETE FROM shifts WHERE id = ? and assignee_id = ?
     // `, [id, assignee_id]) as any;
@@ -70,7 +70,7 @@ export async function DELETE(req: Request, {params}: { params: {id: string }}) {
 }
 
 
-export async function PUT(req: Request, {params}: { params: {id: string }}){
+export async function PUT(req: NextRequest, _context: any) {
   try {
     const { id, assignee_id, status, date, start_time, end_time, notes, location_id} : Shift = await req.json();
 

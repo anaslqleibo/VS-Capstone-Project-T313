@@ -13,10 +13,6 @@ export interface PageProps{
   children?: ReactNode;
 }
 
-export function injectModalOverlay(modalContainer: RefObject<HTMLDivElement|null>){
-  return <div className="absolute z-100 inset-0 m-auto pointer-events-none w-full" ref={modalContainer}></div>;
-}
-
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
 
-export async function PATCH(req: Request, {params}: { params: {id: string}}) {
+export async function PATCH(req: Request, context: RouteContext<'/api/unavailabilities/leaves/[id]/status'>) {
   try {
-    const { id } = await params;
+    const { id } = await context.params;
     const body = await req.json();
     const { user_id, is_accepted } = body;
 

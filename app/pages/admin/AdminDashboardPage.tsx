@@ -12,12 +12,12 @@ export default function AdminDashboardPage() {
   const modalContainer = useRef<HTMLDivElement>(null);
   const user = useAuth().user;
 
-  const declinedShiftDetails : ShiftExtendedProps = {
+  const declinedShiftDetails = {
       status: Status.DeclinedShift,
-      employee: "Naomi",
+      assignee_name: "Naomi",
       date: "11-04-2024",
       time: "12:00-16:30",
-      location: "Noosa",
+      location_name: "Noosa",
       address: "111 Test Drive, Noosa, 4110",
       notes: "Please take a break, you have done a lot of shifts this week..."
   };

@@ -1,5 +1,5 @@
 import { executeQuery } from "@/app/lib/db";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
     try{
@@ -30,7 +30,7 @@ export async function DELETE(request: Request) {
 }
 
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, _context: any) {
   try {
     const body = await request.json();
     const { id, name, address, notes } = body;
