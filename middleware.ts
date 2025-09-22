@@ -56,6 +56,11 @@ export async function middleware(request: NextRequest) {
     );
     
     const { payload } = await jwtVerify(token, secret);
+
+    // Admin-only gate for /portal
+    if (pathname.startsWith("/portal") && payload.role !== "admin") {
+      return NextResponse.redirect(new URL("/home", request.url));
+    }
     
     // Check if token is expired
     if (payload.exp && payload.exp < Date.now() / 1000) {

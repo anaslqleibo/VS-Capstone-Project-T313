@@ -73,8 +73,19 @@ const LoginPage = () => {
       }
       
       // Redirect to homepage after successful login
-      // Use window.location.href for a full page redirect to ensure middleware picks up the token
-      window.location.href = "/portal";
+      // If API returned user.role, use that; otherwise decode JWT payload as fallback.
+      const role: "admin" | "user" | undefined =
+        data?.user?.role ??
+        (() => {
+          try {
+            return JSON.parse(atob(data.token.split(".")[1]))?.role;
+          } catch {
+            return undefined;
+          }
+        })();
+
+      // Use full page reload so middleware picks up the new cookie immediately
+      window.location.href = role === "admin" ? "/portal" : "/home";
       
     } catch (error) {
         console.error("Login failed:", error);
@@ -83,13 +94,32 @@ const LoginPage = () => {
     } 
   };
 
-   useEffect(() => {
-        if (isAuthenticated) {
-            redirect("/portal");
-        }
-    }, [isAuthenticated, router]);
+  //  useEffect(() => {
+  //       if (isAuthenticated) {
+  //           redirect("/portal");
+  //       }
+  //   }, [isAuthenticated, router]);
+
+
+    // push them to the correct landing based on stored role
+    useEffect(() => {
+      if (!isAuthenticated) return;
+
+      try {
+        const storedUser = localStorage.getItem("user");
+        const role: "admin" | "user" | undefined = storedUser
+          ? JSON.parse(storedUser).role
+          : undefined;
+
+        // full replace to avoid back nav to /login
+        window.location.replace(role === "admin" ? "/portal" : "/home");
+      } catch {
+        window.location.replace("/home");
+      }
+    }, [isAuthenticated]);
   
 
+    
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-[color:#f3f4f8]">
       <Toast message={error} type="error" shown={shown} setShown={setShown}/>
