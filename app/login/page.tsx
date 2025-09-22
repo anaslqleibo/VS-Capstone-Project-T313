@@ -74,7 +74,7 @@ const LoginPage = () => {
       
       // Redirect to homepage after successful login
       // Use window.location.href for a full page redirect to ensure middleware picks up the token
-      window.location.href = "/home";
+      window.location.href = "/portal";
       
     } catch (error) {
         console.error("Login failed:", error);
@@ -85,7 +85,7 @@ const LoginPage = () => {
 
    useEffect(() => {
         if (isAuthenticated) {
-            redirect("/home");
+            redirect("/portal");
         }
     }, [isAuthenticated, router]);
   

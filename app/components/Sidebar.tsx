@@ -14,6 +14,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import Button from "./Button";
 import useIsOverMd from "./utils/useIsOverMd";
+import { FaThLarge } from "react-icons/fa";
 
 
 export default function Sidebar({modalContainer} : PageProps){
@@ -58,6 +59,7 @@ export default function Sidebar({modalContainer} : PageProps){
     <button onClick={() => router.replace("/locations")}  className={`${pathName === '/locations' ? "bg-[color:var(--active-color)]" : ""}`}><FaMapMarkerAlt /> Locations</button>
     <button onClick={() => router.replace("/messaging")}  className={`${pathName === '/messaging' ? "bg-[color:var(--active-color)]" : ""}`}><FaEnvelope /> Messaging</button>
     <button onClick={() => router.replace("/account")} className={`${pathName === '/account' ? "bg-[color:var(--active-color)]" : ""}`}><FaUser /> Account</button>
+    <button onClick={() => router.replace("/portal")} className={`${pathName === '/portal' ? "bg-[color:var(--active-color)]" : ""}`}><FaThLarge /> Portal</button>
     </>;
   
   const staffNavs = <>
@@ -65,7 +67,10 @@ export default function Sidebar({modalContainer} : PageProps){
     {/* <button onClick={() => router.replace("/unavailability")} ><FaCalendarAlt /> Unavailability</button> */}
     <button onClick={() => router.replace("/locations")} className={`${pathName === '/locations' ? "bg-[color:var(--active-color)]" : ""}`}><FaMapMarkerAlt /> Locations</button>
     <button onClick={() => router.replace("/messaging")} className={`${pathName === '/messaging' ? "bg-[color:var(--active-color)]" : ""}`}><FaEnvelope /> Messaging</button>
-    <button onClick={() => router.replace("/account")}className={`${pathName === '/account' ? "bg-[color:var(--active-color)]" : ""}`}><FaUser /> Account</button></>
+    <button onClick={() => router.replace("/account")}className={`${pathName === '/account' ? "bg-[color:var(--active-color)]" : ""}`}><FaUser /> Account</button>
+    <button onClick={() => router.replace("/portal")} className={`${pathName === '/portal' ? "bg-[color:var(--active-color)]" : ""}`}><FaThLarge /> Portal</button>
+    </>
+    
 
     return (
       <>
