@@ -50,7 +50,7 @@ export function createNotifications(fromAdminView=false, notifications : Notific
     );
 }
 
-export function createAdminNotification({type, date = new Date(), shift_date = new Date(), days_left = 1, assignee_name='Steve', onClick} : NotificationProps){
+export function createAdminNotification({type, date = new Date(), shift_date = new Date(), days_left = 1, assignee_name='Steve', location_name, start_time, end_time, onClick} : NotificationProps){
     const circle = ()=>{
         const s = type.split(' ');
         const status = stringToStatus(s.length > 1 ? s[1] : s[0]);
@@ -63,7 +63,7 @@ export function createAdminNotification({type, date = new Date(), shift_date = n
         if (onClick) onClick(e);
     }
 
-    const tooltipContent = <>Date: 20-03-2024 <br/> Location: XYZ <br/> Start time: 02:00</>;
+    const tooltipContent = <>Date: {shift_date}<br/> Location: {location_name} <br/> Start time: {start_time} <br/> End time: {end_time}</>;
     const shift = (
         <Tooltip content={tooltipContent} position="top">
             <span className="font-semibold">shift</span>

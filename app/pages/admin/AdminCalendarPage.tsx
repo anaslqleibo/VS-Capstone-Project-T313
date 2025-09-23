@@ -139,6 +139,7 @@ export default function AdminCalendarPage() {
                   <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)} sx={{
                       gap: "16px 24px",
                       padding: "8px",
+                      width: "300px",
                       "& .MuiMonthCalendar-button.Mui-selected": {
                         backgroundColor: "var(--primary-color)",
                         color: "#fff",

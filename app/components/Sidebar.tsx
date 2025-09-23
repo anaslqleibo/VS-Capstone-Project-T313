@@ -57,7 +57,7 @@ export default function Sidebar({modalContainer} : PageProps){
     <button onClick={() => router.replace("/calendar")}  className={`${pathName === '/calendar' ? "bg-[color:var(--active-color)]" : ""}`}><FaCalendarAlt /> Calendar</button>
     <button onClick={() => router.replace("/shift-creation")}  className={`${pathName === '/shift-creation' ? "bg-[color:var(--active-color)]" : ""}`}><FaPen /> Shift creation</button>
     <button onClick={() => router.replace("/locations")}  className={`${pathName === '/locations' ? "bg-[color:var(--active-color)]" : ""}`}><FaMapMarkerAlt /> Locations</button>
-    <button onClick={() => router.replace("/messaging")}  className={`${pathName === '/messaging' ? "bg-[color:var(--active-color)]" : ""}`}><FaEnvelope /> Messaging</button>
+    {/* <button onClick={() => router.replace("/messaging")}  className={`${pathName === '/messaging' ? "bg-[color:var(--active-color)]" : ""}`}><FaEnvelope /> Messaging</button> */}
     <button onClick={() => router.replace("/user-management")} className={`${pathName === '/user-management' ? "bg-[color:var(--active-color)]" : ""}`}><FaUsers /> Users</button>
     <button onClick={() => router.replace("/account")} className={`${pathName === '/account' ? "bg-[color:var(--active-color)]" : ""}`}><FaUser /> Account</button>
     <button onClick={() => router.replace("/portal")} className={`${pathName === '/portal' ? "bg-[color:var(--active-color)]" : ""}`}><FaThLarge /> Portal</button>
@@ -67,7 +67,7 @@ export default function Sidebar({modalContainer} : PageProps){
     <button onClick={() => router.replace("/home")} className={`${pathName === '/home' ? "bg-[color:var(--active-color)]" : ""}`}><FaHome /> Home</button>
     {/* <button onClick={() => router.replace("/unavailability")} ><FaCalendarAlt /> Unavailability</button> */}
     <button onClick={() => router.replace("/locations")} className={`${pathName === '/locations' ? "bg-[color:var(--active-color)]" : ""}`}><FaMapMarkerAlt /> Locations</button>
-    <button onClick={() => router.replace("/messaging")} className={`${pathName === '/messaging' ? "bg-[color:var(--active-color)]" : ""}`}><FaEnvelope /> Messaging</button>
+    {/* <button onClick={() => router.replace("/messaging")} className={`${pathName === '/messaging' ? "bg-[color:var(--active-color)]" : ""}`}><FaEnvelope /> Messaging</button> */}
     <button onClick={() => router.replace("/account")}className={`${pathName === '/account' ? "bg-[color:var(--active-color)]" : ""}`}><FaUser /> Account</button>
     </>
     

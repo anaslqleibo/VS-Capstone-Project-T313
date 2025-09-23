@@ -86,7 +86,7 @@ export default function Tooltip({
 
       {createPortal(
         <div ref={tooltipRef} style={getTooltipStyle()}>
-          <div className="bg-primary text-white text-sm px-2 py-1 rounded shadow-md break-words">
+          <div className="bg-active text-white text-sm px-2 py-1 rounded shadow-md break-words">
             {content}
           </div>
         </div>,

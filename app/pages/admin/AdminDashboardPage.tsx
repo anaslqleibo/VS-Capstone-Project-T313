@@ -6,6 +6,7 @@ import Layout from '@/app/components/Layout';
 import ListView from '@/app/components/ListView';
 import { createNotifications, fetchNotifications, NotificationProps } from '@/app/controllers/Notification';
 import { useAuth } from '@/app/contexts/AuthContext';
+import Spinner from '@/app/components/Spinner';
 
 
 export default function AdminDashboardPage() {
@@ -16,7 +17,7 @@ export default function AdminDashboardPage() {
   useEffect(()=>{
     async function loadNotifications(){
       if (user){
-        const result = await fetchNotifications(user.id);
+        const result = await fetchNotifications(user.id.toString());
         setNotifications(result);
 
         console.log(result);
@@ -42,13 +43,17 @@ export default function AdminDashboardPage() {
             
             <h2 className="text-2xl mb-[30px]">Welcome, <span className="text-[color:var(--primary-color)] font-semibold">{(user?user.first_name:'')+ ' ' + (user?user.last_name:'')}</span></h2>
 
-            <div className="flex flex-1 justify-center gap-4 flex-col md:flex-row items-center">
+            {
+                notifications ? 
+                 <div className="flex flex-1 justify-center gap-4 flex-col md:flex-row items-center">
                 { notifications && <ListView title="Notifications" containerRef={modalContainer} closeButton={false}>{createNotifications(true, notifications??[])}</ListView>}
 
                 {/* <ListView title="Notifications" containerRef={modalContainer} closeButton={false}>{createNotifications(true)}</ListView> */}
 
                 {/* {modalContainer.current && <Modal modalContainer={modalContainer.current} noOverlay={true} type={ModalTypes.DeclinedDetails} details={declinedShiftDetails}/>} */}
-              </div>
+            </div> : <Spinner custom showWater backgroundGradient borderSpinner/>
+            }
+           
           </div>
         </div>
 

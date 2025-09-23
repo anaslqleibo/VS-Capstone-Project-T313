@@ -11,7 +11,7 @@ export async function GET(request : NextRequest, context: RouteContext<'/api/not
         
         if (admin) {
             notifications = await executeQuery(
-                `SELECT n.type as type, DATE_FORMAT(n.updated_at, '%Y-%m-%d') as date, DATE_FORMAT(s.date, '%Y-%m-%d') as shift_date, DATEDIFF(s.date, NOW()) as days_left, CONCAT(u.first_name, ' ', u.last_name) AS assignee_name FROM notifications n INNER JOIN shifts s ON n.shift_id = s.id INNER JOIN users u ON n.assignee_id = u.id WHERE n.is_read_by_admin = 0 AND n.type != "Assigned" AND n.type != "Leave Accepted" AND n.type != "Leave Declined" ORDER BY n.updated_at DESC LIMIT 10`,
+                `SELECT n.type as type, DATE_FORMAT(n.updated_at, '%Y-%m-%d') as date, DATE_FORMAT(s.date, '%Y-%m-%d') as shift_date, DATEDIFF(s.date, NOW()) as days_left, CONCAT(u.first_name, ' ', u.last_name) AS assignee_name, s.start_time as start_time, s.end_time as end_time, l.name as location_name FROM notifications n INNER JOIN shifts s ON n.shift_id = s.id INNER JOIN users u ON n.assignee_id = u.id INNER JOIN locations l ON s.location_id = l.id WHERE n.is_read_by_admin = 0 AND n.type != "Assigned" AND n.type != "Leave Accepted" AND n.type != "Leave Declined" ORDER BY n.updated_at DESC LIMIT 10`,
             );
         }
         else {
