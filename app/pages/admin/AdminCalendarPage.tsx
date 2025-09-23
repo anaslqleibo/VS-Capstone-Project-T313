@@ -17,10 +17,11 @@ import { fetchLocations, getLocationsStatic } from '@/app/controllers/Location';
 import { getEventInputShifts } from '@/app/controllers/Shifts';
 import { fetchAllEmployees } from '@/app/controllers/User';
 import Checkbox from '@/app/components/Checkbox';
-import { fetchLeaves, getEventInputLeaves, getEventInputUnavailabilities } from '@/app/controllers/Unavailabilities';
+import { fetchLeaves, getEventInputLeaves, getEventInputUnavailabilities } from '@/app/controllers/Leave';
 import { useModal } from '@/app/components/ModalContext';
 import { useAuth } from '@/app/contexts/AuthContext';
 import Spinner from '@/app/components/Spinner';
+import { FaClipboardList, FaFlag, FaFontAwesomeFlag, FaList, FaMap, FaMapPin, FaRegClipboard, FaUser } from 'react-icons/fa';
 
 
 export default function AdminCalendarPage() {
@@ -116,32 +117,56 @@ export default function AdminCalendarPage() {
   return (
       <Layout modalContainer={modalContainer}>
         <div className="relative flex-[1] h-full bg-[#f4f4f4]">
-          <div className='p-6 h-full flex flex-col'>
+          <div className='p-2 md:p-6 h-full flex flex-col'>
             
-            {account && <h2 className="text-2xl mb-[30px]">Welcome, <span className="text-[color:var(--primary-color)] font-semibold">{account.first_name+ ' ' + account.last_name}</span></h2>}
+            {account && <h2 className="text-2xl mb-4">Welcome, <span className="text-[color:var(--primary-color)] font-semibold">{account.first_name+ ' ' + account.last_name}</span></h2>}
            
 
             {events.length === 0 ? <Spinner custom showWater backgroundGradient borderSpinner/> :
             <>
-              <div className='flex justify-between items-center mb-4 md:mb-0'>
-              <div className="flex flex-col items-start md:flex-row flex-wrap gap-3 ">
+              <div className='flex justify-between items-center mb-2 md:mb-0'>
+              <div className="flex items-start flex-row flex-wrap gap-3 ">
               
-                <Dropdown items={['All employees', ...employees]} placeholder="Select employee" actAsFilter setFilter={setEmployee} maxVisibleItems={6} className='md:rounded-b-none min-w-32' initialSelectedItem='All employees'/>
+                <Dropdown items={['All employees', ...employees]} placeholder="Select employee" actAsFilter setFilter={setEmployee} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All employees' simplifyOnMobile replacementIcon={<FaUser/>}/>
 
-                <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} className='md:rounded-b-none min-w-32' initialSelectedItem='All locations'/>
+                <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All locations' simplifyOnMobile replacementIcon={<FaMapPin/>}/>
 
-                <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-1)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} className='md:rounded-b-none min-w-32' initialSelectedItem='All shifts'/>
+                <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-1)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} containerClassName='md:rounded-b-none min-w-fit' initialSelectedItem='All shifts' disableTyping simplifyOnMobile replacementIcon={<FaClipboardList/>}/>
 
-                <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='md:rounded-b-none' custom customSelected={monthSelectedDropdown}>
+                <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='hidden md:block' containerClassName='rounded-b-none' custom disableTyping customSelected={monthSelectedDropdown}>
                   <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
                   
-                  <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)}/>
+                  <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)} sx={{
+                      gap: "16px 24px",
+                      padding: "8px",
+                      "& .MuiMonthCalendar-button.Mui-selected": {
+                        backgroundColor: "var(--primary-color)",
+                        color: "#fff",
+                      },
+                    }}/>
                 
                 </Dropdown>
+              
+                
               </div>
+              
 
               {/* <Checkbox checked={showUnavailability} onChange={setShowUnavailability} label='Show unavailability'/>               */}
             </div>
+
+            <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='md:hidden mb-2' custom disableTyping customSelected={monthSelectedDropdown}>
+              <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
+              
+              <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)} sx={{
+                      gap: "16px 4px",
+                      padding: "8px",
+                      width: "240px",
+                      "& .MuiMonthCalendar-button.Mui-selected": {
+                        backgroundColor: "var(--primary-color)",
+                        color: "#fff",
+                      },
+                    }}/>
+            </Dropdown>
 
             <Calendar key={isOverMd ? 'month' : 'list'}  events={events} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'}></Calendar>
 

@@ -2,7 +2,7 @@ import { EventInput } from '@fullcalendar/core';
 import getStatusColor, { stringToStatus } from '../components/utils/getStatusColor';
 import { ShiftExtendedProps } from '../components/Modal';
 
-export type ShiftStatus = 'Pending' | 'Unassigned' | 'Accepted' | 'Open' | 'Request' | 'Declined' | 'Unpublished';
+export type ShiftStatus = 'Pending' | 'Assigned' | 'Unassigned' | 'Accepted' | 'Open' | 'Request' | 'Declined' | 'Unpublished';
 
 export type Shift = {
   id?: string; 

@@ -15,7 +15,7 @@ import { error } from "console";
 import Accordion from "@/app/components/Accordion";
 import getStatusColor, { Status, stringToStatus } from "@/app/components/utils/getStatusColor";
 import Icon from "@/public/icons/Icons";
-import { checkAvailability } from "@/app/controllers/Unavailabilities";
+import { checkAvailability } from "@/app/controllers/Leave";
 import Modal from "@/app/components/Modal";
 import Spinner from "@/app/components/Spinner";
 
@@ -217,7 +217,7 @@ export default function ShiftCreationPage() {
 
   return (
     <Layout modalContainer={modalContainer}>
-       {loading && <div className="absolute z-200 rounded-lg top-0 left-0 w-full h-full bg-[#ffffff8d]"> <Spinner custom backgroundGradient/> </div>}
+       {loading && <div className="absolute z-200 rounded-lg top-0 left-0 w-full h-full bg-[#ffffff8d]"> <Spinner custom showWater backgroundGradient/> </div>}
 
       <div className="relative flex-[1] h-full bg-[#f4f4f4]">
         <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
@@ -281,8 +281,6 @@ export default function ShiftCreationPage() {
                   }}
                   disabled={openShift}
                 />
-
-                <Checkbox label="Mark as open" checked={openShift} onChange={(e)=>setOpenShift(e)} className="text-xs md:text-sm"/>
               </div>
 
               <div className="flex items-center gap-2 text-sm text-gray-600 w-full">
@@ -301,6 +299,14 @@ export default function ShiftCreationPage() {
                     }));
                   }}
                 />
+              </div>
+
+              <div className="flex items-start gap-2 text-sm text-gray-600 w-full">
+                <div className="font-semibold">Settings:</div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  <Checkbox label="Mark as open" checked={openShift} onChange={(e)=>setOpenShift(e)} className="text-xs md:text-sm"/>
+                </div>
+                
               </div>
 
               <div>

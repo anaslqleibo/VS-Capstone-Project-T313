@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import logo from '@/public/LOGO.png';
 import notification from '@/public/icons/notification.png';
-import { FaHome, FaCalendarAlt, FaEnvelope, FaUser, FaMapMarkerAlt, FaPen, FaSignOutAlt } from 'react-icons/fa';
+import { FaHome, FaCalendarAlt, FaEnvelope, FaUser, FaMapMarkerAlt, FaPen, FaSignOutAlt, FaUsers } from 'react-icons/fa';
 import { createModal, ModalTypes } from "./Modal";
 import Icon from "@/public/icons/Icons";
 import { useClickOutside } from "./utils/useClickOutside";
@@ -57,6 +57,7 @@ export default function Sidebar({modalContainer} : PageProps){
     <button onClick={() => router.replace("/shift-creation")}  className={`${pathName === '/shift-creation' ? "bg-[color:var(--active-color)]" : ""}`}><FaPen /> Shift creation</button>
     <button onClick={() => router.replace("/locations")}  className={`${pathName === '/locations' ? "bg-[color:var(--active-color)]" : ""}`}><FaMapMarkerAlt /> Locations</button>
     <button onClick={() => router.replace("/messaging")}  className={`${pathName === '/messaging' ? "bg-[color:var(--active-color)]" : ""}`}><FaEnvelope /> Messaging</button>
+    <button onClick={() => router.replace("/user-management")} className={`${pathName === '/user-management' ? "bg-[color:var(--active-color)]" : ""}`}><FaUsers /> Users</button>
     <button onClick={() => router.replace("/account")} className={`${pathName === '/account' ? "bg-[color:var(--active-color)]" : ""}`}><FaUser /> Account</button>
     </>;
   
@@ -74,7 +75,7 @@ export default function Sidebar({modalContainer} : PageProps){
 
           <Icon id="menu" className="block md:hidden" onClick={()=>setIsMobileMenuOpen((prev)=>!prev)}></Icon>
           
-          <Image src={logo} alt="2 Bent Rods logo" className="w-12 m-auto md:m-2 md:w-36" />
+          <Image src={logo} alt="2 Bent Rods logo" className="w-10 m-auto md:m-2 md:w-24" />
         </div>
 
         {role === "user" && <div className="p-2 hover:bg-[#1e2266] rounded-full md:flex items-center justify-center ml-auto mb-2 hidden" ref={toggleButtonRef} onClick={()=>{setOpen(true)}}>

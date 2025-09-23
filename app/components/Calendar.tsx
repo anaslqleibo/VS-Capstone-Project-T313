@@ -187,6 +187,8 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
         ref={calendarRef}
         plugins={[dayGridPlugin, interactionPlugin, listPlugin, rrulePlugin]}
         initialView={initialView}
+        displayEventTime={false}
+        stickyHeaderDates={false}
         selectable={true}
         events={newEvents}
         headerToolbar={{
@@ -250,9 +252,10 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
             }        
         }}
 
-        // Hides the fullcalendar header toolbar
         viewDidMount={() => {
             if (hideHeader){
+                // Hides the fullcalendar header toolbar
+
                 const calendarEl = document.querySelector('.fc-header-toolbar');
                 if (calendarEl) {
                     calendarEl.className= "hidden";
@@ -263,8 +266,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
 
             const calendarEl2 = document.querySelector('.fc-view-harness');
             if (calendarEl2) calendarEl2.classList.add("flex-1")
-            }
-        }
+        }}
 
             
         />

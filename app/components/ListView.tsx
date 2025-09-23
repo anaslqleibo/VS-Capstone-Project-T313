@@ -122,7 +122,7 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
                       />
                     )}
                   </div>
-                  <ul className="bg-[color:var(--primary-color)] transition-all overflow-y- overflow-x-hidden">
+                  <ul className="bg-[color:var(--primary-color)] transition-all overflow-x-hidden">
                     {items && items.length > 0 ? (
                       items.map((item) => {
                         const id = item.id;

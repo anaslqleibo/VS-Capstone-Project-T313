@@ -1,5 +1,5 @@
 "use client";
-import {  Dispatch, ReactNode, SetStateAction, use, useEffect, useRef, useState } from "react";
+import {  Dispatch, ReactNode, SetStateAction, useEffect, useRef, useState } from "react";
 import Icon from "@/public/icons/Icons";
 import Button from "./Button";
 import { overlayAnimation, useClickOutside } from "./utils/useClickOutside";
@@ -7,15 +7,14 @@ import getStatusColor, { Status, statusToString, stringToStatus } from "./utils/
 import React from "react";
 import { createPortal } from "react-dom";
 import ListView from "./ListView";
-import { createNotifications } from "./utils/notification";
+import { createNotifications } from "../controllers/Notification";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import Dropdown, { DayPicker, DropdownUser, LocationDropdownWithAddress } from "./Dropdown";
 import { EventInput } from "@fullcalendar/core";
 import { buildShiftEventTitle, deleteShift, Shift, updateShift, updateShiftStatus } from "../controllers/Shifts";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { FaBell, FaEdit, FaRegBell, FaSave, FaTrash } from "react-icons/fa";
+import { FaEdit, FaRegBell, FaSave, FaTrash } from "react-icons/fa";
 import Input from "./Input";
-import { fetchLocations, getLocationsStatic } from "../controllers/Location";
 import dayjs from "dayjs";
 import { formatToSqlDate, sqlDateFormatToRegularFormat } from "./utils/formatDate";
 import FormControl from "@mui/material/FormControl";
@@ -23,7 +22,7 @@ import FormLabel from "@mui/material/FormLabel";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
-import { createLeave, deleteLeave, Unavailability, updateLeaveStatus } from "../controllers/Unavailabilities";
+import { createLeave, deleteLeave, Unavailability, updateLeaveStatus } from "../controllers/Leave";
 import Checkbox from "./Checkbox";
 import Spinner from "./Spinner";
 
@@ -729,7 +728,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
             }
 
-            if (prev && ((prev.status === Status.OpenShift || prev.status === Status.Unassigned) && (field==="status" && value!==prev.status))){
+            if (prev && ((prev.status === Status.OpenShift || prev.status === Status.Unassigned) && (field==="status" && value!==prev.status)) && formValues?.assignee_name === undefined){
                 return {
                     ...prev,
                     [field]: value,
@@ -758,7 +757,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
     const [rendered, setRendered] = useState(false);
     const [visible, setVisible] = useState(false);
 
-    overlayAnimation(props.shown ? props.shown : shown, setRendered, setVisible, modalContainer, setParentOpen)
+    if (!props.noOverlay) overlayAnimation(props.shown ? props.shown : shown, setRendered, setVisible, modalContainer, setParentOpen)
 
     const closeModal = () => props.setShown ? props.setShown(false) : setShown(false);
 
@@ -816,7 +815,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
             </div>
         </div>  
     </div>
-    {(buttons!=null || props.customButtons) && <div className=" py-3 flex flex-row px-6 gap-3 rounded-lg">
+    {(buttons!=null || props.customButtons) && <div className="p-4 flex flex-row-reverse px-6 gap-3 rounded-lg bg-gray-50">
         {type!==undefined ? buttons : props.customButtons}
     </div>}    
     </div>);
@@ -825,7 +824,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
     return (
         <ModalPortal container={modalContainer} isModalOpen={rendered}>
-            {rendered && <div role="dialog" aria-modal="true" aria-labelledby="dialog-title" className={`relative z-10 h-full transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} >
+            {rendered && <div role="dialog" aria-modal="true" aria-labelledby="dialog-title" className={`relative z-10 h-full transition-opacity duration-200 ${(visible || props.noOverlay) ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} >
             
             <div aria-hidden="true" className={`absolute inset-0 bg-gray-200/75 backdrop-blur-sm transition-all duration-200 ${visible ? 'backdrop-opacity-100' : 'backdrop-opacity-0'}`}></div>
 
@@ -858,8 +857,6 @@ export function ModalPortal({children, container, isModalOpen}: ModalPortal ) {
     div.className = "w-full h-full z-100";
     elRef.current = div;
     }
-
-    
 
 
  useEffect(() => {

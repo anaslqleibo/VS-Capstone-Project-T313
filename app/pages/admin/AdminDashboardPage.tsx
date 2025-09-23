@@ -1,16 +1,29 @@
 "use client";
-import { useRef} from 'react';
+import { useEffect, useRef, useState} from 'react';
 import { Status } from '@/app/components/utils/getStatusColor';
-import Modal, { ShiftExtendedProps, ModalTypes } from '@/app/components/Modal';
+import Modal, { ModalTypes } from '@/app/components/Modal';
 import Layout from '@/app/components/Layout';
 import ListView from '@/app/components/ListView';
-import { createNotifications } from '@/app/components/utils/notification';
+import { createNotifications, fetchNotifications, NotificationProps } from '@/app/controllers/Notification';
 import { useAuth } from '@/app/contexts/AuthContext';
 
 
 export default function AdminDashboardPage() {
   const modalContainer = useRef<HTMLDivElement>(null);
   const user = useAuth().user;
+  const [notifications, setNotifications] = useState<NotificationProps[]|null>(null);
+
+  useEffect(()=>{
+    async function loadNotifications(){
+      if (user){
+        const result = await fetchNotifications(user.id);
+        setNotifications(result);
+
+        console.log(result);
+      }
+    }
+    loadNotifications();
+  }, [user])
 
   const declinedShiftDetails = {
       status: Status.DeclinedShift,
@@ -30,10 +43,11 @@ export default function AdminDashboardPage() {
             <h2 className="text-2xl mb-[30px]">Welcome, <span className="text-[color:var(--primary-color)] font-semibold">{(user?user.first_name:'')+ ' ' + (user?user.last_name:'')}</span></h2>
 
             <div className="flex flex-1 justify-center gap-4 flex-col md:flex-row items-center">
-                
-                <ListView title="Notifications" containerRef={modalContainer} closeButton={false}>{createNotifications()}</ListView>
+                { notifications && <ListView title="Notifications" containerRef={modalContainer} closeButton={false}>{createNotifications(true, notifications??[])}</ListView>}
 
-                {modalContainer.current && <Modal modalContainer={modalContainer.current} noOverlay={true} type={ModalTypes.DeclinedDetails} details={declinedShiftDetails}/>}
+                {/* <ListView title="Notifications" containerRef={modalContainer} closeButton={false}>{createNotifications(true)}</ListView> */}
+
+                {/* {modalContainer.current && <Modal modalContainer={modalContainer.current} noOverlay={true} type={ModalTypes.DeclinedDetails} details={declinedShiftDetails}/>} */}
               </div>
           </div>
         </div>

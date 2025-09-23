@@ -6,6 +6,7 @@ import { fetchLocations, Location } from '../controllers/Location';
 import Input from './Input';
 import { fetchAllEmployees, User } from '../controllers/User';
 import getStatusColor, { Status, stringToStatus } from './utils/getStatusColor';
+import useIsOverMd from './utils/useIsOverMd';
 
 interface DropdownProps{
   items?:string[];
@@ -17,6 +18,7 @@ interface DropdownProps{
   setFilter ?: Dispatch<SetStateAction<string[]>> | ((e:string[]) => void);
   setMonth ?: dayjs.Dayjs;
   className?:string;
+  containerClassName?:string;
   initialSelectedItem ?: string;
   custom ?: boolean;
   customSelected?:string;
@@ -27,6 +29,9 @@ interface DropdownProps{
   colorBasedOnValue?:boolean;
   startOpen?:boolean;
   syncCurrentWithInitialSelected?:boolean;
+  disableTyping?:boolean;
+  simplifyOnMobile?:boolean;
+  replacementIcon?:ReactNode;
 }
 
 type DayPickerProps = {
@@ -45,11 +50,15 @@ const Dropdown = ({
   multiple = false,
   showCheckbox,
   placeholder = 'Select an option',
-  maxVisibleItems = 3,
+  maxVisibleItems = 5,
   className,
   colorBasedOnValue, 
   startOpen,
   syncCurrentWithInitialSelected,
+  disableTyping,
+  simplifyOnMobile,
+  replacementIcon,
+  containerClassName,
   ...props
 } : DropdownProps) => {
   const [isOpen, setIsOpen] = useState<boolean>(startOpen || false);
@@ -57,6 +66,8 @@ const Dropdown = ({
   const [selected, setSelected] = useState<string[]>(props.initialSelectedItem?[props.initialSelectedItem]:[]);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [hideSelectedItem, setHideSelectedItem] = useState(false);
 
   const setAdvSelected = (filteredItems:string[]) => {
     setSelected(filteredItems)
@@ -73,8 +84,17 @@ const Dropdown = ({
   );
 
   const toggleDropdown = () => {
-    setIsOpen(!isOpen)
-    inputRef.current?.focus();
+    if (!isOpen) {
+      setIsOpen(true);
+
+      setTimeout(() => {
+        const selectedItem = document.getElementsByClassName("dropdown-item-selected").item(0);
+        selectedItem?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 0);
+    } else {
+      setIsOpen(false);
+    }
+    if (!disableTyping) inputRef.current?.focus();
   };
 
   const handleSelect = (item : string) => {
@@ -127,14 +147,16 @@ const Dropdown = ({
       };
     }
   }, [props.initialSelectedItem])
+
+  const isSimplified = simplifyOnMobile && !useIsOverMd();
   
   const activeColor = (colorBasedOnValue&&selected[0]) ? getStatusColor(stringToStatus(selected[0])) : 'var(--color-primary)';
   return (
-    <div className={`relative w-fit min-w-fit text-sm ${className} ${props.disabled ? "pointer-events-none" : ""}`} ref={containerRef}>
-      <div className={` ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : 'border-1 border-[color:var(--color-primary)] text-[color:var(--color-primary)]'} rounded-md ${className} px-3 py-2 flex items-center justify-between cursor-pointer ${props.disabled ? "bg-gray-200 text-gray-400" : ""}`} onClick={toggleDropdown} style={colorBasedOnValue ? {borderColor: activeColor, color:activeColor} : {}}>
+    <div className={`relative w-fit text-sm ${className} ${isSimplified ? 'min-w-fit' : '' }  ${props.disabled ? "pointer-events-none" : ""}`} ref={containerRef}>
+      <div className={` ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : 'border-1 border-[color:var(--color-primary)] text-[color:var(--color-primary)]'} rounded-md ${containerClassName} px-3 py-2 flex items-center justify-between cursor-pointer ${props.disabled ? "bg-gray-200 text-gray-400" : ""}`} onClick={toggleDropdown} style={colorBasedOnValue ? {borderColor: activeColor, color:activeColor} : {}}>
         <div className="flex flex-wrap items-center gap-1 flex-1 min-w-fit">
-          {!props.disabled && (props.custom ? <span>{props.customSelected}</span> : ((!multiple && selected.length>0) || 
-          (multiple && selected.length == 1 && (!isOpen))) ? <span>{selected.at(0)}</span> : selected.map((item, index) => (
+          {!props.disabled && (props.custom ? <span>{isSimplified ? props.customSelected?.substring(0,3) : props.customSelected}</span> : ((!multiple && selected.length>0) || 
+          (multiple && selected.length == 1 && (!isOpen))) ? <span>{!hideSelectedItem && (isSimplified ? (replacementIcon ?? selected.at(0)?.substring(0,3)+'...') : selected.at(0))}</span> : selected.map((item, index) => (
             <span key={index} className="flex items-center gap-1 bg-gray-100 border border-primary text-primary px-2 py-1 rounded whitespace-nowrap text-sm">
               {item}
               <Icon id="x" className="cursor-pointer" onClick={(e) => {
@@ -145,6 +167,9 @@ const Dropdown = ({
           )))}
           <input
             type="text"
+            disabled={disableTyping}
+            onFocus={(e)=> e.target === document.activeElement && setHideSelectedItem(true)}
+            onBlur={(e)=> setHideSelectedItem(false)}
             value={search}
             ref={inputRef}
             onChange={(e) => {
@@ -152,7 +177,7 @@ const Dropdown = ({
                 if (filteredItems.length>0) setIsOpen(true);
             }}
             onKeyDown={handleKeyDown}
-            className="outline-none grow px-1 field-sizing-content"
+            className={`outline-none grow px-1 field-sizing-content ${disableTyping ? 'pointer-events-none' : ''}`}
             placeholder={selected.length === 0 && !props.custom || props.disabled ? placeholder : ''}
           />
         </div>
@@ -161,14 +186,14 @@ const Dropdown = ({
       </div>
 
       {isOpen && (
-        <div className={`absolute z-20 mt-1 ${props.custom ? "w-fit max-h-fit" : "w-full max-h-60 overflow-y-auto"} bg-white border border-gray-300 shadow-md rounded-md max-w-[${maxHeight}px]`}>
+        <div className={`absolute z-20 mt-1 ${props.custom ? "w-fit max-h-fit" : `${isSimplified ? 'w-fit' : 'w-full'} overflow-y-auto`} bg-white border border-gray-300 shadow-md rounded-md`} style={{maxHeight: props.custom ? undefined : maxHeight+'px'}}>
 
           {props.custom && props.children}
 
           {!props.custom && (
             filteredItems.length > 0 ? 
             (filteredItems.map((item, index) => (
-              <div key={index} className={`flex items-center justify-between px-3 py-2 cursor-pointer text-left ${!showCheckbox&&selected.includes(item) ? "bg-gray-200": "hover:bg-gray-100"} `} onClick={(e) => {
+              <div key={index} className={`flex items-center justify-between px-3 py-2 cursor-pointer text-left ${!showCheckbox&&selected.includes(item) ? "bg-gray-200": "hover:bg-gray-100"} ${item===selected.at(0) ? "dropdown-item-selected" : ""}`} onClick={(e) => {
                     setSearch("");
                     handleSelect(item);
                 }}>
