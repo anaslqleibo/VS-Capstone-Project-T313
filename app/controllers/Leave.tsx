@@ -181,7 +181,7 @@ export async function updateLeaveStatus(leave_id: string, user_id: string, is_ac
 
 export async function deleteLeave(shift_id: string) {
   try {
-    const res = await fetch(`/api/shifts/${shift_id}`, {
+    const res = await fetch(`/api/shifts/shift/${shift_id}`, {
       method: 'DELETE',
     });
 

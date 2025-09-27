@@ -246,7 +246,7 @@ interface IconProps {
   props?: {[key:string] : any}; 
 }
 
-function Icon({ id="?", width='1em', height='1em', className="", status = Status.Unavailable, ...props } : IconProps) {
+function Icon({ id="?", width='1em', height='1em', className="", status, ...props } : IconProps) {
     const iconData = icons[id] || icons['?'];
     
     if (!iconData) {
@@ -265,8 +265,8 @@ function Icon({ id="?", width='1em', height='1em', className="", status = Status
         height={h}
         fill="currentColor"
         xmlns="http://www.w3.org/2000/svg"
-        className={`${className} text-[1.1em]`}
-        style={{color: getStatusColor(status)}}
+        className={`text-[1.1em] ${className} `}
+        style={status?{color: getStatusColor(status)}:undefined}
         onClick={props.onClick}
         {...props}
         >

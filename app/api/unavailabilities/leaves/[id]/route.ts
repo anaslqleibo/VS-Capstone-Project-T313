@@ -28,4 +28,3 @@ export async function GET(request : NextRequest, context: RouteContext<'/api/una
         return NextResponse.json({ error: "Failed to fetch leaves" }, { status: 500 });
     }
 };
-

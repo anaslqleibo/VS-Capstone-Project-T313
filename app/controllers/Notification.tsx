@@ -7,14 +7,15 @@ import Tooltip from "../components/Tootltip";
 
 type NotificationType = 'Assigned' | 'Unassigned' | 'Accepted' | 'Declined' | 'Request' | 'Leave Request' | 'Leave Accepted' | 'Leave Declined';
 
-export interface NotificationProps {
+export type NotificationProps = {
     id?:string;
     type: NotificationType,
     date?: Date | string,
+    shift_id?: string,
     shift_date?: Date | string,
     assignee_name?: string;
     days_left?: number,
-    onClick?: Function
+    onClick?: ()=>void;
 
     location_name?: string;
     start_time?: string;
@@ -30,6 +31,22 @@ export async function fetchNotifications(user_id?: string) {
     const data = await res.json();
     return data as NotificationProps[];
 }
+
+export async function notificationMarkAsRead(id: string, is_admin=false) {
+    try {
+        const res = await fetch(`/api/notifications/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_admin }),
+        });
+
+        return res.ok;
+    } catch (err) {
+        console.error('Failed to update notification read status:', err);
+        return false;
+    }
+}
+
 
 
 function getNotifications(){
@@ -60,13 +77,13 @@ export function createAdminNotification({type, date = new Date(), shift_date = n
     function handleClick(e : React.MouseEvent<HTMLParagraphElement>){
         e.stopPropagation(); 
         
-        if (onClick) onClick(e);
+        if (onClick) onClick();
     }
 
     const tooltipContent = <>Date: {shift_date}<br/> Location: {location_name} <br/> Start time: {start_time} <br/> End time: {end_time}</>;
     const shift = (
         <Tooltip content={tooltipContent} position="top">
-            <span className="font-semibold">shift</span>
+            <span className="font-semibold">{type.split(' ').length>1? 'leave': 'shift'}</span>
         </Tooltip>
     );
 
@@ -147,7 +164,7 @@ export function createStaffNotification({type, date = new Date(), shift_date = n
     function handleClick(e : React.MouseEvent<HTMLParagraphElement>){
         e.stopPropagation(); 
         
-        if (onClick) onClick(e);
+        if (onClick) onClick();
     }
 
     let content;

@@ -4,7 +4,7 @@ import { Calendar, CalendarFilter } from '@/app/components/Calendar';
 import getStatusColor, { Status } from '@/app/components/utils/getStatusColor';
 import formatDate, { formatDateDayJS, sqlDateFormatToRegularFormat } from '@/app/components/utils/formatDate';
 import Dropdown from '@/app/components/Dropdown';
-import { createModal, ModalTypes } from '@/app/components/Modal';
+import { createModal, ModalTypes, ShiftExtendedProps } from '@/app/components/Modal';
 import { PageProps } from '@/app/layout';
 import Layout from '@/app/components/Layout';
 import Button from '@/app/components/Button';
@@ -13,7 +13,7 @@ import dayjs from 'dayjs';
 import Accordion from '@/app/components/Accordion';
 import Input from '@/app/components/Input';
 import useIsOverMd from '@/app/components/utils/useIsOverMd';
-import { buildShiftEvent, getEventInputShifts } from '@/app/controllers/Shifts';
+import { buildShiftEvent, fetchShiftExtProps, getEventInputShifts } from '@/app/controllers/Shifts';
 import { EventInput } from '@fullcalendar/core';
 import Checkbox from '@/app/components/Checkbox';
 import { fetchLocations } from '@/app/controllers/Location';
@@ -25,7 +25,7 @@ import { FaClipboardList, FaMapPin } from 'react-icons/fa';
 
 export default function EmployeeDashboardPage() {
   const modalContainer = useRef<HTMLDivElement>(null);
-  const account = useAuth().user;
+  const user = useAuth().user;
 
   const [activeFilter, setActiveFilter] = useState<CalendarFilter>({status: ["All shifts"], location:["All locations"], month:dayjs()});
   
@@ -52,15 +52,15 @@ export default function EmployeeDashboardPage() {
 
   useEffect(() => {
     async function fetchEvents() {
-      if (account){
+      if (user){
 
-        const shifts = await getEventInputShifts(account!.id);
-        const leaves = await getEventInputLeaves(account!.id);
+        const shifts = await getEventInputShifts(user!.id);
+        const leaves = await getEventInputLeaves(user!.id);
         
         let allEvents: EventInput[] = [];
 
         if (showUnavailability){
-          const unavailabilities = await getEventInputUnavailabilities(account?.id ? account?.id : 0);
+          const unavailabilities = await getEventInputUnavailabilities(user?.id ? user?.id : 0);
           allEvents = [...shifts, ...leaves, ...unavailabilities];
         }
         else{
@@ -79,7 +79,7 @@ export default function EmployeeDashboardPage() {
 
     fetchEvents();
     getLocations();
-  }, [showUnavailability, account]);
+  }, [showUnavailability, user]);
 
 
 
@@ -113,7 +113,7 @@ export default function EmployeeDashboardPage() {
           <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
           <div className='p-6 h-full flex flex-col'>
             
-            {account && <h2 className="text-2xl mb-[30px]">Welcome, <span className="text-[color:var(--primary-color)] font-semibold">{account.first_name+ ' ' + account.last_name}</span></h2>}
+            {user && <h2 className="text-2xl mb-[30px]">Welcome, <span className="text-[color:var(--primary-color)] font-semibold">{user.first_name+ ' ' + user.last_name}</span></h2>}
            
             {events.length === 0 ? <Spinner custom showWater backgroundGradient borderSpinner/> :
             <>

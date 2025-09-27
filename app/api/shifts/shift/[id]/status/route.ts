@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
 
-export async function PATCH(req: NextRequest, context: RouteContext<'/api/shifts/[id]/status'>) {
+export async function PATCH(req: NextRequest, context: RouteContext<'/api/shifts/shift/[id]/status'>) {
   try {
     const { id } = await context.params;
     const body = await req.json();

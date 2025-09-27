@@ -15,8 +15,7 @@ export async function GET(request: NextRequest, context: RouteContext<'/api/user
       );
     }
 
-    const userData = user;
-    return NextResponse.json(userData);
+    return NextResponse.json(user);
   } catch (error) {
     console.error("Error fetching user:", error);
     return NextResponse.json(

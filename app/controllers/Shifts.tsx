@@ -15,12 +15,27 @@ export type Shift = {
   location_id: string; 
   location_name: string;
   address: string;
-  assignee_name ?: string
+  assignee_name ?: string;
+  type?:string;
 };
 
 export type ShiftAssignee = {
   id?: string;
   assignee_id: string; 
+}
+
+
+export async function fetchShift(id: string) {
+  const res = await fetch(`/api/shifts/shift/${id}`);
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch the shift');
+  }
+  return (await res.json()) as Shift;
+}
+
+export async function fetchShiftExtProps(id: string) {
+  return shiftToShiftExtProps(await fetchShift(id));
 }
 
 export async function fetchShifts(user_id: number) {
@@ -64,7 +79,7 @@ export async function updateShift(shift: Shift | ShiftAssignee) {
 
 export async function updateShiftStatus(shift_id: string, status: ShiftStatus) {
   try {
-    const res = await fetch(`/api/shifts/${shift_id}/status`, {
+    const res = await fetch(`/api/shifts/shift/${shift_id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
@@ -77,9 +92,9 @@ export async function updateShiftStatus(shift_id: string, status: ShiftStatus) {
   }
 }
 
-export async function deleteShift(shift_id: string, user_id: string) {
+export async function deleteShift(shift_id: string) {
   try {
-    const res = await fetch(`/api/shifts/${shift_id}`, {
+    const res = await fetch(`/api/shifts/shift/${shift_id}`, {
       method: 'DELETE',
     });
 
@@ -93,21 +108,7 @@ export async function deleteShift(shift_id: string, user_id: string) {
 export function getEventInputShifts(user_id: number) {
   return fetchShifts(user_id).then((shifts) =>
     shifts.map((shift) => {
-      const shiftExtProps : ShiftExtendedProps = {
-        status: stringToStatus(shift.status),
-        type: 'shift',
-        date: shift.date.split('T')[0],
-        start_time: shift.start_time.slice(0, 5), // Updated to use start_time
-        end_time: shift.end_time.slice(0, 5),     // Updated to use end_time
-        time: `${shift.start_time.slice(0, 5)}–${shift.end_time.slice(0, 5)}`,
-        location_id: shift.location_id,
-        location_name: shift.location_name,           // Updated to use location
-        address: shift.address,
-        notes: shift.notes,
-        assignee_id: shift.assignee_id,
-        assignee_name: shift.assignee_name
-        // employee field removed since it's not in the database
-      };
+      const shiftExtProps : ShiftExtendedProps = shiftToShiftExtProps(shift);
 
       return {
         id: shift.id,
@@ -117,6 +118,26 @@ export function getEventInputShifts(user_id: number) {
       } as EventInput
     }
   ));
+}
+
+function shiftToShiftExtProps(shift: Shift){
+  const shiftExtProps : ShiftExtendedProps = {
+    id: shift.id,
+    status: stringToStatus(shift.status),
+    type: shift.type??'shift',
+    date: shift.date.split('T')[0],
+    start_time: shift.start_time.slice(0, 5), // Updated to use start_time
+    end_time: shift.end_time.slice(0, 5),     // Updated to use end_time
+    time: `${shift.start_time.slice(0, 5)}–${shift.end_time.slice(0, 5)}`,
+    location_id: shift.location_id,
+    location_name: shift.location_name,           // Updated to use location
+    address: shift.address,
+    notes: shift.notes,
+    assignee_id: shift.assignee_id,
+    assignee_name: shift.assignee_name
+    // employee field removed since it's not in the database
+  };
+ return shiftExtProps;
 }
 
 export function buildShiftEvent(date: string, timeRange: string, otherProps: Partial<EventInput> = {}) {

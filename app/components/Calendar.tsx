@@ -15,6 +15,7 @@ import Toast from "./Toast";
 import { buildShiftEventTitle } from "../controllers/Shifts";
 import { Role } from "../controllers/User";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { v4 as uuidv4 } from 'uuid';
 
 
 export interface CalendarFilter{
@@ -66,7 +67,7 @@ function constructEventsArray(events: EventInput[], role: Role) {
     }
     
     const event: EventInput = {
-        id: crypto.randomUUID(),
+        id: uuidv4(),
         title: role==="admin" ? buildShiftEventTitle(status, time, location_name, assignee_name, type) : buildShiftEventTitle(status, time, location_name, undefined, type),
         start: date + 'T' + start_time,
         end: e.end ? e.end : date + 'T' + end_time,

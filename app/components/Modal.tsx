@@ -7,13 +7,13 @@ import getStatusColor, { Status, statusToString, stringToStatus } from "./utils/
 import React from "react";
 import { createPortal } from "react-dom";
 import ListView from "./ListView";
-import { createNotifications } from "../controllers/Notification";
+import { createNotifications, NotificationProps } from "../controllers/Notification";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import Dropdown, { DayPicker, DropdownUser, LocationDropdownWithAddress } from "./Dropdown";
 import { EventInput } from "@fullcalendar/core";
 import { buildShiftEventTitle, deleteShift, Shift, updateShift, updateShiftStatus } from "../controllers/Shifts";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { FaEdit, FaRegBell, FaSave, FaTrash } from "react-icons/fa";
+import { FaCalendar, FaCross, FaEdit, FaRegBell, FaSave, FaTrash } from "react-icons/fa";
 import Input from "./Input";
 import dayjs from "dayjs";
 import { formatToSqlDate, sqlDateFormatToRegularFormat } from "./utils/formatDate";
@@ -72,6 +72,7 @@ export function getModalTypesByStatus(status:Status, type:EventTypes="shift"){
 }
 
 export type LeaveExtendedProps = {
+    id?: string;
     assignee_id: string;
     assignee_name?: string;
     type: string;
@@ -120,6 +121,7 @@ interface ModalProps{
     event?:EventInput;
     displayToast?:(message:string, toastType: 'success'|'error')=>void;
     noOverlay?:boolean;
+    hasItems?:(e:boolean)=>void;
 }
 
 function createAdminComponent(status: Status, employee?:string, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isEditing=false, setEditing?:(e:boolean)=>void, formValues?: Record<string, any>, handleChange?: (field: string, value: any) => void, initialDetails?:ShiftExtendedProps, setLoading?:(e:boolean)=>void){
@@ -129,7 +131,7 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
     const handleDelete = async () => {
         const confirm = window.confirm("Are you sure you want to delete this shift?")
         if (!confirm) return;
-        const result = await deleteShift(event?.extendedProps?.id, event?.extendedProps?.assignee_id);
+        const result = await deleteShift(event?.extendedProps?.id);
         
         if (result){
             if (event) setEvents!(event, "delete"); 
@@ -172,9 +174,7 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
                         backgroundColor: getStatusColor(castedFormValues.status)
                     };
                     
-                    console.log(updatedEvent);
-
-                    setEvents!(updatedEvent, "update");
+                    if (setEvents) setEvents(updatedEvent, "update");
                     
                     if (setEditing) {
                         setEditing(false);
@@ -244,7 +244,7 @@ function createDetailEditor(label: string, field: keyof ShiftExtendedProps, deta
 
     if (type === "textarea")
         return (<><p className="text-sm font-semibold text-gray-600 mt-1 mb-1">{label}</p>
-    <textarea readOnly={!isEditing} className="text-gray-500 font-normal text-sm border-2 border-gray-500 bg-gray-100 rounded-md min-w-full p-2 min-h-[72px] resize-none focus:outline-0" value={castedFormValues.notes} onChange={(e)=>handleChange!("notes", e.target.value)}></textarea></>);
+    <textarea readOnly={!isEditing} className="text-gray-500 font-normal text-sm border-2 border-gray-500 bg-gray-100 rounded-md min-w-full p-2 min-h-[72px] resize-none focus:outline-0" value={castedFormValues.notes??''} onChange={(e)=>handleChange!("notes", e.target.value)}></textarea></>);
     else{
         if (isEditing){
             const pickerSetup = { "& .MuiPickersInputBase-sectionsContainer": {padding: "8px 4px", fontSize: "0.9em"}};
@@ -313,7 +313,7 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
             </>
         );
     }
-    else if ('recurrence' in castedDetails && (castedDetails.type === "leave" || type === ModalTypes.LeaveDetails))
+    else if ((castedDetails.type === "leave" || type === ModalTypes.LeaveDetails || type == ModalTypes.PendingDetails))
     {
         return (
             <>
@@ -552,7 +552,6 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         }
         
     }
-    
     else if (formValues && formValues.type === "leave" && type === ModalTypes.PendingDetails)
     {
         if (isAdmin){
@@ -603,7 +602,6 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         </>);
         }   
         else{
-            
             const handleCancel = async () => {
             const result = await deleteLeave(event?.extendedProps?.id as string);
 
@@ -674,17 +672,12 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         </>);
     }
     else if (type === ModalTypes.DeclinedDetails){
-        const handleView = () => {
-            // delete from db and check if succesful, if yes then proceed
-            // viewDeclined();
-            const result = true;
-
+        const handleView = async () => {
+            const result = await deleteShift(event?.extendedProps?.id);
+            
             if (result){
                 if (event) setEvents!(event, "delete"); 
                 closeModal!();
-            }
-            else{
-                displayToast!('An unknown error occured', 'error');
             }
         }
 
@@ -707,8 +700,12 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
     return buttons;
 }
 
-export function createModal(type:ModalTypes|null, startOpen: boolean, modalContainer: HTMLDivElement, details?:Record<string, any>, setParentOpen?: (e:boolean)=>void, setEvents?:setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void){
-    return (<Modal type={type} details={details} startOpen={startOpen} modalContainer={modalContainer} setParentOpen={setParentOpen} setEvents={setEvents} event={event} displayToast={displayToast}/>);
+export function createModalNoOverlay(type:ModalTypes|null, modalContainer: HTMLDivElement, details?:Record<string, any>, displayToast?:(message:string, toastType: 'success'|'error')=>void, setShown?:(e:boolean)=>void){
+    return (<Modal noOverlay={true} type={type} details={details} modalContainer={modalContainer} displayToast={displayToast} setShown={setShown}/>);
+}
+
+export function createModal(type:ModalTypes|null, startOpen: boolean, modalContainer: HTMLDivElement, details?:Record<string, any>, setParentOpen?: (e:boolean)=>void, setEvents?:setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, hasItems?:(e:boolean)=>void){
+    return (<Modal type={type} details={details} startOpen={startOpen} modalContainer={modalContainer} setParentOpen={setParentOpen} setEvents={setEvents} event={event} displayToast={displayToast} hasItems={hasItems}/>);
 }
 
 export default function Modal({type, details, startOpen, title, modalContainer, setParentOpen, ...props} : ModalProps){
@@ -716,6 +713,10 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
     const [isEditing, setIsEditing] = useState(false);
     const [formValues, setFormValues] = useState<ShiftExtendedProps|LeaveExtendedProps|undefined>(details ? ('status' in details ? details as ShiftExtendedProps : details as LeaveExtendedProps) : undefined);
     
+    useEffect(() => {
+        setFormValues(details ? ('status' in details ? details as ShiftExtendedProps : details as LeaveExtendedProps) : undefined);
+    }, [details]);
+
     const handleChange = (field: string, value: any) => {
         setFormValues((prev : any) => {
             if (value && formValues && "start_time" in formValues && (field === "start_time" || field === "end_time") && !(!formValues?.start_time || !formValues?.end_time)){
@@ -752,7 +753,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
     };
 
     const containerRef = useRef<HTMLDivElement>(null);
-    useClickOutside(containerRef, ()=> props.setShown ? props.setShown(false) : setShown(false));
+    if (!props.noOverlay) useClickOutside(containerRef, ()=> props.setShown ? props.setShown(false) : setShown(false));
 
     const [rendered, setRendered] = useState(false);
     const [visible, setVisible] = useState(false);
@@ -785,35 +786,32 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
     {loading && <div className="absolute rounded-lg top-0 left-0 w-full h-full bg-[#ffffff8d]"> <Spinner custom showWater backgroundGradient/> </div>}
 
     <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg">
-        <div className="sm:flex sm:items-start">
-        
-            <div className="mt-3 w-full sm:mt-0 sm:text-left">
-                <div className="flex items-center justify-between align-middle mb-2">
-                    <h1 id="dialog-title" className="text-lg font-semibold text-gray-900">
-                        
-                        {type !== undefined ? (formValues?.type ? type?.replace("shift", formValues?.type) : type) : title??"Please set the tag 'title'"}
-                    </h1>
+        <div className="w-full md:text-left">
+            <div className="flex items-center justify-between align-middle mb-2">
+                <h1 id="dialog-title" className="text-lg font-semibold text-gray-900">
                     
-                    {!props.noOverlay && 
-                    <Icon
-                        id="x"
-                        width="1.5em"
-                        height="1.5em"
-                        className="text-black-700 hover:text-[color:var(--danger-color)]"
-                        onClick={closeModal}
-                    />}
-                    
-                </div>
+                    {type !== undefined ? (formValues?.type ? type?.replace("shift", formValues?.type) : type) : title??"Please set the tag 'title'"}
+                </h1>
+                
+                { 
+                <Icon
+                    id="x"
+                    width="1.5em"
+                    height="1.5em"
+                    className="text-black-700 hover:text-danger"
+                    onClick={closeModal}
+                />}
+                
+            </div>
+            
+
+            {type && details && type !== ModalTypes.Notifications && createDetails(type, details, admin, props.setEvents, props.event, props.displayToast, closeModal, isEditing, setEditing, formValues, handleChange, "location_id" in details ? details as ShiftExtendedProps : undefined, setLoading)}
                 
 
-                {type && details && type !== ModalTypes.Notifications && createDetails(type, details, admin, props.setEvents, props.event, props.displayToast, closeModal, isEditing, setEditing, formValues, handleChange, "location_id" in details ? details as ShiftExtendedProps : undefined, setLoading)}
-                    
+            {props.children}
 
-                {props.children}
-
-               
-            </div>
-        </div>  
+            
+        </div>
     </div>
     {(buttons!=null || props.customButtons) && <div className="p-4 flex flex-row-reverse px-6 gap-3 rounded-lg bg-gray-50">
         {type!==undefined ? buttons : props.customButtons}
@@ -824,7 +822,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
     return (
         <ModalPortal container={modalContainer} isModalOpen={rendered}>
-            {rendered && <div role="dialog" aria-modal="true" aria-labelledby="dialog-title" className={`relative z-10 h-full transition-opacity duration-200 ${(visible || props.noOverlay) ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} >
+            {rendered && <div role="dialog" aria-modal="true" aria-labelledby="dialog-title" className={`relative z-10 h-full transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} >
             
             <div aria-hidden="true" className={`absolute inset-0 bg-gray-200/75 backdrop-blur-sm transition-all duration-200 ${visible ? 'backdrop-opacity-100' : 'backdrop-opacity-0'}`}></div>
 
@@ -832,7 +830,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
             <div className="flex min-h-full justify-center p-4 text-center items-center sm:p-0">
             
                 {type === ModalTypes.Notifications &&
-                    <ListView title="Notifications" containerRef={containerRef} setShown={setShown}>{createNotifications()}</ListView>
+                    <ListView title="Notifications" containerRef={containerRef} setShown={setShown} idList={details ? details.map((d:any)=>d.id) : undefined} hasItems={props.hasItems}>{createNotifications(false, details as NotificationProps[])}</ListView>
                 }
 
                 {type !== ModalTypes.Notifications && ModalJSX}
@@ -846,39 +844,31 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
 interface ModalPortal{
     children: ReactNode;
-    container: HTMLDivElement | HTMLElement | undefined;
+    container: HTMLDivElement | HTMLElement;
     isModalOpen:boolean;
 }
 
 export function ModalPortal({children, container, isModalOpen}: ModalPortal ) {
-  const elRef = useRef<HTMLDivElement | null>(null);
-  if (!elRef.current) {
-    const div = document.createElement("div");
-    div.className = "w-full h-full z-100";
-    elRef.current = div;
-    }
+    const main = document.querySelector('main');
+    useEffect(() => {
+        if (!main) return;
 
+        if (isModalOpen) {
+            if (!main.contains(container)) {
+                main.appendChild(container);
+            }
+        } else {
+            if (main.contains(container)) {
+                main.removeChild(container);
+            }
+        }
 
- useEffect(() => {
-    const el = elRef.current!;
-  if (!container) return;
+        return () => {
+            if (main.contains(container)) {
+                main.removeChild(container);
+            }
+        };
+    }, [main, isModalOpen]);
 
-  if (isModalOpen) {
-    if (!container.contains(el)) {
-      container.appendChild(el);
-    }
-  } else {
-    if (container.contains(el)) {
-      container.removeChild(el);
-    }
-  }
-
-  return () => {
-    if (container.contains(el)) {
-      container.removeChild(el);
-    }
-  };
-}, [container, isModalOpen]);
-
-  return container ? createPortal(children, elRef.current) : null;
+    return container ? createPortal(children, container) : null;
 }
