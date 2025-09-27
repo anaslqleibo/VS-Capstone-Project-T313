@@ -1,15 +1,26 @@
+"use client";
+import { usePathname } from "next/navigation";
+import { RefObject } from 'react';
 import { ModalProvider, useModal } from './ModalContext';
 import Sidebar from './Sidebar';
-import { injectModalOverlay, PageProps } from '@/app/layout';
+import { PageProps } from '@/app/layout';
 
+
+function injectModalOverlay(modalContainer: RefObject<HTMLDivElement|null>){
+  return <div className="absolute z-100 inset-0 m-auto pointer-events-none w-full" ref={modalContainer}></div>;
+}
 
 function Layout({modalContainer, children}:PageProps){
   // const { modalShown } = useModal();
 
+
+  const pathname = usePathname();
+  const hideSidebar = pathname === "/portal";     
+
   return (
     <div className="h-screen overflow-hidden flex flex-col">
       <div className="flex overflow-hidden flex-col md:flex-row flex-1">
-        <Sidebar modalContainer={modalContainer} />
+        {!hideSidebar && <Sidebar modalContainer={modalContainer} />}
         
         <main className="flex-1 overflow-hidden relative">
           {injectModalOverlay(modalContainer)}

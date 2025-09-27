@@ -4,6 +4,7 @@ export enum Status {
     Accepted = 'Accepted',
     Pending = 'Pending',
     DeclinedShift = 'Declined',
+    Assigned = "Assigned",
     Unassigned = 'Unassigned',
     OpenShift = 'Open',
     Request = 'Request',
@@ -18,6 +19,8 @@ export function stringToStatus(status: string): Status {
             return Status.Pending;
         case 'Unassigned':
             return Status.Unassigned;
+        case 'Assigned':
+            return Status.Assigned;
         case 'Accepted':
             return Status.Accepted;
         case 'Leave':
@@ -39,6 +42,8 @@ export function statusToString(status: Status): ShiftStatus {
     switch (status) {
         case Status.Pending:
             return 'Pending';
+        case Status.Assigned:
+            return 'Assigned';
         case Status.Unassigned:
             return 'Unassigned';
         case Status.Accepted:
@@ -68,6 +73,7 @@ function getStatusColor(status:Status, returnHex:boolean=true){
                 return "var(--color-primary)";
             case Status.Leave:
                 return "var(--color-dark-grey)";
+            case Status.Assigned:
             case Status.OpenShift:
                 return "var(--color-hover)";
             case Status.DeclinedShift:
@@ -89,6 +95,7 @@ function getStatusColor(status:Status, returnHex:boolean=true){
                 return "var(--primary-color-rgb)";
             case Status.Leave:
                 return "var(--dark-grey-rgb)";
+            case Status.Assigned:
             case Status.OpenShift:
                 return "var(--hover-color-rgb)";
             case Status.DeclinedShift:

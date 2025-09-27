@@ -1,9 +1,8 @@
 "use client";
 import Icon from "@/public/icons/Icons";
 import React, { forwardRef, JSX, ReactElement, ReactNode, RefObject, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { overlayAnimation, useClickOutside } from "./utils/useClickOutside";
-import { createRoot } from "react-dom/client";
 import { v4 as uuidv4 } from 'uuid';
+import { notificationMarkAsRead } from "../controllers/Notification";
 
 interface ListViewProps {
   title: string;
@@ -11,6 +10,8 @@ interface ListViewProps {
   containerRef: React.RefObject<HTMLDivElement|null>;
   setShown?:(e:boolean)=>void;
   children?: React.ReactNode;
+  idList?: string;
+  hasItems?:(e:boolean)=>void;
 }
 
 interface Item {
@@ -48,21 +49,20 @@ export type ListViewHandle = {
 };
 
 const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
-  { title, closeButton = true, containerRef, ...props },
+  { title, closeButton = true, containerRef, hasItems, ...props },
   ref
 ) {
-  // const [shown, setShown] = useState(true);
-  //  useImperativeHandle(ref, () => ({
-  //   toggleShown: () => setShown((prev) => !prev),
-  // }));  
-
 
   const [items, setItems] = useState<Item[]>(
-    flattenChildren(props.children).map((child) => ({
-      id: uuidv4(),
+    flattenChildren(props.children).map((child, index) => ({
+      id: props.idList ? props.idList[index] : uuidv4(),
       content: child as Item["content"],
     }))
   );
+
+  function onMarkAsRead(id: string){
+    notificationMarkAsRead(id);
+  }
 
   const [removalQueue, setRemovalQueue] = useState<RemovalQueue>({});
   const notificationItems = useRef<NotificationItems>({});
@@ -74,6 +74,11 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
       delete updated[id];
       return updated;
     });
+    onMarkAsRead(id);
+
+    if ((items.length-1)<= 0){
+      hasItems && hasItems(false);
+    }
   };
 
   const markAsRead = (id: string) => {
@@ -110,8 +115,8 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
   const isMarkedForRemoval = (id: string) =>
     Object.prototype.hasOwnProperty.call(removalQueue, id);
   
-  return (<div className='w-full md:w-max h-80 flex flex-col text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg overflow-hidden text-left shadow-xl transition-all my-auto' ref={containerRef}>
-                  <div className="w-full h-fit px-4 py-2 border-b border-gray-200 text-xl text-[color:var(--secondary-color))] font-semibold flex items-center justify-between gap-5">
+  return (<div className='w-full md:w-max h-fit flex flex-col text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg overflow-hidden text-left shadow-xl transition-all my-auto' ref={containerRef}>
+                  <div className="w-full h-fit px-4 py-2 border-b border-gray-200 text-xl text-[color:var(--secondary-color))] font-semibold flex items-center justify-between gap-20">
                     {title || "Title"}
 
                     {closeButton && (
@@ -122,7 +127,7 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
                       />
                     )}
                   </div>
-                  <ul className="bg-[color:var(--primary-color)] transition-all overflow-y- overflow-x-hidden">
+                  <ul className="bg-[color:var(--primary-color)] transition-all overflow-x-hidden">
                     {items && items.length > 0 ? (
                       items.map((item) => {
                         const id = item.id;
@@ -140,7 +145,7 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
                             <li className="w-full px-4 py-2 border-b bg-white border-gray-200 hover:bg-gray-100 hover:cursor-pointer flex items-center justify-between gap-5 transition-all duration-300 ease-in-out group translate-0"
                               onClick={handleParentClick}
                               ref={r => {notificationItems.current[id] = r;}}>
-                              {item.content}
+                              <div>{item.content}</div>
 
                               <Icon
                                 id="read"

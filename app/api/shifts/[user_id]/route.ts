@@ -5,10 +5,10 @@ import { User } from "@/app/controllers/User";
 import { isAdmin } from "../../users/[id]/is_admin";
 
 
-export async function GET(request : Request, {params}: { params: {id: string }}) {
+export async function GET(request : NextRequest, context: RouteContext<'/api/shifts/[user_id]'>) {
     try{
-        const p = await params;
-        const admin = await isAdmin(p.id);
+        const p = await context.params;
+        const admin = await isAdmin(p.user_id);
         let shifts;
         
         if (admin) {
@@ -18,8 +18,8 @@ export async function GET(request : Request, {params}: { params: {id: string }})
         }
         else {
             shifts = await executeQuery(
-            `SELECT s.id as id, s.assignee_id as assignee_id, s.status as status, DATE_FORMAT(s.date, '%Y-%m-%d') as date, s.start_time as start_time, s.end_time as end_time, s.notes as notes, l.id as location_id,  l.name as location_name, l.address as address, CONCAT(u.first_name," ", u.last_name) as assignee_name FROM shifts s INNER JOIN locations l ON s.location_id = l.id INNER JOIN users u ON s.assignee_id = u.id WHERE s.status != "Unassigned" AND s.status != "Declined" AND s.published = 1 AND u.id = ? AND s.type = "shift"`,
-            [p.id]
+            `SELECT s.id as id, s.assignee_id as assignee_id, s.status as status, DATE_FORMAT(s.date, '%Y-%m-%d') as date, s.start_time as start_time, s.end_time as end_time, s.notes as notes, l.id as location_id,  l.name as location_name, l.address as address, CONCAT(u.first_name," ", u.last_name) as assignee_name FROM shifts s INNER JOIN locations l ON s.location_id = l.id INNER JOIN users u ON s.assignee_id = u.id WHERE s.status != "Unassigned" AND s.status != "Declined" AND u.id = ? AND s.type = "shift"`,
+            [p.user_id]
             );
         }
 
@@ -32,45 +32,8 @@ export async function GET(request : Request, {params}: { params: {id: string }})
     }
 };
 
-export async function DELETE(req: Request, {params}: { params: {id: string }}) {
-  try {
-    const p = await params;
 
-    const id = p.id;
-    // const id = p.id.split('-')[0];
-    // const assignee_id = p.id.split('-')[1];
-
-    // If decided to use composite key betwee id and assignee id
-    // const result = await executeQuery(`
-    //   DELETE FROM shifts WHERE id = ? and assignee_id = ?
-    // `, [id, assignee_id]) as any;
-
-    const result = await executeQuery(`
-    DELETE FROM shifts WHERE id = ?`, [id]) as any;
-
-    if (result.affectedRows === 0) {
-      return NextResponse.json(
-        { error: "Shift not found" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ 
-      success: true, 
-      message: "Shift deleted successfully"
-    });
-
-  } catch (error) {
-    console.error("Error deleting shift:", error);
-    return NextResponse.json(
-      { error: "Failed to delete shift" },
-      { status: 500 }
-    );
-  }
-}
-
-
-export async function PUT(req: Request, {params}: { params: {id: string }}){
+export async function PUT(req: NextRequest, _context: any) {
   try {
     const { id, assignee_id, status, date, start_time, end_time, notes, location_id, published} : Shift = await req.json();
 
@@ -119,6 +82,9 @@ export async function PUT(req: Request, {params}: { params: {id: string }}){
     }
     vals.push(id);
 
+
+    console.log(vals);
+    console.log(updates);
     const result = await executeQuery(`UPDATE shifts SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, vals) as any;
 
     if (result.affectedRows === 0) {

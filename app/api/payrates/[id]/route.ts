@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
+import RouteContext from "next";
 
 
-export async function GET(request: Request, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: RouteContext<'/api/payrates/[id]'>) {
   try {
-    const { id } = await params;
+    const { id } = await context.params;
 
     const payrates = await executeQuery(`SELECT id, job_title, age_group, level, specialty, day_type, amount FROM pay_rates WHERE id = ?`, [id]);
 

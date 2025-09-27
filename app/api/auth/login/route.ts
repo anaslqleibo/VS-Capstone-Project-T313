@@ -3,12 +3,15 @@ import { executeQuery } from "@/app/lib/db";
 import bcrypt from "bcryptjs";
 import { createToken } from "@/app/lib/auth";
 
+type Role = "admin" | "user";
+
 interface User {
   id: number;
   first_name: string;
   last_name: string;
   email: string;
   password: string;
+  role: Role;
 }
 
 export async function POST(request: NextRequest) {
@@ -34,7 +37,7 @@ export async function POST(request: NextRequest) {
 
     // Get user by email
     const users = await executeQuery(
-      "SELECT id, first_name, last_name, email, password FROM users WHERE email = ?",
+      "SELECT id, first_name, last_name, email, password, role FROM users WHERE email = ?",
       [email]
     ) as User[];
 
@@ -63,7 +66,8 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       email: user.email,
       firstName: user.first_name,
-      lastName: user.last_name
+      lastName: user.last_name,
+      role: user.role,
     });
 
     // Update last login

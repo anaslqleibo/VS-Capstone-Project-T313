@@ -1,10 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
 import bcrypt from "bcryptjs";
 
-export async function PATCH(req: Request, {params}: { params: {id: string}}) {
+export async function PATCH(req: NextRequest, context: RouteContext<'/api/users/[id]/password'>) {
   try {
-    const { id } = await params;
+    const { id } = await context.params;
     const { password } = await req.json();
 
     console.log("BRO", password);

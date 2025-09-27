@@ -160,20 +160,16 @@ const AccountPage = () => {
         <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
         
         <main className="flex-1 p-6 md:p-10 overflow-y-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold text-blue-900 ">Account</h1>
+          <h1 className="text-3xl font-bold text-blue-900 mb-4">Account</h1>
 
-            {user?.role === 'admin' && <Button onClick={() => router.push("/user-management")} className="px-6 py-4" fontSize="1em">Account Management</Button>}
-            
-          </div>
 
           {/* CARD */}
-          {profile === undefined || loading ? <Spinner custom simplified /> :
+          {profile === undefined || loading ? <Spinner custom showWater backgroundGradient borderSpinner/> :
             <div className="bg-white p-6 rounded-xl shadow">
             {/* VIEW MODE */}
             {!isEditing && (
               <div className="flex flex-col gap-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row md:items-center justify-between">
                   <h2 className="text-xl font-semibold">Personal Details</h2>
                   {profile && (!profile.gender || !profile.date_of_birth) && 
                   <p className="text-sm text-danger">Please complete your personal details</p>}
@@ -199,7 +195,7 @@ const AccountPage = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col md:flex-row md:items-center justify-between">
                   <h2 className="text-xl font-semibold">Contact</h2>
                   {profile && (!profile.phone || !profile.address || !profile.emergency_person || !profile.emergency_contact) && 
                   <p className="text-sm text-danger">Please complete your contact details</p>}

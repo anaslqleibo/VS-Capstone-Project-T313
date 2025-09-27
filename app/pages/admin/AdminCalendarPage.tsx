@@ -17,12 +17,13 @@ import { fetchLocations, getLocationsStatic } from '@/app/controllers/Location';
 import { getEventInputShifts, publishBulkShift } from '@/app/controllers/Shifts';
 import { fetchAllEmployees } from '@/app/controllers/User';
 import Checkbox from '@/app/components/Checkbox';
-import { fetchLeaves, getEventInputLeaves, getEventInputUnavailabilities } from '@/app/controllers/Unavailabilities';
+import { fetchLeaves, getEventInputLeaves, getEventInputUnavailabilities } from '@/app/controllers/Leave';
 import { useModal } from '@/app/components/ModalContext';
 import { useAuth } from '@/app/contexts/AuthContext';
 import Spinner from '@/app/components/Spinner';
 import Modal from '@/app/components/Modal';
 import Toast from '@/app/components/Toast';
+import { FaClipboardList, FaFlag, FaFontAwesomeFlag, FaList, FaMap, FaMapPin, FaRegClipboard, FaUser } from 'react-icons/fa';
 
 
 export default function AdminCalendarPage() {
@@ -166,10 +167,33 @@ export default function AdminCalendarPage() {
 
             {allEvents === undefined ? <Spinner custom showWater backgroundGradient borderSpinner/> :
             <>
-              <div className={`flex justify-between ${showUnpublished ? 'items-end' : 'items-center'}  mb-4 md:mb-0`}>
-                <div className="flex flex-col items-start md:flex-row flex-wrap gap-3">
+              <div className='flex justify-between items-center mb-2 md:mb-0'>
+                <div className="flex items-start flex-row flex-wrap gap-3 ">
                 
-                  <Dropdown items={['All employees', ...employees]} placeholder="Select employee" actAsFilter setFilter={setEmployee} maxVisibleItems={6} className='md:rounded-b-none min-w-32' initialSelectedItem='All employees'/>
+                  <Dropdown items={['All employees', ...employees]} placeholder="Select employee" actAsFilter setFilter={setEmployee} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All employees' simplifyOnMobile replacementIcon={<FaUser/>}/>
+
+                  <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All locations' simplifyOnMobile replacementIcon={<FaMapPin/>}/>
+
+                  <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-1)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} containerClassName='md:rounded-b-none min-w-fit' initialSelectedItem='All shifts' disableTyping simplifyOnMobile replacementIcon={<FaClipboardList/>}/>
+
+                  <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='hidden md:block' containerClassName='rounded-b-none' custom disableTyping customSelected={monthSelectedDropdown}>
+                    <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
+                    
+                    <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)} sx={{
+                        gap: "16px 24px",
+                        padding: "8px",
+                        width: "300px",
+                        "& .MuiMonthCalendar-button.Mui-selected": {
+                          backgroundColor: "var(--primary-color)",
+                          color: "#fff",
+                        },
+                      }}/>
+                  
+                  </Dropdown>
+                
+                  
+                </div>
+              
 
                   <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} className='md:rounded-b-none min-w-32' initialSelectedItem='All locations'/>
 
@@ -181,20 +205,31 @@ export default function AdminCalendarPage() {
                     <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)}/>
                   
                   </Dropdown>
-                </div>
+              </div>
 
-                {(allEvents && allEvents.find(e => e.extendedProps?.published===0)) &&
-                <div className='flex flex-col items-end gap-2'>
-                  <Checkbox checked={showUnpublished} onChange={setShowUnpublished} label='Show unpublished shifts' className='text-sm'/>
-                  {showUnpublished && <Button className='md:rounded-b-none py-2 px-4' fontSize='0.8em' onClick={()=>setOpenModal(true)}>Publish all shifts</Button> }  
+              {(allEvents && allEvents.find(e => e.extendedProps?.published===0)) &&
+              <div className='flex flex-col items-end gap-2'>
+                <Checkbox checked={showUnpublished} onChange={setShowUnpublished} label='Show unpublished shifts' className='text-sm'/>
+                {showUnpublished && <Button className='md:rounded-b-none py-2 px-4' fontSize='0.8em' onClick={()=>setOpenModal(true)}>Publish all shifts</Button> }  
 
-                </div>
-                }
-                
-                         
-            </div>
+              </div>
+              }
 
-            <Calendar key={isOverMd ? 'month' : 'list'}  events={events ?? []} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'} updateEventData={updateEventData}></Calendar>
+            <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='md:hidden mb-2' custom disableTyping customSelected={monthSelectedDropdown}>
+              <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
+              
+              <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)} sx={{
+                      gap: "16px 4px",
+                      padding: "8px",
+                      width: "240px",
+                      "& .MuiMonthCalendar-button.Mui-selected": {
+                        backgroundColor: "var(--primary-color)",
+                        color: "#fff",
+                      },
+                    }}/>
+            </Dropdown>
+
+            <Calendar key={isOverMd ? 'month' : 'list'}  events={events} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'}></Calendar>
 
             { modalContainer.current &&       
               <Modal details={{}} shown={openModal} setShown={setOpenModal} modalContainer={modalContainer.current} setParentOpen={setOpenModal} displayToast={displayToast} title="Publish all shifts confirmation">
