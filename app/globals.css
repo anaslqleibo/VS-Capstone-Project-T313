@@ -1,4 +1,24 @@
 @import "tailwindcss";
+@tailwind utilities;
+
+@layer utilities {
+  /* Chrome, Safari, and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* IE and Edge */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+  }
+
+  /* Firefox */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  
+}
+
 @theme{
   --color-unpublished: #B19F90;
 
@@ -138,3 +158,51 @@ main {
 .fc-event:hover .event-hover-details {
   display: block;
 }
+
+::-webkit-scrollbar{
+  width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  border-radius: 20px;
+  background: var(--light-grey);
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb:vertical {
+  background: var(--primary-color);
+  border-radius: 10px;
+  background-image: linear-gradient(white, white);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 2px 20%;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover:vertical {
+  background: var(--color-hover);
+  background-image: linear-gradient(white, white);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 2px 20%;
+};
+
+/* Handle */
+::-webkit-scrollbar-thumb:horizontal {
+  background: var(--primary-color);
+  border-radius: 10px;
+  background-image: linear-gradient(white, white);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 20% 2px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover:horizontal {
+  background: var(--color-hover);
+  background-image: linear-gradient(white, white);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 20% 2px;
+};

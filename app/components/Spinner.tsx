@@ -1,5 +1,7 @@
 type SpinnerProps = {
     custom?: boolean;
+    className?:string;
+    notCentered?:boolean;
 }
 
 type CustomSpinnerProps = {
@@ -170,12 +172,12 @@ export function CustomSpinner({simplified, borderSpinner, showWater, backgroundG
 
 
 
-export default function Spinner({custom, ...props}:SpinnerProps & CustomSpinnerProps){
+export default function Spinner({custom, className, notCentered, ...props}:SpinnerProps & CustomSpinnerProps){
     const spinner = custom ? <CustomSpinner {...props}/>
-    : <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-primary"></div>;
+    : <div className={`${className} ${className?.includes('w-')?'':'w-12'} ${className?.includes('h-')?'':'h-12'} animate-spin rounded-full ${className?.includes('border-')?'':'border-4'} border-gray-300 border-t-primary`}></div>;
 
     return (
-    <div className="flex justify-center items-center absolute top-1/2 left-1/2 -translate-1/2">
+    <div className={`flex justify-center items-center absolute ${notCentered ? '' : 'top-1/2 left-1/2 -translate-1/2'}`}>
         {spinner}
     </div>
     );

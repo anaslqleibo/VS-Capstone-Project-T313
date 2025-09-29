@@ -7,7 +7,7 @@ export async function GET(request: NextRequest, context: RouteContext<'/api/payr
   try {
     const { id } = await context.params;
 
-    const payrates = await executeQuery(`SELECT id, job_title, age_group, level, specialty, day_type, amount FROM pay_rates WHERE id = ?`, [id]);
+    const payrates = await executeQuery(`SELECT id, job_title, age_group, level, specialty, weekday, saturday, sunday, public_holiday FROM pay_rates WHERE id = ?`, [id]);
 
     if (!payrates || (Array.isArray(payrates) && payrates.length === 0)) {
       return NextResponse.json(

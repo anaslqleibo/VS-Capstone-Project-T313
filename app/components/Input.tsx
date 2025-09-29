@@ -17,9 +17,10 @@ interface InputIconProps{
   className?: string;
   value?: string;
   onChange?: (e:any) => void;
+  readOnly?:boolean;
 }
 
-export function InputIcon({ type = "search", placeholder, size = "base", icon = "?", validate, showErrors, error, className, value, onChange, ...props } : InputIconProps) {
+export function InputIcon({ type = "search", placeholder, size = "base", icon = "?", validate, showErrors, error, className, value, onChange, readOnly, ...props } : InputIconProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const fontSize = "text-" + size;
@@ -32,15 +33,11 @@ export function InputIcon({ type = "search", placeholder, size = "base", icon = 
 
   return (
     <div className={`w-fit group ${className}`}>
-      <div
-        onClick={() => inputRef.current?.focus()}
-        className={`flex ${right ? "flex-row-reverse" : "flex-row"} items-stretch w-50 gap-3 ${filled && right ? "pl-5" : filled ? "pr-5" : "px-5"} rounded-md border-[1.5px] text-sm !outline-none focus:ring-1 border-[color:var(--dark-grey)] transition-colors cursor-text overflow-hidden group-hover:border-[color:var(--hover-color)] has-focus:border-[color:var(--primary-color)] invalid:border-red-500 ${fontSize} ${className}`}>
-        <div className={`${filled ? "bg-[color:var(--dark-grey)] px-4 group-hover:bg-[color:var(--hover-color)] group-has-focus:bg-[color:var(--primary-color)]" : "bg-transparent group-hover:text-[color:var(--hover-color)] group-has-focus:text-[color:var(--primary-color)]"} flex items-center justify-center transition-colors ${iconColor} group-hover:${iconColorActive} `}>
+      <div onClick={() => inputRef.current?.focus()} className={`flex ${right ? "flex-row-reverse" : "flex-row"} items-stretch gap-3 ${filled && right ? "pl-2" : filled ? "pr-2" : "px-2"} rounded-md border-[1.5px] text-sm !outline-none focus:ring-1 ${readOnly ? 'border-primary' : 'border-dark-grey group-hover:border-hover'} transition-colors cursor-text overflow-hidden  has-focus:border-primary invalid:border-danger ${fontSize} ${className}`}>
+        <div className={`${filled ? `${readOnly ? "bg-primary" : "bg-dark-grey group-hover:bg-[color:var(--hover-color)] group-hover:text-[color:var(--hover-color)] "} px-2  group-has-focus:bg-[color:var(--primary-color)]` : "bg-transparent group-has-focus:text-[color:var(--primary-color)]"} flex items-center justify-center transition-colors ${iconColor} group-hover:${iconColorActive} `}>
           <Icon
             id={type === "search" ? type : icon}
-            className={`transition-colors }
-              text-[1.3em]
-            `}
+            className={`transition-colors`}
             width="1em"
             height="1em" />
         </div>
@@ -50,15 +47,17 @@ export function InputIcon({ type = "search", placeholder, size = "base", icon = 
           onChange={onChange}
           ref={inputRef}
           placeholder={placeholder}
-          className={`p-0 outline-none w-full ${fontSize} my-4`}
+          className={`p-0 outline-none w-full ${fontSize} my-2`}
           {...props}
+          readOnly={readOnly}
         />
         :
         <input
           ref={inputRef}
           placeholder={placeholder}
-          className={`p-0 outline-none w-full ${fontSize} my-4`}
+          className={`p-0 outline-none w-full ${fontSize} my-2`}
           {...props}
+          readOnly={readOnly}
         />
         }
       </div>

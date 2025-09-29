@@ -20,7 +20,7 @@ interface DropdownProps{
   setMonth ?: dayjs.Dayjs;
   className?:string;
   containerClassName?:string;
-  initialSelectedItem ?: string;
+  initialSelectedItem ?: string | string[];
   custom ?: boolean;
   customSelected?:string;
   children ?: ReactNode;
@@ -30,6 +30,7 @@ interface DropdownProps{
   colorBasedOnValue?:boolean;
   startOpen?:boolean;
   syncCurrentWithInitialSelected?:boolean;
+  openWhenNoItemIsSelected?: boolean;
   preventEmptySelection?:boolean;
   disableTyping?:boolean;
   simplifyOnMobile?:boolean;
@@ -63,6 +64,7 @@ const Dropdown = ({
   simplifyOnMobile,
   replacementIcon,
   containerClassName,
+  openWhenNoItemIsSelected = true,
   ...props
 } : DropdownProps) => {
   const [isOpen, setIsOpen] = useState<boolean>(startOpen || false);
@@ -84,7 +86,7 @@ const Dropdown = ({
   const maxHeight = maxVisibleItems * itemHeight;
 
   const filteredItems = items.filter(item =>
-    item.toLowerCase().includes(search.toLowerCase())
+    item&&typeof item === 'string'&&item.toLowerCase().includes(search.toLowerCase())
   );
 
   const toggleDropdown = () => {
@@ -149,10 +151,11 @@ const Dropdown = ({
     if (syncCurrentWithInitialSelected) {
       if (props.initialSelectedItem && typeof props.initialSelectedItem === 'string')
         handleSelect(props.initialSelectedItem);
-      else {
+      else{
         clearSelect()
-        setIsOpen(true);
+        if (openWhenNoItemIsSelected) setIsOpen(true);
       };
+
     }
   }, [props.initialSelectedItem])
 
@@ -282,6 +285,8 @@ export function LocationDropdownWithAddress({detail, setUpdatedDetail, onSelect,
         items={locations.map((l) => l.name)}
         placeholder="Select location"
         maxVisibleItems={6}
+        syncCurrentWithInitialSelected={true}
+        openWhenNoItemIsSelected={false}
         initialSelectedItem={detail ?? undefined}
         className="text-black border-gray-400 min-w-32 max-w-64"
         onChange={handleChange}

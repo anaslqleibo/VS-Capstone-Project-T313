@@ -6,12 +6,14 @@ interface TooltipProps {
   content: React.ReactNode;
   children: React.ReactNode;
   position?: "top" | "bottom" | "left" | "right";
+  textWhenContentEmpty?:string;
 }
 
 export default function Tooltip({
   content,
   children,
   position = "top",
+  textWhenContentEmpty,
 }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
@@ -87,7 +89,7 @@ export default function Tooltip({
       {createPortal(
         <div ref={tooltipRef} style={getTooltipStyle()}>
           <div className="bg-active text-white text-sm px-2 py-1 rounded shadow-md break-words">
-            {content}
+            {content ? content : (textWhenContentEmpty?textWhenContentEmpty:'None')}
           </div>
         </div>,
         document.body

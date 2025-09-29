@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
 
-export async function PATCH(req: Request, {params}: { params: {id: string}}) {
+export async function PATCH(req: Request, context: RouteContext<'/api/shifts/shift/[id]/publish'>) {
   try {
-    const { id } = await params;
+    const { id } = await context.params;
     if ( !id) {
       return NextResponse.json(
         { error: "Shift id not provided" },

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AdminCalendarFilter, Calendar, CalendarFilter } from '@/app/components/Calendar';
 import getStatusColor, { Status } from '@/app/components/utils/getStatusColor';
 import formatDate, { formatDateDayJS, sqlDateFormatToRegularFormat } from '@/app/components/utils/formatDate';
@@ -155,7 +155,30 @@ export default function AdminCalendarPage() {
     }
     else displayToast("Fail to publish multiple shifts!", 'error');
   }
-   
+
+  const [trHeights, setTrHeights] = useState<number[]>([]);
+
+  const targetRef = useRef<HTMLTableElement>(null);
+  useEffect(() => {
+    const sourceEl = document.querySelector<HTMLElement>('.fc-scroller-liquid-absolute');
+    const targetEl = targetRef.current;
+
+  if (!sourceEl || !targetEl) {
+    return;
+  }
+
+  const handleScroll = () => {
+    targetEl.scrollTop = sourceEl.scrollTop;
+    targetEl.scrollLeft = sourceEl.scrollLeft;
+  };
+
+  sourceEl.addEventListener("scroll", handleScroll);
+
+    return () => {
+      sourceEl.removeEventListener("scroll", handleScroll);
+    };
+  }, [targetRef.current, events]);
+
   return (
       <Layout modalContainer={modalContainer}>
         <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
@@ -167,70 +190,84 @@ export default function AdminCalendarPage() {
 
             {allEvents === undefined ? <Spinner custom showWater backgroundGradient borderSpinner/> :
             <>
-              <div className='flex justify-between items-center mb-2 md:mb-0'>
-                <div className="flex items-start flex-row flex-wrap gap-3 ">
+            <div className='flex h-full flex-1 gap-2'>
+              <div className='h-full hidden md:block'>
+                <div style={{height: document.getElementById('top-section')?.clientHeight+'px'}}>&nbsp;</div>
+                <div style={{height: document.getElementsByClassName('fc-dayGridMonth-view').item(0)?.clientHeight+'px'}} className='overflow-hidden' ref={targetRef}>
+                  <table className='border-separate border-spacing-0'>
+                  <thead>
+                    <tr className="sticky top-0 z-10" style={{height: document.getElementsByClassName('fc-scrollgrid-sync-inner').item(0)?.clientHeight+'px'}}>
+                      <th className='border bold text-primary bg-[#f2f2f2] border-light-grey'>Pay</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    { 
+                      trHeights.length>0 && trHeights.map((height, index)=><tr key={index} style={{height: height+"px"}}><td className='border px-3 text-hover font-semibold border-light-grey'>$200</td></tr>)
+                    }
+                  </tbody>
+                </table>
+                </div>
                 
-                  <Dropdown items={['All employees', ...employees]} placeholder="Select employee" actAsFilter setFilter={setEmployee} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All employees' simplifyOnMobile replacementIcon={<FaUser/>}/>
+              </div>
+              <div className='flex flex-col flex-1'>
+                <div id='top-section' className='flex justify-between items-end'>
+                <div>
+                  <div className='flex justify-between items-center mb-2 md:mb-0'>
+                    <div className="flex items-start flex-row flex-wrap gap-3 ">
+                      <Dropdown items={['All employees', ...employees]} placeholder="Select employee" actAsFilter setFilter={setEmployee} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All employees' simplifyOnMobile replacementIcon={<FaUser/>}/>
 
-                  <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All locations' simplifyOnMobile replacementIcon={<FaMapPin/>}/>
+                      <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All locations' simplifyOnMobile replacementIcon={<FaMapPin/>}/>
 
-                  <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-1)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} containerClassName='md:rounded-b-none min-w-fit' initialSelectedItem='All shifts' disableTyping simplifyOnMobile replacementIcon={<FaClipboardList/>}/>
+                      <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-1)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} containerClassName='md:rounded-b-none min-w-fit' initialSelectedItem='All shifts' disableTyping simplifyOnMobile replacementIcon={<FaClipboardList/>}/>
 
-                  <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='hidden md:block' containerClassName='rounded-b-none' custom disableTyping customSelected={monthSelectedDropdown}>
+                      <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='hidden md:block' containerClassName='rounded-b-none' custom disableTyping customSelected={monthSelectedDropdown}>
+                        <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
+                        
+                        <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)} sx={{
+                            gap: "16px 24px",
+                            padding: "8px",
+                            width: "300px",
+                            "& .MuiMonthCalendar-button.Mui-selected": {
+                              backgroundColor: "var(--primary-color)",
+                              color: "#fff",
+                            },
+                          }}/>
+                      
+                      </Dropdown>
+                    
+                      
+                    </div>
+                  
+                  </div>
+
+                  <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='md:hidden mb-2' custom disableTyping customSelected={monthSelectedDropdown}>
                     <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
                     
                     <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)} sx={{
-                        gap: "16px 24px",
-                        padding: "8px",
-                        width: "300px",
-                        "& .MuiMonthCalendar-button.Mui-selected": {
-                          backgroundColor: "var(--primary-color)",
-                          color: "#fff",
-                        },
-                      }}/>
-                  
+                            gap: "16px 4px",
+                            padding: "8px",
+                            width: "240px",
+                            "& .MuiMonthCalendar-button.Mui-selected": {
+                              backgroundColor: "var(--primary-color)",
+                              color: "#fff",
+                            },
+                          }}/>
                   </Dropdown>
-                
-                  
                 </div>
-              
 
-                  <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} className='md:rounded-b-none min-w-32' initialSelectedItem='All locations'/>
 
-                  <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-2)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} className='md:rounded-b-none min-w-32' initialSelectedItem='All shifts'/>
+                {(allEvents && allEvents.find(e => e.extendedProps?.published===0)) ?
+                <div className='flex flex-col items-end gap-2'>
+                  <Checkbox checked={showUnpublished} onChange={setShowUnpublished} label='Show unpublished shifts' className='text-sm'/>
+                  {showUnpublished && <Button className='rounded-b-none rounded-t-md py-2 px-4' fontSize='0.8em' onClick={()=>setOpenModal(true)}>Publish all shifts</Button> }  
 
-                  <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='md:rounded-b-none' custom customSelected={monthSelectedDropdown}>
-                    <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
-                    
-                    <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)}/>
-                  
-                  </Dropdown>
+                </div> : 'All shifts published'
+                }
+                </div>
+                <Calendar key={isOverMd ? 'month' : 'list'}  events={events??[]} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'} bruh={setTrHeights}></Calendar>
               </div>
-
-              {(allEvents && allEvents.find(e => e.extendedProps?.published===0)) &&
-              <div className='flex flex-col items-end gap-2'>
-                <Checkbox checked={showUnpublished} onChange={setShowUnpublished} label='Show unpublished shifts' className='text-sm'/>
-                {showUnpublished && <Button className='md:rounded-b-none py-2 px-4' fontSize='0.8em' onClick={()=>setOpenModal(true)}>Publish all shifts</Button> }  
-
-              </div>
-              }
-
-            <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='md:hidden mb-2' custom disableTyping customSelected={monthSelectedDropdown}>
-              <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
-              
-              <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)} sx={{
-                      gap: "16px 4px",
-                      padding: "8px",
-                      width: "240px",
-                      "& .MuiMonthCalendar-button.Mui-selected": {
-                        backgroundColor: "var(--primary-color)",
-                        color: "#fff",
-                      },
-                    }}/>
-            </Dropdown>
-
-            <Calendar key={isOverMd ? 'month' : 'list'}  events={events} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'}></Calendar>
-
+            </div>
+            
             { modalContainer.current &&       
               <Modal details={{}} shown={openModal} setShown={setOpenModal} modalContainer={modalContainer.current} setParentOpen={setOpenModal} displayToast={displayToast} title="Publish all shifts confirmation">
                 <div className='mt-4'>You are about to publish multiple shifts. Would you like to publish only the shifts scheduled for this month ({activeFilter.month.format("MMMM YYYY")}) or all upcoming shifts?</div>

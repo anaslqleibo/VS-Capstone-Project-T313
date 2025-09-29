@@ -21,7 +21,7 @@ const AccountPage = () => {
   const user = useAuth().user;
   const [initialProfile, setInitialProfile] = useState<Partial<User>>({});
   const [profile, setProfile] = useState<Partial<User>|undefined>(undefined);
-  const [payRate, setPayRate] = useState<PayRate[]>([]);
+  const [payRate, setPayRate] = useState<PayRate|null>(null);
 
   useEffect(()=>{
     const fetchAccountDetails = async () => {
@@ -34,7 +34,7 @@ const AccountPage = () => {
           try{
             setPayRateLoading(true);
             const payRate = await fetchPayRates(completeUser.pay_rate_id);
-            setPayRate(payRate);
+            setPayRate(payRate[0]);
           }
           finally{
             setPayRateLoading(false);
@@ -232,27 +232,24 @@ const AccountPage = () => {
                 <div className="grid grid-cols-2 md:flex md:gap-8 -mt-4">
                   <h5 className="font-semibold text-sm">
                     <span className="text-xs text-gray-500">Active job title: </span> 
-                    <div>{(payRate[0] && 'job_title' in payRate[0]) ? payRate[0].job_title : "-"}</div>
+                    <div>{(payRate && 'job_title' in payRate) ? payRate.job_title : "-"}</div>
                   </h5>
 
                   <h5 className="font-semibold text-sm">
                     <span className="text-xs text-gray-500">Age group:</span> 
-                    <div>{(payRate[0] && 'age_group' in payRate[0]) ? payRate[0].age_group : "-"}</div>
+                    <div>{(payRate && 'age_group' in payRate) ? payRate.age_group : "-"}</div>
                   </h5>
 
                   <h5 className="font-semibold text-sm">
                     <span className="text-xs text-gray-500">Level:</span> 
-                    <div>{(payRate[0] && 'level' in payRate[0]) ? payRate[0].level : "-"}</div>
+                    <div>{(payRate && 'level' in payRate) ? payRate.level : "-"}</div>
                   </h5>
 
-                  {(payRate[0] && payRate[0].specialty) ? 
+                  {(payRate && payRate.specialty) ? 
                   <h5 className="font-semibold text-sm">
                     <span className="text-xs text-gray-500">Specialty: </span>
-                    <div>{payRate[0].specialty}</div>
+                    <div>{payRate.specialty}</div>
                   </h5> : ""}
-                  
-
-
                 </div>
                   
                   }
@@ -261,12 +258,26 @@ const AccountPage = () => {
                 {payRateLoading ? <Spinner/> :
                 <div className="grid grid-cols-2 md:flex md:flex-row gap-4 md:gap-16 bg-gray-100 p-4 rounded-md -mt-4 ease-in-out duration-400 hover:bg-[color:#dce6fc]">
                   
-                  {payRate.length>0 ? payRate.map((rate, index) => (
-                    <div key={index}>
-                      <div className="text-xs text-gray-500">{rate.day_type}</div>
-                      <div className="font-medium">${(rate.amount?.toPrecision(4))}</div>
+                  {payRate ? 
+                    <>
+                    <div>
+                      <div className="text-xs text-gray-500">Weekday</div>
+                      <div className="font-medium">${(payRate.weekday?.toPrecision(4))}</div>
                     </div>
-                  )): "Your pay rates has not been setup by the admin."}
+                    <div>
+                      <div className="text-xs text-gray-500">Saturday</div>
+                      <div className="font-medium">${(payRate.saturday?.toPrecision(4))}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500">Sunday</div>
+                      <div className="font-medium">${(payRate.sunday?.toPrecision(4))}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-gray-500">Public Holiday</div>
+                      <div className="font-medium">${(payRate.public_holiday?.toPrecision(4))}</div>
+                    </div>
+                    </>
+                  : "Your pay rates has not been setup by the admin."}
                 </div>}
                 
 

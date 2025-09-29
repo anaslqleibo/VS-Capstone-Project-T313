@@ -22,8 +22,10 @@ export type User = {
 export type PayRate = {
   id: string;
   job_title: string;
-  day_type: string;
-  amount: number;
+  weekday?: number;
+  saturday?: number;
+  sunday?: number;
+  public_holiday?: number;
   age_group: string;
   level: number;
   specialty?:string;
@@ -72,8 +74,9 @@ export async function fetchAllUsers() {
 }
 
 
-export async function fetchPayRates(pay_rate_id: string) {
-  const res = await fetch('/api/payrates/'+pay_rate_id);
+export async function fetchPayRates(pay_rate_id?: string) {
+
+  const res = pay_rate_id ? await fetch('/api/payrates/'+pay_rate_id) : await fetch('/api/payrates');
 
   if (!res.ok) {
     throw new Error('Failed to fetch pay rates data');
@@ -108,6 +111,24 @@ export async function updatePassword(user_id: string, password: string) {
     return res.ok;
   } catch (err) {
     console.error('Failed to update user password:', err);
+    return false;
+  }
+}
+
+export async function updatePayRate(user_id: string, job_title: string, age_group: string, level: string, specialty?:string) {
+  try{
+    const res = await fetch(`/api/users/${user_id}/update_pay_rate`,  {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({job_title, age_group, level, specialty}),
+    });
+
+    const { success, pay_rate_id } = await res.json();
+    if (success) return pay_rate_id;
+    return false;
+    
+  } catch (err) {
+    console.error("Failed to update user's pay rate:", err);
     return false;
   }
 }

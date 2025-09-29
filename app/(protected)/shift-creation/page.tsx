@@ -6,7 +6,7 @@ import { PickerValue } from "@mui/x-date-pickers/internals";
 import Layout from "@/app/components/Layout";
 import Dropdown, { LocationDropdownWithAddress } from "@/app/components/Dropdown";
 import Button from "@/app/components/Button";
-import { fetchAllEmployees, User } from "@/app/controllers/User";
+import { fetchAllEmployees, fetchPayRates, PayRate, User } from "@/app/controllers/User";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { createShift, Shift, ShiftStatus } from "@/app/controllers/Shifts";
 import Checkbox from "@/app/components/Checkbox";
@@ -18,6 +18,9 @@ import Icon from "@/public/icons/Icons";
 import { checkAvailability } from "@/app/controllers/Leave";
 import Modal from "@/app/components/Modal";
 import Spinner from "@/app/components/Spinner";
+import { InputIcon } from "@/app/components/Input";
+import { redirect } from "next/dist/server/api-utils";
+import { useRouter } from "next/navigation";
 
 export default function ShiftCreationPage() {
   const modalContainer = useRef<HTMLDivElement>(null);
@@ -108,10 +111,8 @@ export default function ShiftCreationPage() {
       return;
     }
 
-    console.log('1');
     if (!assignee?.id){
       if (modalConfirmation){
-        console.log('2');
         setModalConfirmation(false);
       }
       else{
@@ -130,7 +131,9 @@ export default function ShiftCreationPage() {
       location_id: location.id.toString(),
       location_name: location.name,
       address: location.address,
-      published: isPublished
+      published: isPublished,
+      pay_rate: payRateShown,
+      total_payment: Math.round((payRateShown * end.diff(start, 'minute')/60)*100)/100,
     };
 
     let proceed = true;
@@ -158,6 +161,10 @@ export default function ShiftCreationPage() {
       setStart(null);
       setEnd(null);
       setNotes("");
+      setStatus('default');
+      setIsPublished(false);
+      setMarkAccepted(false);
+      setOpenShift(false);
     } catch (err) {
       console.error("Shift creation failed:", err);
       alert("Something went wrong. Check console for details.");
@@ -193,10 +200,35 @@ export default function ShiftCreationPage() {
   };
 
   const borderColor = statusColors[status];
-  
+  const [payRateShown, setPayRateShown] = useState<number>(0);
 
+  const [payRateLoading, setPayRateLoading] = useState(false);
   useEffect(()=>{
     async function getAvailability(){
+      if (assignee && date){
+        (async () => {
+          try{
+            if (!assignee.pay_rate_id){
+              setPayRateShown(0);
+              return;
+            }
+            setPayRateLoading(true);
+            const payRate = await fetchPayRates(assignee.pay_rate_id);
+            const isWeekday = date.day()>0 && date.day()<6;
+            const isSaturday = date.day()===6;
+            const isSunday = date.day()===0;
+
+            if (isWeekday && payRate[0].weekday) setPayRateShown(Math.round(payRate[0].weekday * 100) / 100);
+            if (isSaturday && payRate[0].saturday) setPayRateShown(Math.round(payRate[0].saturday * 100) / 100);
+            if (isSunday && payRate[0].sunday) setPayRateShown(Math.round(payRate[0].sunday * 100) / 100);
+          }
+          finally{
+            setPayRateLoading(false);
+          }
+        })();
+        
+      }
+
       if (assignee && date && start && end){
         const res = await checkAvailability(assignee.id, date.format("YYYY-MM-DD"), start?.format("HH:mm"), end?.format("HH:mm"));
         console.log(res);
@@ -232,13 +264,15 @@ export default function ShiftCreationPage() {
     } 
   }, [openShift])
 
+  
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   return (
     <Layout modalContainer={modalContainer}>
        {loading && <div className="absolute z-200 rounded-lg top-0 left-0 w-full h-full bg-[#ffffff8d]"> <Spinner custom showWater backgroundGradient/> </div>}
 
-      <div className="relative flex-[1] h-full bg-[#f4f4f 4]">
+      <div className="relative flex-[1] h-full bg-[#f4f4f4]">
         <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
        
 
@@ -251,7 +285,7 @@ export default function ShiftCreationPage() {
           </h2> */}
 
           <div className="flex flex-col justify-between md:flex-row gap-4 h-full">
-            <div className={`bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg md:w-fit md:flex-1/2 ${borderColor}overflow-y-auto h-full`} >
+            <div className={`bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg md:w-fit md:flex-1/2 ${borderColor} overflow-y-auto h-full`} >
             <div className="mt-3 sm:mt-0 sm:text-left flex flex-col gap-3">
               <h1 className="text-3xl mb-2 font-semibold text-[color:var(--primary-color)]">Create shift</h1>
 
@@ -290,17 +324,49 @@ export default function ShiftCreationPage() {
                   items={employees.map(employee => `${employee.first_name} ${employee.last_name}`)}
                   placeholder="Select employee"
                   maxVisibleItems={6}
-                  className="text-black border-gray-400"
+                  className="text-black border-gray-400 min-w-40"
                   onChange={(value) => {
                     const selectedEmployee = employees.find(emp => 
                       `${emp.first_name} ${emp.last_name}` === value
                     );
-                    console.log("Selected employee object:", selectedEmployee);
                     setAssignee(selectedEmployee || null);
                   }}
                   disabled={openShift}
                 />
               </div>
+
+              {assignee && date ? 
+              <div className="flex items-center gap-4 text-sm text-gray-600 w-full">
+
+                {assignee.pay_rate_id ? 
+                  
+                    <>
+                    <div className="flex flex-col">
+                    <div className="font-semibold">Pay rate ({date? (date.day()>0 && date.day()<6?'Weekday': date.day()===6?"Saturday":'Sunday'):''}): </div>
+                     { payRateLoading ? <div className="relative mt-2 mb-4"><Spinner notCentered={true} className="w-6 h-6 border-2 left-0"/></div> :
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-primary text-lg">${payRateShown}</span>
+                      {(start && end) ? <span className="font-semibold text-secondary text-md">× {Math.round((end.diff(start, 'minute')/60)*100)/100} hours = </span> : ''}
+                    </div>  }
+                  </div>
+                
+                  
+                  {(start && end && !payRateLoading) ?
+                  <div className="flex flex-col">
+                    <div className="font-semibold">Total payment: </div>
+                    <span className="font-bold text-primary text-lg">${Math.round((payRateShown * end.diff(start, 'minute')/60)*100)/100}</span>
+                  </div>
+                  : ''}
+                  </>
+                
+                  
+                :
+                  <div className="flex flex-col">
+                    <a className="font-bold text-danger underline cursor-pointer" onClick={()=>router.push('/user-management')}>Please assign a pay rate for this user first!</a>
+                  </div>
+                }
+              </div> : ''}
+
 
               <div className="flex items-center gap-2 text-sm text-gray-600 w-full">
                 <div className="flex flex-col gap-3 font-semibold text-gray-600">
@@ -322,7 +388,7 @@ export default function ShiftCreationPage() {
 
               <div className="flex items-start gap-2 text-sm text-gray-600 w-full">
                 <div className="font-semibold">Settings:</div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                <div className="flex flex-col md:grid md:grid-cols-2 gap-x-4 gap-y-2">
                   <Checkbox label="Mark as open" checked={openShift} onChange={(e)=>setOpenShift(e)} className="text-xs md:text-sm"/>
                   <Checkbox label="Set as published" checked={isPublished} onChange={(e)=>setIsPublished(e)} className="text-xs md:text-sm"/>
                   <Checkbox label="Assign directly" checked={markAccepted} onChange={(e)=>handleMarkAcceptedChanged(e)} className="text-xs md:text-sm"/>

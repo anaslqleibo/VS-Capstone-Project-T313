@@ -18,6 +18,8 @@ export type Shift = {
   assignee_name ?: string;
   published ?: boolean;
   type?:string;
+  pay_rate?:number;
+  total_payment?:number;
 };
 
 export type ShiftAssignee = {
@@ -95,7 +97,7 @@ export async function updateShiftStatus(shift_id: string, status: ShiftStatus) {
 
 export async function publishShift(shift_id: string) {
   try {
-    const res = await fetch(`/api/shifts/${shift_id}/publish`, {
+    const res = await fetch(`/api/shifts/shift/${shift_id}/publish`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -165,7 +167,10 @@ function shiftToShiftExtProps(shift: Shift){
     address: shift.address,
     notes: shift.notes,
     assignee_id: shift.assignee_id,
-    assignee_name: shift.assignee_name
+    assignee_name: shift.assignee_name,
+    published: shift.published,
+    pay_rate: shift.pay_rate,
+    total_payment: shift.total_payment,
     // employee field removed since it's not in the database
   };
  return shiftExtProps;

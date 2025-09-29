@@ -19,6 +19,7 @@ import { FaThLarge } from "react-icons/fa";
 import { fetchNotifications, NotificationProps } from "../controllers/Notification";
 import { fetchShiftExtProps, ShiftStatus } from "../controllers/Shifts";
 import { stringToStatus } from "./utils/getStatusColor";
+import Accordion from "./Accordion";
 
 
 export default function Sidebar({modalContainer} : PageProps){
@@ -52,7 +53,7 @@ export default function Sidebar({modalContainer} : PageProps){
   const pathName = usePathname();
   const isMobile = useIsOverMd();
 
-  const logout = <div onClick={() => auth.logout()} className="absolute bottom-2 right-2 hover:bg-[color:var(--danger-color-hover)] hover:font-bold bg-[color:var(--danger-color-hover)] text-white md:bg-transparent flex items-center gap-2 py-2 px-4 rounded-lg transition-colors duration-300 text-sm">
+  const logout = <div onClick={() => auth.logout()} className="absolute right-2 bottom-2 hover:bg-[color:var(--danger-color-hover)] hover:font-bold bg-[color:var(--danger-color-hover)] text-white md:bg-transparent flex items-center text-right gap-2 py-2 px-4 rounded-lg transition-colors duration-300 text-sm">
       <FaSignOutAlt className="rotate-180"/>
       Logout
     </div>;
@@ -70,7 +71,6 @@ export default function Sidebar({modalContainer} : PageProps){
   
   const staffNavs = <>
     <button onClick={() => router.replace("/home")} className={`${pathName === '/home' ? "bg-[color:var(--active-color)]" : ""}`}><FaHome /> Home</button>
-    {/* <button onClick={() => router.replace("/unavailability")} ><FaCalendarAlt /> Unavailability</button> */}
     <button onClick={() => router.replace("/locations")} className={`${pathName === '/locations' ? "bg-[color:var(--active-color)]" : ""}`}><FaMapMarkerAlt /> Locations</button>
     {/* <button onClick={() => router.replace("/messaging")} className={`${pathName === '/messaging' ? "bg-[color:var(--active-color)]" : ""}`}><FaEnvelope /> Messaging</button> */}
     <button onClick={() => router.replace("/account")}className={`${pathName === '/account' ? "bg-[color:var(--active-color)]" : ""}`}><FaUser /> Account</button>
@@ -131,7 +131,7 @@ export default function Sidebar({modalContainer} : PageProps){
 
         {open && modalContainer.current && role==="user" && notifications && createModal(displayShift ? getModalTypesByStatus(stringToStatus(displayShift.status), displayShift.type as EventTypes) : ModalTypes.Notifications, true, modalContainer.current, displayShift ? displayShift : notifications, setOpen, undefined, undefined, undefined, (e:boolean)=>{!e && setNotifications([])})}
         
-        <nav className='relative hidden w-full md:flex flex-col items-center h-full [&>button]:w-full [&>button]:flex [&>button]:items-center [&>button]:p-[10px] [&>button]:text-white [&>button]:font-bold [&>button]:mb-[15px] [&>button]:rounded-[10px] [&>button]:transition-colors [&>button]:duration-200 [&>button]:hover:bg-[#1e2266] [&>button]:gap-5'>
+        <nav className='relative hidden w-full md:flex flex-col mb-2 overflow-y-auto items-center h-full [&>button]:w-full [&>button]:flex [&>button]:items-center [&>button]:p-[10px] [&>button]:text-white [&>button]:font-bold [&>button]:mb-[15px] [&>button]:rounded-[10px] [&>button]:transition-colors [&>button]:duration-200 [&>button]:hover:bg-[#1e2266] [&>button]:gap-5'>
           
           {role === "admin" ? adminNavs : staffNavs}
             
@@ -145,16 +145,16 @@ export default function Sidebar({modalContainer} : PageProps){
         <Icon id="x" className="text-white float-end" width="2em" height="2em" onClick={()=>setIsMobileMenuOpen(false)}></Icon>
         <Image src={logo} alt="2 Bent Rods logo" className="w-36 m-auto my-7 clear-end"/>
 
-        {role === "user" && <div className="w-12 h-12 hover:bg-[#1e2266] rounded-full items-center justify-center ml-auto mb-2" ref={toggleButtonRef} onClick={()=>{setIsMobileMenuOpen(false); openNotificationView()}}>
-          <Image id="notification-button-icon" src={(notifications && notifications?.length>0) ? notification : notification_none} alt="Notifications" className="w-6 object-contain" />
-        </div>}
+          {role === "user" && <div className="w-12 h-12 hover:bg-[#1e2266] rounded-full items-center justify-center ml-auto mb-2" ref={toggleButtonRef} onClick={()=>{setIsMobileMenuOpen(false); openNotificationView()}}>
+            <Image id="notification-button-icon" src={(notifications && notifications?.length>0) ? notification : notification_none} alt="Notifications" className="w-6 object-contain" />
+          </div>}
 
           <nav className='flex flex-col w-fit p-4 gap-4 md:hidden [&>button]:flex [&>button]:items-center [&>button]:gap-4 [&>button]:text-white [&>button]:font-semibold [&>button]:hover:bg-[#1e2266] [&>button]:p-2 [&>button]:rounded-md [&>button]:aria-[current]:bg-[color:var(--active-color)] items-stretch justify-center'>
             {role === "admin" ? adminNavs : staffNavs}
           </nav>
 
           {logout}
-          </div>
+        </div>
         
         </>
     );

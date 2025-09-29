@@ -106,6 +106,8 @@ export type ShiftExtendedProps = {
     address: string;
     notes: string;
     published?: boolean;
+    pay_rate?:number;
+    total_payment?:number;
     day?: string;
     recurrence?: string;
 }
@@ -127,6 +129,7 @@ interface ModalProps{
     displayToast?:(message:string, toastType: 'success'|'error')=>void;
     noOverlay?:boolean;
     hasItems?:(e:boolean)=>void;
+    onClose?:()=>void;
 }
 
 function createAdminComponent(status: Status, employee?:string, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isEditing=false, setEditing?:(e:boolean)=>void, formValues?: Record<string, any>, handleChange?: (field: string, value: any) => void, initialDetails?:ShiftExtendedProps, setLoading?:(e:boolean)=>void){
@@ -175,8 +178,8 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
                     const updatedEvent = {
                         ...event,
                         extendedProps: {...castedFormValues, assignee_id: isOpenOrUnassigned ? '' : castedFormValues.assignee_id, assignee_name: isOpenOrUnassigned ? undefined : castedFormValues.assignee_name},
-                        title: buildShiftEventTitle(castedFormValues.status, castedFormValues.time, castedFormValues.location_name, castedFormValues.status==='Open' ? '' : castedFormValues.assignee_name),
-                        backgroundColor: getStatusColor(castedFormValues.status)
+                        title: buildShiftEventTitle(castedFormValues.published ? castedFormValues.status : Status.Unpublished, castedFormValues.time, castedFormValues.location_name, isOpenOrUnassigned ? '' : castedFormValues.assignee_name),
+                        backgroundColor: getStatusColor(castedFormValues.published ? castedFormValues.status : Status.Unpublished)
                     };
                     
                     if (setEvents) setEvents(updatedEvent, "update");
@@ -319,7 +322,7 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
             </>
         );
     }
-    else if ((castedDetails.type === "leave" || type === ModalTypes.LeaveDetails || type == ModalTypes.PendingDetails))
+    else if (castedDetails.type === "leave" && (type === ModalTypes.LeaveDetails || type == ModalTypes.PendingDetails))
     {
         return (
             <>
@@ -421,6 +424,7 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
             {createDetailEditor("Time: ", 'time' , castedDetails.time, "", isEditing, formValues, handleChange, displayToast)}
             {createDetailEditor("Location: ", 'location_name' ,castedDetails.location_name, "", isEditing, formValues, handleChange, displayToast)}
             {createDetailEditor("Address: ", 'address' ,castedDetails.address, "", isEditing, formValues, handleChange, displayToast)}
+            {isAdmin && castedDetails.total_payment && createDetailEditor("Pay: ", 'total_payment' ,'$'+castedDetails.total_payment.toFixed(2), "", isEditing, formValues, handleChange, displayToast)}
             {createDetailEditor("Notes: ", 'notes',castedDetails.notes, "textarea", isEditing, formValues, handleChange, displayToast)}
             </>
         );
@@ -801,16 +805,16 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
             };
         });
     };
+    const closeModal = () => {props.setShown ? props.setShown(false) : setShown(false); props.onClose && props.onClose()};
 
     const containerRef = useRef<HTMLDivElement>(null);
-    if (!props.noOverlay) useClickOutside(containerRef, ()=> props.setShown ? props.setShown(false) : setShown(false));
+    if (!props.noOverlay) useClickOutside(containerRef, closeModal);
 
     const [rendered, setRendered] = useState(false);
     const [visible, setVisible] = useState(false);
 
     if (!props.noOverlay) overlayAnimation(props.shown ? props.shown : shown, setRendered, setVisible, modalContainer, setParentOpen)
 
-    const closeModal = () => props.setShown ? props.setShown(false) : setShown(false);
 
     const user = useAuth().user;
     const admin = user?.role === "admin";

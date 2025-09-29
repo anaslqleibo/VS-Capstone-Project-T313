@@ -40,6 +40,7 @@ interface CalendarProps{
     rootRef ?: RefObject<ReturnType<typeof createRoot> | null>;
     hideHeader?: boolean;
     updateEventData?:(event:EventInput, mode:string)=>void;
+    bruh?: (e:number[])=>void;
     // onClicks ?: ((...e:any) => void)[];
 }
 
@@ -47,7 +48,7 @@ function constructEventsArray(events: EventInput[], role: Role) {
   const newEvents: EventInput[] = [];
   
   events.forEach(e => {
-    const {id, status, original_status, type, assignee_id, assignee_name, date, start_time, end_time, time, location_id, location_name, address, notes, repeat, published} = e.extendedProps || {};
+    const {id, status, original_status, type, assignee_id, assignee_name, date, start_time, end_time, time, location_id, location_name, address, notes, repeat, published, total_payment} = e.extendedProps || {};
 
     const shiftExtProps : ShiftExtendedProps = {
         id: id,
@@ -65,6 +66,7 @@ function constructEventsArray(events: EventInput[], role: Role) {
         address,
         notes,
         published,
+        total_payment,
         day:repeat,
         recurrence:repeat
     }
@@ -92,22 +94,23 @@ function constructEventsArray(events: EventInput[], role: Role) {
 }
 
 function filterEventsArray(events: EventInput[], showSelectedFilter: CalendarFilter | AdminCalendarFilter) {
-  return events.filter(e => {
-    const { status, type, location_name, assignee_name } = e.extendedProps || {};
-    
-    const matchStatus = showSelectedFilter.status.includes("All shifts") ||
-      showSelectedFilter.status.includes(type==='leave'?'Leave':status);
+    return events.filter(e => {
+        const { status, type, location_name, assignee_name } = e.extendedProps || {};
+        
+        const matchStatus = showSelectedFilter.status.includes("All shifts") ||
+        showSelectedFilter.status.includes(type==='leave'?'Leave':status);
 
-    const matchLocation = showSelectedFilter.location.includes("All locations") || showSelectedFilter.location.includes(location_name);
+        const matchLocation = showSelectedFilter.location.includes("All locations") || showSelectedFilter.location.includes(location_name);
 
-    if (((showSelectedFilter as AdminCalendarFilter).employee)){
-        const filter = (showSelectedFilter as AdminCalendarFilter);
-        const matchEmployee = filter.employee.includes("All employees") ||
-        filter.employee.includes(assignee_name);
-        return matchStatus && matchLocation && matchEmployee;
-    }
-    return matchStatus && matchLocation;
-  });
+        if (((showSelectedFilter as AdminCalendarFilter).employee)){
+            const filter = (showSelectedFilter as AdminCalendarFilter);
+            const matchEmployee = filter.employee.includes("All employees") ||
+            filter.employee.includes(assignee_name);
+            return matchStatus && matchLocation && matchEmployee;
+        }
+        
+        return matchStatus && matchLocation;
+    });
 }
 
 export function Calendar({initialView = "dayGridMonth", selectable = true, events, showSelectedFilter, modalContainer, hideHeader=false, updateEventData, ...props} : CalendarProps){
@@ -118,6 +121,8 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
     const [originalEvents, setOriginalEvents] = useState<EventInput[]>(initialEvents);
     
     const [newEvents, setEvents] = useState<EventInput[]>(initialEvents);
+
+    
 
     useEffect(() => {
         if (events) {
@@ -174,6 +179,8 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
             setEvents(filterEventsArray(originalEvents, showSelectedFilter));
         }     
         else setEvents(originalEvents);
+
+        props.bruh&&syncHeights();
     }, [showSelectedFilter]);
 
 
@@ -185,6 +192,15 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
         setMessage(message);
         setToastType(toastType);
         setToastShown(true);
+    }
+
+    const syncHeights = () => {
+        requestAnimationFrame(() => {
+            const tbody = document.querySelector('tbody[role="presentation"]');
+            const trows = Array.from(tbody?.children ?? []);
+            const res = trows.map(row => (row as HTMLElement).clientHeight);
+            props.bruh && props.bruh(res);
+        });
     }
 
     return (
@@ -261,6 +277,11 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
             if (dot) {
                 dot.className= "hidden";
             }        
+            
+            if (props.bruh && info.view.calendar.getEvents().length === events.length) {
+                syncHeights();
+            }
+
         }}
 
         viewDidMount={() => {

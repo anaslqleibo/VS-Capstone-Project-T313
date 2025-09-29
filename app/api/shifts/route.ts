@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
       start_time,     
       end_time,       
       notes,
+      pay_rate,
+      total_payment,
       published
     } = await req.json();
 
@@ -24,7 +26,10 @@ export async function POST(req: NextRequest) {
       date,
       start_time,
       end_time,
-      notes
+      notes,
+      pay_rate,
+      total_payment,
+      published
     });
 
     if (!date || !start_time || !end_time || !status || !location_id) {
@@ -34,9 +39,9 @@ export async function POST(req: NextRequest) {
     const admin = await isAdmin(assignee_id);
 
     await executeQuery(
-      `INSERT INTO shifts (assignee_id, status, location_id, date, start_time, end_time, notes, published)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, // added status field
-      [(status !== "Open" && status !== "Unassigned") ? assignee_id : null, (status !== "Open" && status !== "Unassigned" && admin) ? "Accepted" : status, location_id, date, start_time, end_time, notes, published ? 1 : 0]
+      `INSERT INTO shifts (assignee_id, status, location_id, date, start_time, end_time, notes, pay_rate, total_payment, published)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, // added status field
+      [(status !== "Open" && status !== "Unassigned") ? assignee_id : null, (status !== "Open" && status !== "Unassigned" && admin) ? "Accepted" : status, location_id, date, start_time, end_time, notes, pay_rate, total_payment, published ? 1 : 0]
     );
 
     return new Response(JSON.stringify({ message: "Shift created successfully" }), {

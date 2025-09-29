@@ -174,10 +174,10 @@ const LocationsPage = () => {
       <InputIcon placeholder="Search locations..." type="search" icon="search" className='w-full mt-1 mb-4' value={search} onChange={(e)=>setSearch(e.target.value)}/>
   
       {locations ? 
-        <div className='h-full overflow-y-auto flex-1'>
+        <div className='h-full overflow-y-auto flex-1 pr-2'>
           <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
             { locations && locations.map((loc) => (
-              <Accordion text={loc.name} key={loc.id} className='w-full h-full' componentClassName="w-full px-2 py-4 text-sm rounded-lg bg-gray-200 cursor-pointer ease-in duration-200 text-black hover:bg-[color:var(--hover-color)] hover:text-white gap-4 *:hidden hover:*:flex" dropdownContainerLastName='text-sm -translate-y-1 bg-gray-100' hideArrow={true} 
+              <Accordion text={loc.name} key={loc.id} className='w-full h-full' componentClassName="w-full px-2 py-4 text-xs md:text-sm rounded-lg bg-gray-200 cursor-pointer ease-in duration-200 text-black hover:bg-[color:var(--hover-color)] hover:text-white gap-4 *:hidden hover:*:flex" dropdownContainerClassName='text-sm -translate-y-1 bg-gray-100' hideArrow={true} 
               titleChildren={isAdmin && <div className='flex gap-3'>
                 <FaEdit className='hover:text-[color:var(--primary-color)] ease-in duration-200' onClick={(e)=>{
                   e.stopPropagation();
