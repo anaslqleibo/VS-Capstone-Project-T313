@@ -41,8 +41,8 @@ export async function fetchShiftExtProps(id: string) {
   return shiftToShiftExtProps(await fetchShift(id));
 }
 
-export async function fetchShifts(user_id: number) {
-  const res = await fetch(`/api/shifts/${user_id}`);
+export async function fetchShifts(user_id: number, month='-') {
+  const res = await fetch(`/api/shifts/${user_id}/${month}`);
 
   if (!res.ok) {
     throw new Error('Failed to fetch shifts');
@@ -137,8 +137,8 @@ export async function deleteShift(shift_id: string) {
   }
 }
 
-export function getEventInputShifts(user_id: number) {
-  return fetchShifts(user_id).then((shifts) =>
+export function getEventInputShifts(user_id: number, month='-') {
+  return fetchShifts(user_id, month).then((shifts) =>
     shifts.map((shift) => {
       const shiftExtProps : ShiftExtendedProps = shiftToShiftExtProps(shift);
 

@@ -30,7 +30,6 @@ export async function PATCH(req: NextRequest, context: RouteContext<'/api/users/
     
     const detailsExist = await executeQuery('SELECT user_id FROM employee_details WHERE user_id = ?', [id]) as any[];
 
-    console.log(detailsExist);
     let result:any;
     if (detailsExist.length === 0){
         result = await executeQuery('INSERT INTO employee_details (user_id, pay_rate_id) VALUES (?,?)', [id, payrateId[0].id]) as any;

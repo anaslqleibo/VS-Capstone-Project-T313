@@ -10,9 +10,9 @@ type NotificationType = 'Assigned' | 'Unassigned' | 'Accepted' | 'Declined' | 'R
 export type NotificationProps = {
     id?:string;
     type: NotificationType,
-    date?: Date | string,
+    date?: string,
     shift_id?: string,
-    shift_date?: Date | string,
+    shift_date?: string,
     assignee_name?: string;
     days_left?: number,
     onClick?: ()=>void;
@@ -67,7 +67,7 @@ export function createNotifications(fromAdminView=false, notifications : Notific
     );
 }
 
-export function createAdminNotification({type, date = new Date(), shift_date = new Date(), days_left = 1, assignee_name='Steve', location_name, start_time, end_time, onClick} : NotificationProps){
+export function createAdminNotification({type, date, shift_date, days_left = 1, assignee_name='Steve', location_name, start_time, end_time, onClick} : NotificationProps){
     const circle = ()=>{
         const s = type.split(' ');
         const status = stringToStatus(s.length > 1 ? s[1] : s[0]);
@@ -80,10 +80,23 @@ export function createAdminNotification({type, date = new Date(), shift_date = n
         if (onClick) onClick();
     }
 
-    const tooltipContent = <>Date: {shift_date}<br/> Location: {location_name} <br/> Start time: {start_time} <br/> End time: {end_time}</>;
+    const isLeave = type.split(' ').length>1;
+
+    const tooltipContent = isLeave ? 
+    <>
+        Date: {shift_date}<br/>
+        Start time: {start_time} <br/> 
+        End time: {end_time}
+    </> : <>
+        Date: {shift_date}<br/> 
+        Location: {location_name} <br/> 
+        Start time: {start_time} <br/> 
+        End time: {end_time}
+    </>;
+
     const shift = (
-        <Tooltip content={tooltipContent} position="top">
-            <span className="font-semibold">{type.split(' ').length>1? 'leave': 'shift'}</span>
+        <Tooltip content={tooltipContent} position="top" inline={true}>
+            <span className="font-semibold">{isLeave? 'leave': 'shift'}</span>
         </Tooltip>
     );
 
@@ -154,7 +167,7 @@ export function createAdminNotification({type, date = new Date(), shift_date = n
 
 
 
-export function createStaffNotification({type, date = new Date(), shift_date = new Date(), days_left=1, onClick} : NotificationProps){
+export function createStaffNotification({type, date, shift_date, days_left=1, onClick} : NotificationProps){
     const circle = ()=>{
         const s = type.split(' ');
         const status = stringToStatus(s.length > 1 ? s[1] : s[0]);

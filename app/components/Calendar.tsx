@@ -29,6 +29,7 @@ export interface AdminCalendarFilter{
     status: string[];
     month: dayjs.Dayjs;
     employee: string[];
+    show_unpublished: boolean;
 }
 
 interface CalendarProps{
@@ -40,9 +41,12 @@ interface CalendarProps{
     rootRef ?: RefObject<ReturnType<typeof createRoot> | null>;
     hideHeader?: boolean;
     updateEventData?:(event:EventInput, mode:string)=>void;
-    bruh?: (e:number[])=>void;
+    setColHeights?: (e:number[])=>void;
+    setWeeklyPay?: (e:weeklyPayType[])=>void;
     // onClicks ?: ((...e:any) => void)[];
 }
+
+export type weeklyPayType = {total: number, assignees: {name?: string, total_pay?:number, duration?:number}[]};
 
 function constructEventsArray(events: EventInput[], role: Role) {
   const newEvents: EventInput[] = [];
@@ -95,10 +99,10 @@ function constructEventsArray(events: EventInput[], role: Role) {
 
 function filterEventsArray(events: EventInput[], showSelectedFilter: CalendarFilter | AdminCalendarFilter) {
     return events.filter(e => {
-        const { status, type, location_name, assignee_name } = e.extendedProps || {};
+        const { type, location_name, assignee_name, published, original_status} = e.extendedProps || {};
         
         const matchStatus = showSelectedFilter.status.includes("All shifts") ||
-        showSelectedFilter.status.includes(type==='leave'?'Leave':status);
+        showSelectedFilter.status.includes(type==='leave'?'Leave':original_status);
 
         const matchLocation = showSelectedFilter.location.includes("All locations") || showSelectedFilter.location.includes(location_name);
 
@@ -106,14 +110,16 @@ function filterEventsArray(events: EventInput[], showSelectedFilter: CalendarFil
             const filter = (showSelectedFilter as AdminCalendarFilter);
             const matchEmployee = filter.employee.includes("All employees") ||
             filter.employee.includes(assignee_name);
-            return matchStatus && matchLocation && matchEmployee;
+
+            const matchUnpublished = !filter.show_unpublished ? published === 1 : true;
+            return matchStatus && matchLocation && matchEmployee && matchUnpublished;
         }
         
         return matchStatus && matchLocation;
     });
 }
 
-export function Calendar({initialView = "dayGridMonth", selectable = true, events, showSelectedFilter, modalContainer, hideHeader=false, updateEventData, ...props} : CalendarProps){
+export function Calendar({initialView = "dayGridMonth", selectable = true, events, showSelectedFilter, modalContainer, hideHeader=false, updateEventData, setWeeklyPay, ...props} : CalendarProps){
     const role : Role = useAuth().user?.role || 'user';
 
     const initialEvents = useMemo(() => constructEventsArray(events, role), [events, role]);
@@ -180,7 +186,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
         }     
         else setEvents(originalEvents);
 
-        props.bruh&&syncHeights();
+        props.setColHeights&&syncHeights();
     }, [showSelectedFilter]);
 
 
@@ -195,13 +201,102 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
     }
 
     const syncHeights = () => {
-        requestAnimationFrame(() => {
-            const tbody = document.querySelector('tbody[role="presentation"]');
-            const trows = Array.from(tbody?.children ?? []);
-            const res = trows.map(row => (row as HTMLElement).clientHeight);
-            props.bruh && props.bruh(res);
-        });
+        setTimeout(()=>{
+            requestAnimationFrame(() => {
+                const tbody = document.querySelector('tbody[role="presentation"]');
+                    const trows = Array.from(tbody?.children ?? []);
+                    const res = trows.map(row => (row as HTMLElement).clientHeight);
+                    props.setColHeights && props.setColHeights(res);
+            });
+        }, 200);   
     }
+
+    const isAdmin = useAuth().user?.role==='admin';
+
+    const [visibleRange, setVisibleRange] = useState<{start: string, end: string} | null>(null);
+    useEffect(() => {
+        if (!isAdmin || !visibleRange || !events?.length) return;
+
+        const { start, end } = visibleRange;
+        const diff = dayjs(end).diff(start, 'day');
+        // console.log(start, end);
+
+
+        let show_unpublished = false;
+        if ((showSelectedFilter as AdminCalendarFilter).employee){
+            show_unpublished = (showSelectedFilter as AdminCalendarFilter).show_unpublished;
+        }
+
+        const shifts = events.filter(e=>e.extendedProps?.type==='shift'&&(!show_unpublished?e.extendedProps?.published===1:true)).map((e) => {
+            const { start_time, end_time, total_payment, assignee_name } = e.extendedProps as ShiftExtendedProps;
+
+            let duration = 0;
+            if (start_time && end_time) {
+                const start = dayjs(start_time, "HH:mm");
+                const end = dayjs(end_time, "HH:mm");
+                duration = end.diff(start, "minute");
+            }
+
+            return {
+                start: e.start,
+                total_payment,
+                assignee: assignee_name,
+                duration,
+            };
+            }).toSorted((a, b) => {
+                if (!a.start && !b.start) return 0;
+                if (!a.start) return 1;
+                if (!b.start) return -1;
+                return a.start.toLocaleString().localeCompare(b.start.toLocaleString());
+            });
+
+
+        const weeks = [];
+        let lastShiftIndex=0;
+
+        for (let i=0; i<(diff/7); i++){
+            const startFrom = dayjs(start).add(i*7,'day');
+
+            const rangeStart = startFrom;
+            const rangeEnd = startFrom.add(7, 'day');
+
+            // console.log('start range:', rangeStart.format('YYYY-MM-DD'));
+            // console.log('end range:', rangeEnd.format('YYYY-MM-DD'));
+            const weeklyPayDetails:weeklyPayType = {total: 0, assignees: []};
+
+            for (let j=lastShiftIndex; j < shifts.length; j++){
+                // console.log(shifts[j].start);
+
+                if ((dayjs(shifts[j].start?.toLocaleString()).isAfter(rangeStart, 'day') && dayjs(shifts[j].start?.toLocaleString()).isBefore(rangeEnd, 'day')) || dayjs(shifts[j].start?.toLocaleString()).isSame(rangeStart, 'day')){
+                    const assigneeIdx = weeklyPayDetails.assignees.findIndex(u=>u.name===shifts[j].assignee)
+
+                    const totalRounded = Math.round((shifts[j].total_payment??0)*100)/100;
+                    if (assigneeIdx !== -1 && weeklyPayDetails.assignees[assigneeIdx].total_pay && weeklyPayDetails.assignees[assigneeIdx].duration)
+                    {
+                        weeklyPayDetails.assignees[assigneeIdx].total_pay += totalRounded;
+                        weeklyPayDetails.assignees[assigneeIdx].duration += shifts[j].duration??0;
+                    }
+                    else {
+                        weeklyPayDetails.assignees.push({name: shifts[j].assignee, total_pay: totalRounded, duration: shifts[j].duration});
+                    }
+
+                    weeklyPayDetails.total += totalRounded;
+                }
+                else if (dayjs(shifts[j].start?.toLocaleString()).isBefore(rangeStart, 'day')){
+                    continue;
+                }
+                else{
+                    lastShiftIndex=j;
+                    break;
+                }
+            }
+            weeks.push(weeklyPayDetails);
+        }
+
+        console.log(weeks);
+        setWeeklyPay&&setWeeklyPay(weeks);
+
+    },[isAdmin, events, visibleRange, showSelectedFilter]);
 
     return (
     <>
@@ -278,7 +373,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
                 dot.className= "hidden";
             }        
             
-            if (props.bruh && info.view.calendar.getEvents().length === events.length) {
+            if (props.setColHeights && info.view.calendar.getEvents().length === events.length) {
                 syncHeights();
             }
 
@@ -300,7 +395,12 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
             if (calendarEl2) calendarEl2.classList.add("flex-1")
         }}
 
-            
+        datesSet={(dateInfo)=>{
+            setVisibleRange({
+                start: dateInfo.startStr.split('T')[0],
+                end: dateInfo.endStr.split('T')[0],
+            });
+        }}
         />
 
         {activeModal.isOpen && modalContainer.current && createModal(getModalTypesByStatus(activeModal.status, activeModal.details?.type as EventTypes),true,modalContainer.current,activeModal.details, setOpen, updateEvent, activeModal.event, displayToast)}

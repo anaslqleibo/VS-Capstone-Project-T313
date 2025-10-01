@@ -11,11 +11,15 @@ import Spinner from "@/app/components/Spinner";
 import Icon from "@/public/icons/Icons";
 import Toast from "@/app/components/Toast";
 import Dropdown from "@/app/components/Dropdown";
-import { fetchAllUsers, fetchPayRates, PayRate, updatePayRate, User } from "@/app/controllers/User";
+import { addNewUser, deletePayRate, deleteUser, fetchAllUsers, fetchPayRates, insertPayRate, PayRate, updatePayRate, updateUser, updateUsersPayRate, User } from "@/app/controllers/User";
 import { FaDollarSign, FaEdit } from "react-icons/fa";
 import dayjs from "dayjs";
 import Modal from "@/app/components/Modal";
 import Tooltip from "@/app/components/Tootltip";
+import Form from "@/app/components/Form";
+import { formatToSqlDate, sqlDateFormatToRegularFormat } from "@/app/components/utils/formatDate";
+import Checkbox from "@/app/components/Checkbox";
+import useIsOverMd from "@/app/components/utils/useIsOverMd";
 
 
 type UserExtended = User & {
@@ -44,8 +48,11 @@ const modalContainer = useRef<HTMLDivElement>(null);
   const [activeFilter, setActiveFilter] = useState<string[]>(['Name','Email','Phone']);
   
   const [selectedPayRate, setSelectedPayRate] = useState<PayRate|null>(null);
-  const [payRateLoading, setPayRateLoading] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
   const [editingPayRate, setEditingPayRate] = useState(false);
+  const [showOptionalFields, setShowOptionalFields] = useState(false);
+  const [showAssignPositionField, setShowAssignPositionField] = useState(false);
+  const [newUserAdmin, setNewUserAdmin] = useState(false);
 
   // Check if user is authenticated and has admin role
   // useEffect(() => {
@@ -73,14 +80,14 @@ const modalContainer = useRef<HTMLDivElement>(null);
 
 
   useEffect(()=>{
-    if ((activePage === 'pay-rates' || editingPayRate) && payRates.length === 0){
+    if ((activePage === 'pay-rates' || editingPayRate || showAssignPositionField) && payRates.length === 0){
       (async () => {
         const res = await fetchPayRates();
         setPayRates(res);
 
       })();
     }
-  },[activePage, editingPayRate])
+  },[activePage, editingPayRate, showAssignPositionField])
 
   // If not authenticated or not admin, show loading or redirect
   // if (!isAuthenticated) {
@@ -110,18 +117,6 @@ const modalContainer = useRef<HTMLDivElement>(null);
     setUsers(users.map(u => u.id === id ? { ...u, is_active: 0 } : u));
   };
 
-  const handleDeleteUser = async (email: string) => {
-    await fetch("/api/users", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
-    setUsers(users.filter(u => u.email !== email));
-    setOpenModal(false);
-    displayToast('Succesfully deleted account with email ' + email + '!', 'success');
-
-    setUserSelected(null);
-  };
   const [modalType, setModalType] = useState<'create'|'update'|'delete'|'view'>('create');
   const [openModal, setOpenModal] = useState(false);
   const [showToast, setToastShown] = useState(false);
@@ -158,12 +153,12 @@ const modalContainer = useRef<HTMLDivElement>(null);
       if (selectedUser){
         if (selectedUser.pay_rate_id){
           try{
-            setPayRateLoading(true);
+            setModalLoading(true);
             const payRate = await fetchPayRates(selectedUser.pay_rate_id);
             setSelectedPayRate(payRate[0]);
           }
           finally{
-            setPayRateLoading(false);
+            setModalLoading(false);
           }
           
         } 
@@ -173,6 +168,16 @@ const modalContainer = useRef<HTMLDivElement>(null);
     fetchPayRateDetails();  
     
   }, [selectedUser])
+
+  useEffect(()=>{
+    if (!openModal){
+      setUserSelected(null);
+      setSelectedPayRate(null);
+      setShowOptionalFields(false);
+      setNewUserAdmin(false);
+      setShowAssignPositionField(false);
+    }
+  }, [openModal])
 
 
   const exportToCSV = () => {
@@ -199,33 +204,174 @@ const modalContainer = useRef<HTMLDivElement>(null);
 
   const specialtyList = (selectedPayRate && selectedPayRate.age_group && selectedPayRate.job_title && selectedPayRate.level) ? [...(new Set((payRates.filter(data=>data.job_title === selectedPayRate.job_title && data.age_group === selectedPayRate.age_group && data.level.toString() === selectedPayRate.level.toString())).map(payRate=>payRate.specialty?payRate.specialty:'-')))] : undefined;
 
-  const handleUpdatePayRate = () => {
+  const handleUpdateUsersPayRate = () => {
     
     if (!selectedPayRate?.job_title || !selectedPayRate.age_group || !selectedPayRate.level) return;
 
-    (async ()=>{
-      try{
-        if (selectedUser){
-          const result = await updatePayRate(selectedUser.id.toString(), selectedPayRate?.job_title, selectedPayRate?.age_group, selectedPayRate?.level.toString(), selectedPayRate?.specialty);
-          if (result){
-            displayToast(`Succesfully ${selectedUser?.pay_rate_id ? "updated" : "assigned"} user's pay rates!`, 'success');
+    if (activePage === 'users'){
+      (async ()=>{
+        try{
+          if (selectedUser){
+            setModalLoading(true);
+            const result = await updateUsersPayRate(selectedUser.id.toString(), selectedPayRate?.job_title, selectedPayRate?.age_group, selectedPayRate?.level.toString(), selectedPayRate?.specialty);
+            if (result){
+              displayToast(`Succesfully ${selectedUser?.pay_rate_id ? "updated" : "assigned"} user's pay rates!`, 'success');
 
-            if (selectedUser) {
-              setUserSelected({...selectedUser, pay_rate_id: result});
-              setUsers((prev)=>[...prev.filter(u=>u.id!==selectedUser.id), {...selectedUser, pay_rate_id: result}])
+              if (selectedUser) {
+                setUserSelected({...selectedUser, pay_rate_id: result, job_title: selectedPayRate.job_title});
+                setUsers((prev)=>prev.map(u=>u.id===selectedUser.id?{...selectedUser, pay_rate_id: result, job_title: selectedPayRate.job_title}:u)); 
+              }
+
             }
-
+            else displayToast(`Fail to ${selectedUser?.pay_rate_id ? "update" : "assign"} user's pay rates.`, 'error');
           }
-          else displayToast(`Fail to ${selectedUser?.pay_rate_id ? "update" : "assign"} user's pay rates.`, 'error');
+          else displayToast(`No selected user found.`, 'error');
         }
-        else displayToast(`No selected user found.`, 'error');
+        finally{
+          setEditingPayRate(false);
+          setModalLoading(false);
+        }
+      })();
+    }
+  }
+
+  const processPayRate = (payRate?:any) => {
+    (async ()=>{
+      if (modalType==='update' && selectedPayRate){
+        if (selectedPayRate.job_title === payRate.job_title && selectedPayRate.age_group === payRate.age_group && selectedPayRate.level === payRate.level && selectedPayRate.specialty === payRate.specialty && selectedPayRate.weekday?.toPrecision(4) === payRate.weekday && selectedPayRate.saturday?.toPrecision(4) === payRate.saturday && selectedPayRate.sunday?.toPrecision(4) === payRate.sunday && selectedPayRate.public_holiday?.toPrecision(4) === payRate.public_holiday){
+          setOpenModal(false);
+          return;
+        }
+
+        const updatedPayRate : PayRate = {...{...payRate, weekday: Number(payRate.weekday), saturday: Number(payRate.saturday), sunday: Number(payRate.sunday), public_holiday: Number(payRate.public_holiday)} as PayRate, id: selectedPayRate?.id};
+        
+        try{
+          setModalLoading(true);
+          const res = await updatePayRate(updatedPayRate);
+          if (res){
+            payRates.length>0 && setPayRates(prev=>prev.map(pr=>pr.id===selectedPayRate.id?updatedPayRate:pr));
+            displayToast("Successfully updated pay rate details!", 'success');
+            setOpenModal(false);
+          }
+          else 
+            displayToast("Fail to update pay rate details!", 'error');
+        }
+        finally{
+          setModalLoading(false);
+        }
+        
       }
-      finally{
-        setEditingPayRate(false);
+      else if (modalType === 'create'){
+        const newPayRate : PayRate = {...{...payRate, weekday: Number(payRate.weekday), saturday: Number(payRate.saturday), sunday: Number(payRate.sunday), public_holiday: Number(payRate.public_holiday)} as PayRate};
+        
+        try{
+          setModalLoading(true);
+          const res = await insertPayRate(newPayRate);
+          if (res){
+            payRates.length>0 && setPayRates(prev=>[...prev, {...newPayRate, id: res}]);
+            displayToast("Successfully added new pay rate details!", 'success');
+            setOpenModal(false);
+          }
+          else 
+            displayToast("Fail to add new pay rate details!", 'error');
+        }
+        finally{
+          setModalLoading(false);
+        }
+      }
+      else if (modalType==='delete' && selectedPayRate){
+        try{
+          setModalLoading(true);
+          const res = await deletePayRate(selectedPayRate.id);
+          if (res){
+              payRates.length>0 && setPayRates(prev=>prev.filter(pr=>pr.id!==selectedPayRate.id));
+              displayToast("Successfully deleted a job position/pay rate!", 'success');
+              setOpenModal(false);
+              setSelectedPayRate(null);
+            }
+            else 
+              displayToast("Fail to delete pay rate!", 'error');
+        }
+        finally{
+          setModalLoading(false);
+        }
+        
       }
     })();
-    
   }
+
+  const processUser = (user?:any) => {
+    (async ()=>{
+      if (modalType==='update' && selectedUser){
+        const updatedUser : User = {...user as User, id: selectedUser?.id, role: selectedUser.role};
+        
+        try{
+          setModalLoading(true);
+          const res = await updateUser(updatedUser);
+          if (res){
+            users.length>0 && setUsers(prev=>prev.map(u=>u.id===selectedUser.id?updatedUser:u));
+            displayToast("Successfully updated user details!", 'success');
+            setOpenModal(false);
+          }
+          else 
+            displayToast("Fail to update user details!", 'error');
+        }
+        finally{
+          setModalLoading(false);
+        }
+        
+      }
+      else if (modalType === 'create'){
+        let payRateId;
+
+        if (showAssignPositionField && payRates){
+          if (!selectedPayRate?.job_title || !selectedPayRate.age_group || !selectedPayRate.level){
+            displayToast("Please select all the required fields for assigning pay rates", 'error');
+            return;
+          }
+
+          payRateId = payRates.find(pr=>pr.job_title===selectedPayRate?.job_title && pr.age_group === selectedPayRate.age_group && pr.level.toString() === selectedPayRate.level.toString() && pr.specialty === ((selectedPayRate.specialty&&selectedPayRate.specialty!=='-')?selectedPayRate.specialty:null))?.id;
+        }
+        const newUser : User = {...user as User, role: newUserAdmin?'admin':'user', pay_rate_id: payRateId};
+
+        try{
+          setModalLoading(true);
+          const res = await addNewUser(newUser, showOptionalFields, showAssignPositionField);
+          if (res.success){
+            users.length>0 && setUsers(prev=>[...prev, {...newUser, id: res.new_id, date_of_birth: sqlDateFormatToRegularFormat(newUser.date_of_birth??'').replaceAll('-','/')}]);
+            displayToast(`Successfully added new ${newUserAdmin?'admin':'staff'} account!`, 'success');
+            setOpenModal(false);
+          }
+          else {
+            displayToast(res.err??"Fail to add new user account!", 'error');
+          }
+        }
+        finally{
+          setModalLoading(false);
+        }
+      }
+      else if (modalType==='delete' && selectedUser){
+        try{
+          setModalLoading(true);
+          const res = await deleteUser(selectedUser.email);
+          if (res){
+              users.length>0 && setUsers(prev=>prev.filter(u=>u.id!==selectedUser.id));
+              displayToast("Successfully deleted a user account!", 'success');
+              setOpenModal(false);
+              setUserSelected(null);
+            }
+            else 
+              displayToast("Fail to delete a user account!", 'error');
+        }
+        finally{
+          setModalLoading(false);
+        }
+        
+      }
+    })();
+  }
+  const isOverMd=useIsOverMd();
+  const stringIsFloat = (e:string) => /^[+-]?\d+(\.\d+)?$/.test(e);
   return (
     <Layout modalContainer={modalContainer}>
        <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
@@ -242,7 +388,7 @@ const modalContainer = useRef<HTMLDivElement>(null);
 
       </div>
         
-      {activePage === 'pay-rates' ? <div className="mt-6 -mb-6 text-gray-700">Hover over the job title to see all assigned employees with that job title</div> : ''}
+      {activePage === 'pay-rates' ? <div className="mt-4 mb-2 text-gray-700">{isOverMd?'Hover over':'Click the'} the job title to see all assigned employees with that job title</div> : ''}
 
       {activePage === 'users' ? 
       <>
@@ -312,8 +458,8 @@ const modalContainer = useRef<HTMLDivElement>(null);
         }
       </>
       : 
-      <div className="mt-8 h-full">
-        <div className="h-100 overflow-y-auto">
+      <>
+        <div className="flex-1 overflow-y-auto">
           { payRates.length>0 ? 
           <table className="w-full border-separate border-spacing-0 border-black">
             <thead>
@@ -363,40 +509,26 @@ const modalContainer = useRef<HTMLDivElement>(null);
           : <Spinner />}
         </div>
       
-      <Button onClick={exportToCSV} className="mt-2 px-4 py-2 text-white rounded">
-        Export CSV
-      </Button>
-      </div>
+        <Button onClick={exportToCSV} className="mt-4 px-4 py-2 text-white rounded w-fit">
+          Export CSV
+        </Button>
+      </>
 
       }
       
 
       { modalContainer.current && 
         <Modal details={{}} shown={openModal} setShown={setOpenModal} modalContainer={modalContainer.current} onClose={()=>setEditingPayRate(false)} setParentOpen={setOpenModal} displayToast={displayToast} title={modalType==="delete"?'Delete '+ activePage.substring(0,activePage.length-1) +' confirmation':modalType==="create"?'Create new '+activePage.substring(0,activePage.length-1) :modalType==='update'?"Modify "+ activePage.substring(0,activePage.length-1) +" details":'Manage pay rates'}>
-          {selectedUser && modalType === 'delete'  && activePage === 'users' &&
-          <div>
-          <p className="mb-6">
-              Are you sure you want to delete <span className="font-medium text-secondary">{selectedUser.first_name} {selectedUser.last_name}</span> ({selectedUser.email})?
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button onClick={() => setOpenModal(false)}>No</Button>
-              <Button type='outline'
-                onClick={() => handleDeleteUser(selectedUser.email)}
-              >
-                Yes
-              </Button>
-            </div>
-          </div>
-          }
+          
 
           {selectedPayRate && modalType === 'delete' && activePage === 'pay-rates' &&
           <div>
           <p className="mb-6">
-              Are you sure you want to delete <span className="font-medium text-secondary">{selectedPayRate.job_title}-{selectedPayRate.age_group}-{'Level ' + selectedPayRate.level}{selectedPayRate.specialty?'-'+selectedPayRate.specialty:''}?</span>
+              Are you sure you want to delete <span className="font-medium text-secondary"><br/>{selectedPayRate.job_title}-{selectedPayRate.age_group}-{'Level ' + selectedPayRate.level}{selectedPayRate.specialty?'-'+selectedPayRate.specialty:''}?</span><br/><br/>Deleting this position will remove it from all assigned users. Those users will no longer have a position and must be reassigned to a new one.
             </p>
             <div className="flex justify-end gap-2">
               <Button onClick={() => setOpenModal(false)}>No</Button>
-              <Button type='outline'>Yes
+              <Button type='outline' onClick={()=>processPayRate()}>Yes
               </Button>
             </div>
           </div>
@@ -405,7 +537,7 @@ const modalContainer = useRef<HTMLDivElement>(null);
           {selectedUser && modalType === 'view' && 
 
           ((selectedUser?.pay_rate_id || editingPayRate) ? 
-          (payRateLoading ? <div className="m-10 flex relative">&nbsp;<Spinner/></div> : 
+          (modalLoading ? <div className="m-10 flex relative">&nbsp;<Spinner/></div> : 
             ( editingPayRate ? 
               <div className="text-md flex flex-col gap-2 mt-4">
                 <div className="flex items-center gap-2">
@@ -439,7 +571,7 @@ const modalContainer = useRef<HTMLDivElement>(null);
                   <Button className="w-fit mt-5 py-2 px-4" fontSize="0.9em" onClick={()=>setEditingPayRate(false)}>Cancel</Button>
                   {
                     selectedPayRate && selectedPayRate.level && selectedPayRate.age_group && selectedPayRate.job_title ?
-                    <Button className="w-fit mt-5 py-2 px-4" fontSize="0.9em" onClick={handleUpdatePayRate}>Save</Button> : ''
+                    <Button className="w-fit mt-5 py-2 px-4" fontSize="0.9em" onClick={handleUpdateUsersPayRate}>Save</Button> : ''
                   }
                 </div>
               </div>
@@ -479,106 +611,208 @@ const modalContainer = useRef<HTMLDivElement>(null);
           )
           : 
           <>
-            No pay rates has been assigned to this user.
+            No job position/pay rates has been assigned to this user.
 
 
             <Button className="float-end mb-5 mt-5 py-2 px-4" fontSize="0.9em" onClick={()=>setEditingPayRate(true)}>Assign position</Button>
           </>)
           }
 
-          {selectedPayRate && modalType === 'update' && activePage==='pay-rates' && 
+          {(modalType === 'update' || modalType === 'create') && activePage==='pay-rates' && 
+          (modalLoading ? <div className="m-10 flex relative">&nbsp;<Spinner/></div> : 
+          <Form onSubmit={async (_e, f)=> processPayRate(f)}>
             <div className="text-md flex flex-col gap-2 mt-4">
                 <div className="flex items-center gap-2">
                   <span className="text-primary font-semibold w-24 text-right">Job title: </span>
-                  <Input className="min-w-40"  value={selectedPayRate ? selectedPayRate.job_title : undefined} onChange={(e)=>{selectedPayRate ? setSelectedPayRate({...selectedPayRate, job_title: e.target.value}):undefined}} placeholder="Update job title"/>
+                  <Input name='job_title' className="min-w-40"  value={(selectedPayRate && modalType === 'update') ? selectedPayRate.job_title : undefined} onChange={(e)=>{selectedPayRate ? setSelectedPayRate({...selectedPayRate, job_title: e.target.value}):undefined}} placeholder="Enter the job title" required validateMode="onBlur"/>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-primary font-semibold w-24 text-right">Age Group: </span>
-                  <Input className="min-w-40" value={selectedPayRate ? selectedPayRate.age_group : undefined} onChange={(e)=>selectedPayRate&&setSelectedPayRate({...selectedPayRate, age_group: e.target.value})} placeholder="Update age group"/>
+                  <Input name='age_group' className="min-w-40" value={(selectedPayRate && modalType === 'update') ? selectedPayRate.age_group : undefined} onChange={(e)=>selectedPayRate&&setSelectedPayRate({...selectedPayRate, age_group: e.target.value})} placeholder="Enter the age group" required validateMode="onBlur"/>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-primary font-semibold w-24 text-right">Level: </span>
-                  <Input className="min-w-40"  value={(selectedPayRate &&  selectedPayRate.level) ? selectedPayRate.level.toString() : undefined} onChange={(e)=>selectedPayRate&&setSelectedPayRate({...selectedPayRate, level: e.target.value, specialty: ''})} placeholder="Update level"/>
+                  <Input name='level' className="min-w-40"  value={(selectedPayRate && modalType === 'update' &&  selectedPayRate.level) ? selectedPayRate.level.toString() : undefined} onChange={(e)=>selectedPayRate&&setSelectedPayRate({...selectedPayRate, level: e.target.value, specialty: ''})} placeholder="Enter the level" required validateMode="onBlur"/>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <span className="text-primary font-semibold w-24 text-right">Specialty: </span>
+                  <Tooltip content='Leave empty if not specified' timeoutHide={2000} timeoutShow={500} position="bottom">
+                    <Input name='specialty' className="min-w-40" value={(selectedPayRate && modalType === 'update' && selectedPayRate.specialty) ? selectedPayRate.specialty : undefined} placeholder="Enter optional specialty field" onChange={(e)=>selectedPayRate&&setSelectedPayRate({...selectedPayRate, specialty: e.target.value})}/>
+                  </Tooltip>
                   
-                  <Input className="min-w-40" value={(selectedPayRate && selectedPayRate.specialty) ? selectedPayRate.specialty : undefined} placeholder="Optional specialty field" onChange={(e)=>selectedPayRate&&setSelectedPayRate({...selectedPayRate, specialty: e.target.value})}/>
                 </div>
 
+                <span className="font-semibold text-primary w-24 text-right">Pay rate:</span>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 w-fit ml-7">
+                  
+                  <div>
+                    <span className="text-sm font-semibold text-primary">Weekday</span>
+                    <Input name='weekday' className="w-fit md:w-40" placeholder="Enter weekday pay rate" type="icon left filled" icon="$" value={(selectedPayRate && modalType === 'update' && selectedPayRate.weekday) ? selectedPayRate.weekday.toPrecision(4) : ''} required validateMode="onChange" customValidate={(val:string)=>{
+                    if (val==='') return'';
+                    if (!stringIsFloat(val)) return 'Please type in this format XX.XX';
+                    return '';
+                  }}/>
+                  </div>
+                  <div>
+                    <span className="text-sm font-semibold text-primary">Saturday</span>
+                    <Input name='saturday' className="w-fit md:w-40" placeholder="Enter saturday pay rate" type="icon left filled" icon="$" value={(selectedPayRate && modalType === 'update' &&selectedPayRate.saturday) ? selectedPayRate.saturday.toPrecision(4) : ''} required validateMode="onChange" customValidate={(val:string)=>{
+                    if (val==='') return'';
+                    if (!stringIsFloat(val)) return 'Please type in this format XX.XX';
+                    return '';
+                  }}/>
+                  </div>
+                  <div>
+                    <span className="text-sm font-semibold text-primary">Sunday</span>
+                    <Input name='sunday' className="w-fit md:w-40" placeholder="Enter sunday pay rate" type="icon left filled" icon="$" value={(selectedPayRate && modalType === 'update' &&selectedPayRate.sunday) ? selectedPayRate.sunday.toPrecision(4) : ''} required validateMode="onChange" customValidate={(val:string)=>{
+                    if (val==='') return'';
+                    if (!stringIsFloat(val)) return 'Please type in this format XX.XX';
+                    return '';
+                  }}/>
+                  </div>
+                  <div>
+                    <span className="text-sm font-semibold text-primary">Public Holiday</span>
+                    <Tooltip content="Defaults to sunday's pay rate" timeoutShow={1500} timeoutHide={2000} position="bottom">
+                    <Input name='public_holiday' className="w-fit md:w-40" placeholder="Enter public holiday pay rate (optional, defaults to sunday's pay rate)" type="icon left filled" icon="$" value={(selectedPayRate && modalType === 'update' && selectedPayRate.public_holiday) ? selectedPayRate.public_holiday.toPrecision(4) : ''} validateMode="onChange" customValidate={(val:string)=>{
+                    if (val==='') return'';
+                    if (!stringIsFloat(val)) return 'Please type in this format XX.XX';
+                    return '';
+                  }}/></Tooltip>
+                  </div>
+                </div>   
+
+
                 <div className="flex flex-row-reverse items-end justify-between">
-                  <Button className="w-fit mt-5 py-2 px-4" fontSize="0.9em" onClick={()=>setEditingPayRate(false)}>Cancel</Button>
+                  <Button className="w-fit mt-5 py-2 px-4" fontSize="0.9em" onClick={()=>activePage==='pay-rates'? setOpenModal(false): setEditingPayRate(false)}>Cancel</Button>
                   {
                     selectedPayRate && selectedPayRate.level && selectedPayRate.age_group && selectedPayRate.job_title ?
-                    <Button className="w-fit mt-5 py-2 px-4" fontSize="0.9em" onClick={handleUpdatePayRate}>Save</Button> : ''
+                    <Button className="w-fit mt-5 py-2 px-4" fontSize="0.9em" onClick={activePage==='pay-rates'?undefined:handleUpdateUsersPayRate} htmlType="submit">{modalType==='create'?'Add':'Save'}</Button> : ''
                   }
                 </div>
-              </div>
+            </div>
+          </Form>)
           
           }
 
-          {modalType === 'create' && activePage==='pay-rates' && 
-            <div className="text-md flex flex-col gap-2 mt-4">
-        
-              <div className="flex items-center gap-2">
-                <span className="text-primary font-semibold w-30 text-right after:ml-0.5 after:text-red-500 after:content-['*']">Job title: </span>
-                <Input className="min-w-40" placeholder="Enter the job job title"/>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-primary font-semibold w-30 text-right after:ml-0.5 after:text-red-500 after:content-['*']">Age Group: </span>
-                <Input className="min-w-40" placeholder="Enter the age group"/>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-primary font-semibold w-30 text-right after:ml-0.5 after:text-red-500 after:content-['*']">Level: </span>
-                <Input className="min-w-40" placeholder="Enter the level"/>
-              </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-primary font-semibold w-30 text-right">Specialty: </span>
-                <Input className="min-w-40" placeholder="Enter the specialty (optional)"/>
-              </div>
 
-              <div className="flex flex-row-reverse items-end justify-between">
-                <Button className="w-fit mt-5 py-2 px-4" fontSize="0.9em" onClick={()=>setEditingPayRate(false)}>Cancel</Button>
-                {
-                  selectedPayRate && selectedPayRate.level && selectedPayRate.age_group && selectedPayRate.job_title ?
-                  <Button className="w-fit mt-5 py-2 px-4" fontSize="0.9em" onClick={handleUpdatePayRate}>Save</Button> : ''
-                }
-              </div>
-            </div>
+          {activePage==='users' && (modalType === 'create'|| modalType==='update') && 
+               
+              <Form onSubmit={async (_e,f)=>processUser(f)} >
+                {modalLoading ? <div className="absolute rounded-lg top-0 left-0 w-full h-full z-10 bg-[#ffffffa2]"> <Spinner/> </div> : ''}
+                <div className="flex flex-col gap-3 max-h-90 overflow-y-auto pr-2">
+                  <h2 className="text-primary font-semibold">General account details</h2>
+                  <div className="bg-gray-50 p-4 rounded-md -mt-2 ease-in-out duration-400">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input label="First Name" name="first_name" type="text" placeholder="First name"
+                            value={(selectedUser&&modalType==='update'&&selectedUser.first_name) ? selectedUser.first_name : ''} required/>
+                      <Input label="Last Name"  name="last_name"  type="text" placeholder="Last name"
+                            value={(selectedUser&&modalType==='update'&&selectedUser.last_name) ? selectedUser.last_name : ''}  required/>
+                      <Input label="Email" name="email" type="email" placeholder="Email"
+                            value={(selectedUser&&modalType==='update'&&selectedUser.email) ? selectedUser.email : ''} required/>
+                      <Input label={modalType==='create'?"Temporary Password":"Password"} name="password" type="password" placeholder={modalType==='create'?"Temporary Password":"Password"} required
+                            value={(selectedUser&&modalType==='update') ? '676767' : ''} />
+                      
+                    </div>
+                  </div>
+
+                  {modalType === 'create' ?  
+                  <Checkbox checked={showOptionalFields} onChange={(e)=>setShowOptionalFields(e)} label='Show optional fields' className="text-sm"/> 
+                  : ''}
+
+                  
+
+                  {(showOptionalFields||modalType==='update') ? 
+                  <>
+                    <h2 className="text-primary font-semibold">Other optional and contact details</h2>
+                  <div className="bg-gray-50 p-4 rounded-md -mt-2 ease-in-out duration-400">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Input label="Preferred Name"  name="preferred_name" type="text" placeholder="Preferred name"
+                            value={(selectedUser&&modalType==='update'&&selectedUser.preferred_name) ? selectedUser.preferred_name : ''} />
+                      <Input label="Gender" name="gender" type="gender" placeholder="Type your gender here..."
+                            value={(selectedUser&&modalType==='update'&&selectedUser.gender) ? selectedUser.gender : ''}  validateMode="onSubmit"/>
+                        
+                      <Input label="Date of birth" name="date_of_birth" type="date" placeholder="DD-MM-YYYY"
+                            value={((selectedUser&&modalType==='update'&&selectedUser.date_of_birth) && selectedUser.date_of_birth ) ? formatToSqlDate(selectedUser.date_of_birth?.replaceAll('/','-')) : ''}/>
+
+                      <Input label="Mobile Phone"  name="phone" type="tel" placeholder="04xx xxx xxx"
+                            value={(selectedUser&&modalType==='update'&&selectedUser.phone) ? selectedUser.phone : ''}/>
+                      <Input label="Address" name="address" type="text" placeholder="Address"
+                            value={(selectedUser&&modalType==='update'&&selectedUser.address) ? selectedUser.address : ''} validateMode="onSubmit" />
+                      <Input label="Emergency Contact Person" name="emergency_person" type="text" placeholder="Emergency contact person"
+                            value={(selectedUser&&modalType==='update'&&selectedUser.emergency_person) ? selectedUser.emergency_person : ''} />
+                      <Input label="Emergency Contact Number" name="emergency_contact" type="text" placeholder="Emergency contact number"
+                      value={(selectedUser&&modalType==='update'&&selectedUser.emergency_contact) ? selectedUser.emergency_contact : ''} />
+                    </div>
+                  </div>
+                  </>
+                  : ''}
+
+                  {modalType === 'create' ?  
+                  <Checkbox checked={showAssignPositionField} onChange={(e)=>setShowAssignPositionField(e)} label='Assign a position' className="text-sm"/> 
+                  : ''}
+
+                  {(showAssignPositionField && modalType==='create') ? 
+                  <div className="bg-gray-50 p-4 rounded-md text-sm flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium w-24 text-right">Job title: </span>
+                      <Dropdown className="min-w-40" items={[...(new Set(payRates.map(data=>data.job_title)))]} initialSelectedItem={selectedPayRate ? selectedPayRate.job_title : undefined} onChange={(e)=>{selectedPayRate ? setSelectedPayRate({...selectedPayRate, job_title: e}) : setSelectedPayRate({id:'',job_title: e, age_group:'',level:0});
+                      if (selectedPayRate && e!==selectedPayRate.job_title) setSelectedPayRate({id:'',job_title: e, age_group:'',level:0});
+                      }} disableTyping placeholder="Select job title"/>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium w-24 text-right">Age Group: </span>
+                      <Dropdown className="min-w-40" items={(selectedPayRate && selectedPayRate.job_title) ? [...(new Set((payRates.filter(data=>data.job_title === selectedPayRate.job_title)).map(payRate=>payRate.age_group)))] : undefined} initialSelectedItem={selectedPayRate ? selectedPayRate.age_group : undefined} disableTyping disabled={!selectedPayRate || !selectedPayRate.job_title} syncCurrentWithInitialSelected={true} openWhenNoItemIsSelected={false} onChange={(e)=>selectedPayRate&&setSelectedPayRate({...selectedPayRate, level: 0, age_group: e})} placeholder="Select age group"/>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium w-24 text-right">Level: </span>
+                      <Dropdown className="min-w-40" items={(selectedPayRate && selectedPayRate.age_group && selectedPayRate.job_title) ? [...(new Set((payRates.filter(data=>data.job_title === selectedPayRate.job_title && data.age_group === selectedPayRate.age_group)).map(payRate=>payRate.level.toString())))] : undefined} initialSelectedItem={(selectedPayRate &&  selectedPayRate.level) ? selectedPayRate.level.toString() : undefined} syncCurrentWithInitialSelected={true} openWhenNoItemIsSelected={false} disableTyping disabled={!selectedPayRate || !selectedPayRate.age_group} onChange={(e)=>selectedPayRate&&setSelectedPayRate({...selectedPayRate, level: e, specialty: ''})} placeholder="Select level"/>
+                    </div>
+
+                    {(specialtyList?.length === 1 && specialtyList[0] === '-') || !specialtyList ? '' :
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium w-24 text-right">Specialty: </span>
+                      
+                      <Dropdown className="min-w-40" items={specialtyList} initialSelectedItem={(selectedPayRate && selectedPayRate.specialty) ? selectedPayRate.specialty : undefined} syncCurrentWithInitialSelected={true} openWhenNoItemIsSelected={false} disableTyping disabled={!selectedPayRate || !selectedPayRate.level} placeholder="Select optional specialty" onChange={(e)=>selectedPayRate&&setSelectedPayRate({...selectedPayRate, specialty:e})}/>
+                      
+                      
+                    </div>}
+                  </div>
+                  :''}
+
+                  <Checkbox checked={modalType==='update' ? selectedUser?.role ==='admin' : newUserAdmin} onChange={(e)=>(modalType==='update'&&selectedUser) ? setUserSelected({...selectedUser, role: e?'admin':'user'}) :setNewUserAdmin(e)} label='Set as administrator' className="text-sm"/> 
+
+                  
+                
+                </div>
+                
+                
+
+                <div className="flex items-stretch gap-3 justify-end">
+                  <Button type="outline" className="text-sm px-4 py-2" fontSize='0.9em' onClick={()=>setOpenModal(false)}>
+                    Cancel
+                  </Button>
+                  <Button htmlType="submit" className="text-sm px-6 py-2" fontSize='0.9em'>{modalType==='create'?'Add':'Save'}</Button>
+                </div>
+              </Form>
           }
 
+          {selectedUser && modalType === 'delete'  && activePage === 'users' &&
+            (modalLoading ? <div className="m-10 flex relative">&nbsp;<Spinner/></div> :<div>
+            <p className="mb-6">
+                Are you sure you want to delete <span className="font-medium text-secondary">{selectedUser.first_name} {selectedUser.last_name}</span> ({selectedUser.email})? <br/><br/>
 
-          {modalType === 'create' && activePage==='users' && 
-            <div className="text-md flex flex-col gap-2 mt-4">
-        
-              <div className="flex items-center gap-2">
-                <span className="text-primary font-semibold w-30 text-right after:ml-0.5 after:text-red-500 after:content-['*']">First Name: </span>
-                <Input className="min-w-40" placeholder="Enter the job job title"/>
+                This will convert all shifts assigned to this user to be unassigned. Are you sure you want to continue?
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button onClick={() => setOpenModal(false)}>No</Button>
+                <Button type='outline'
+                  onClick={() => processUser()}
+                >
+                  Yes
+                </Button>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-primary font-semibold w-30 text-right after:ml-0.5 after:text-red-500 after:content-['*']">Last Name: </span>
-                <Input className="min-w-40" placeholder="Enter the age group"/>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-primary font-semibold w-30 text-right after:ml-0.5 after:text-red-500 after:content-['*']">Email: </span>
-                <Input className="min-w-40" placeholder="Enter the level"/>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-primary font-semibold w-30 text-right">Temporary Password: </span>
-                <Input className="min-w-40" placeholder="Enter the specialty (optional)"/>
-              </div>
-
-              <div className="flex flex-row-reverse items-end justify-between">
-                <Button className="w-fit mt-5 py-2 px-4" fontSize="0.9em" onClick={()=>setEditingPayRate(false)}>Cancel</Button>
-                {
-                  selectedPayRate && selectedPayRate.level && selectedPayRate.age_group && selectedPayRate.job_title ?
-                  <Button className="w-fit mt-5 py-2 px-4" fontSize="0.9em" onClick={handleUpdatePayRate}>Save</Button> : ''
-                }
-              </div>
-            </div>
+            </div>)
           }
 
         </Modal>

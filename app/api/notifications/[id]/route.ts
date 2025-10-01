@@ -11,12 +11,12 @@ export async function GET(request : NextRequest, context: RouteContext<'/api/not
         
         if (admin) {
             notifications = await executeQuery(
-                `SELECT n.id as id, n.type as type, DATE_FORMAT(n.updated_at, '%Y-%m-%d') as date, s.id as shift_id, DATE_FORMAT(s.date, '%Y-%m-%d') as shift_date, DATEDIFF(s.date, NOW()) as days_left, CONCAT(u.first_name, ' ', u.last_name) AS assignee_name, s.start_time as start_time, s.end_time as end_time, l.name as location_name FROM notifications n INNER JOIN shifts s ON n.shift_id = s.id LEFT JOIN users u ON s.assignee_id = u.id LEFT JOIN locations l ON s.location_id = l.id WHERE n.is_read_by_admin = 0 AND n.type != "Assigned" AND n.type != "Leave Accepted" AND n.type != "Leave Declined" ORDER BY n.updated_at DESC LIMIT 10`,
+                `SELECT n.id as id, n.type as type, DATE_FORMAT(n.updated_at, '%d-%m-%Y') as date, s.id as shift_id, DATE_FORMAT(s.date, '%d-%m-%Y') as shift_date, DATEDIFF(s.date, NOW()) as days_left, CONCAT(u.first_name, ' ', u.last_name) AS assignee_name, s.start_time as start_time, s.end_time as end_time, l.name as location_name FROM notifications n INNER JOIN shifts s ON n.shift_id = s.id LEFT JOIN users u ON s.assignee_id = u.id LEFT JOIN locations l ON s.location_id = l.id WHERE n.is_read_by_admin = 0 AND n.type != "Assigned" AND n.type != "Leave Accepted" AND n.type != "Leave Declined" ORDER BY n.updated_at DESC LIMIT 10`,
             );
         }
         else {
             notifications = await executeQuery(
-                `SELECT n.id as id, n.type as type, DATE_FORMAT(n.updated_at, '%Y-%m-%d') as date, s.id as shift_id, DATE_FORMAT(s.date, '%Y-%m-%d') as shift_date, DATEDIFF(s.date, NOW()) as days_left, CONCAT(u.first_name, ' ', u.last_name) AS assignee_name, s.start_time as start_time, s.end_time as end_time, l.name as location_name FROM notifications n INNER JOIN shifts s ON n.shift_id = s.id LEFT JOIN users u ON s.assignee_id = u.id LEFT JOIN locations l ON s.location_id = l.id WHERE n.is_read_by_assignee = 0 AND n.type != "Request" AND n.type != "Accepted" AND n.type != "Declined" AND n.type != "Leave Request" AND u.id = ? ORDER BY n.updated_at DESC LIMIT 10`,
+                `SELECT n.id as id, n.type as type, DATE_FORMAT(n.updated_at, '%d-%m-%Y') as date, s.id as shift_id, DATE_FORMAT(s.date, '%d-%m-%Y') as shift_date, DATEDIFF(s.date, NOW()) as days_left, CONCAT(u.first_name, ' ', u.last_name) AS assignee_name, s.start_time as start_time, s.end_time as end_time, l.name as location_name FROM notifications n INNER JOIN shifts s ON n.shift_id = s.id LEFT JOIN users u ON s.assignee_id = u.id LEFT JOIN locations l ON s.location_id = l.id WHERE n.is_read_by_assignee = 0 AND n.type != "Request" AND n.type != "Accepted" AND n.type != "Declined" AND n.type != "Leave Request" AND u.id = ? ORDER BY n.updated_at DESC LIMIT 10`,
                 [p.id]
             );
         }

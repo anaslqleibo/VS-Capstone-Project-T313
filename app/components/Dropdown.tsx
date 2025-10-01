@@ -35,6 +35,7 @@ interface DropdownProps{
   disableTyping?:boolean;
   simplifyOnMobile?:boolean;
   replacementIcon?:ReactNode;
+  
 }
 
 type DayPickerProps = {
@@ -158,6 +159,7 @@ const Dropdown = ({
 
     }
   }, [props.initialSelectedItem])
+
 
   const isSimplified = simplifyOnMobile && !useIsOverMd();
   

@@ -1,24 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
 import { Shift } from "@/app/controllers/Shifts";
-import { isAdmin } from "../../users/[id]/is_admin";
+import { isAdmin } from "@/app/api/users/[id]/is_admin";
+import dayjs from "dayjs";
 
 
-export async function GET(request : NextRequest, context: RouteContext<'/api/shifts/[user_id]'>) {
+export async function GET(request : NextRequest, context: RouteContext<'/api/shifts/[user_id]/[month]'>) {
     try{
-        const p = await context.params;
-        const admin = await isAdmin(p.user_id);
+        const {user_id, month} = await context.params;
+        const admin = await isAdmin(user_id);
         let shifts;
         
+        const targetMonth = month;
+        const targetYear = 2025;
+
+        const startOfMonth = dayjs(`${targetYear}-${targetMonth}-01`).startOf("month");
+        const endOfMonth = dayjs(`${targetYear}-${targetMonth}-01`).endOf("month");
+
+        const start = startOfMonth.subtract(14, "day");
+        const end = endOfMonth.add(14, "day");
+
+        const format = (d: dayjs.Dayjs) => d.format("YYYY-MM-DD");
+
+
         if (admin) {
             shifts = await executeQuery(
-                `SELECT s.id as id, s.assignee_id as assignee_id, s.status as status, DATE_FORMAT(s.date, '%Y-%m-%d') as date, s.start_time as start_time, s.end_time as end_time, s.notes as notes, s.published as published, l.id as location_id, l.name as location_name, l.address as address, CONCAT(u.first_name," ", u.last_name) as assignee_name, s.pay_rate as pay_rate, s.total_payment as total_payment FROM shifts s INNER JOIN locations l ON s.location_id = l.id LEFT JOIN users u ON s.assignee_id = u.id WHERE s.type = "shift"`
+                `SELECT s.id as id, s.assignee_id as assignee_id, s.status as status, DATE_FORMAT(s.date, '%Y-%m-%d') as date, s.start_time as start_time, s.end_time as end_time, s.notes as notes, s.published as published, l.id as location_id, l.name as location_name, l.address as address, CONCAT(u.first_name," ", u.last_name) as assignee_name, s.pay_rate as pay_rate, s.total_payment as total_payment FROM shifts s INNER JOIN locations l ON s.location_id = l.id LEFT JOIN users u ON s.assignee_id = u.id WHERE s.type = "shift" AND s.date BETWEEN ? AND ?`, [format(start), format(end)]
             );
         }
         else {
             shifts = await executeQuery(
             `SELECT s.id as id, s.assignee_id as assignee_id, s.status as status, DATE_FORMAT(s.date, '%Y-%m-%d') as date, s.start_time as start_time, s.end_time as end_time, s.notes as notes, s.published as published, l.id as location_id,  l.name as location_name, l.address as address, CONCAT(u.first_name," ", u.last_name) as assignee_name FROM shifts s INNER JOIN locations l ON s.location_id = l.id INNER JOIN users u ON s.assignee_id = u.id WHERE s.status != "Unassigned" AND s.status != "Declined" AND u.id = ? AND s.type = "shift" AND s.published = 1`,
-            [p.user_id]
+            [user_id]
             );
         }
 

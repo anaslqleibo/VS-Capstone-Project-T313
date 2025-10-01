@@ -1,26 +1,25 @@
 "use client";
-import { useRef, useState, useEffect, SetStateAction, Dispatch } from "react";
+import { useRef, useState, useEffect, SetStateAction, Dispatch, forwardRef, useImperativeHandle } from "react";
 import Icon from '@/public/icons/Icons';
 import { validateInput } from './utils/validateInput';
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
+import { formatToSqlDate } from "./utils/formatDate";
 
 interface InputIconProps{
   type: string;
   placeholder?: string;
   size?: string;
   icon: string;
-  validate?: boolean;
-  showErrors?: boolean;
-  error?: string;
   className?: string;
   value?: string;
   onChange?: (e:any) => void;
   readOnly?:boolean;
+  htmlType?: 'text' | 'email' | 'tel' | 'number' | 'password' | 'date';
 }
 
-export function InputIcon({ type = "search", placeholder, size = "base", icon = "?", validate, showErrors, error, className, value, onChange, readOnly, ...props } : InputIconProps) {
+export function InputIcon({ type = "search", placeholder, size = "base", icon = "?", className, value, onChange, readOnly, htmlType, ...props } : InputIconProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const fontSize = "text-" + size;
@@ -32,9 +31,8 @@ export function InputIcon({ type = "search", placeholder, size = "base", icon = 
   const iconColor = filled ? "text-white" : "text-[color:var(--dark-grey)]";
 
   return (
-    <div className={`w-fit group ${className}`}>
-      <div onClick={() => inputRef.current?.focus()} className={`flex ${right ? "flex-row-reverse" : "flex-row"} items-stretch gap-3 ${filled && right ? "pl-2" : filled ? "pr-2" : "px-2"} rounded-md border-[1.5px] text-sm !outline-none focus:ring-1 ${readOnly ? 'border-primary' : 'border-dark-grey group-hover:border-hover'} transition-colors cursor-text overflow-hidden  has-focus:border-primary invalid:border-danger ${fontSize} ${className}`}>
-        <div className={`${filled ? `${readOnly ? "bg-primary" : "bg-dark-grey group-hover:bg-[color:var(--hover-color)] group-hover:text-[color:var(--hover-color)] "} px-2  group-has-focus:bg-[color:var(--primary-color)]` : "bg-transparent group-has-focus:text-[color:var(--primary-color)]"} flex items-center justify-center transition-colors ${iconColor} group-hover:${iconColorActive} `}>
+    <div onClick={() => inputRef.current?.focus()} className={`flex ${right ? "flex-row-reverse" : "flex-row"} items-stretch gap-3 ${filled && right ? "pl-2" : filled ? "pr-2" : "px-2"} rounded-md border-[1.5px] text-sm !outline-none focus:ring-1 ${readOnly ? 'border-primary' : 'border-dark-grey group-hover:border-hover'} transition-colors cursor-text overflow-hidden  has-focus:border-primary invalid:border-danger ${fontSize} ${className}`}>
+        <div className={`${filled ? `${readOnly ? "bg-primary" : "bg-dark-grey group-hover:bg-[color:var(--hover-color)]"} px-2  group-has-focus:bg-[color:var(--primary-color)]` : "bg-transparent group-has-focus:text-[color:var(--primary-color)]"} flex items-center justify-center transition-colors ${iconColor} group-hover:${iconColorActive} `}>
           <Icon
             id={type === "search" ? type : icon}
             className={`transition-colors`}
@@ -50,6 +48,7 @@ export function InputIcon({ type = "search", placeholder, size = "base", icon = 
           className={`p-0 outline-none w-full ${fontSize} my-2`}
           {...props}
           readOnly={readOnly}
+          type={htmlType?htmlType:'text'}
         />
         :
         <input
@@ -58,11 +57,11 @@ export function InputIcon({ type = "search", placeholder, size = "base", icon = 
           className={`p-0 outline-none w-full ${fontSize} my-2`}
           {...props}
           readOnly={readOnly}
+          type={htmlType?htmlType:'text'}
+
         />
         }
       </div>
-      {error && <p className="text-red-500 text-sm mt-1 text-left">{error}</p>}
-    </div>
   );
 }
 
@@ -70,7 +69,7 @@ interface InputProps {
   id ?: string;
   name ?: string;
   label ?: string;
-  type ?: string;
+  type?: string;
   required ?: boolean;
   value ?: string | number;
   onChange ?: (e : any) => void;
@@ -89,29 +88,40 @@ interface InputProps {
   readonly?: boolean;
   setValue ?: (e:any) => void;
   containerClassName?:string;
+  icon?:string;
 }
 
 
-function Input({
-  id, name, label, type = "text", required = false, value, onChange, placeholder, validate = true, minLength, maxLength, pattern, textarea,
-  customValidate, validateMode = "onSubmit", externalTrigger=0, className, ...props
-} : InputProps) {
+const Input = forwardRef(function Input(
+  {
+    id, name, label, type = "text", required = false, value, onChange, placeholder,
+    validate = true, minLength, maxLength, pattern, textarea, customValidate,
+    validateMode = "onSubmit", externalTrigger=0, className, ...props
+  }: InputProps,
+  ref
+) {
+ 
 
   const internalRef = useRef<HTMLInputElement>(null);
-  const [internalValue, setInternalValue] = useState("");
-  const controlled = typeof value !== "undefined" //&& typeof onChange === "function"; 
-  const isControlled = value !== undefined;
+  const [internalValue, setInternalValue] = useState(value??'');
+  const controlled = value !== undefined && (typeof onChange === "function" || typeof props.setValue === "function"); 
   const [isPasswordShown, setPasswordShown] = useState(false);
-
-  
   const isPassword = type === "password";
   const inputType = isPassword ? (isPasswordShown ? "text" : "password") : type;
+
+
+  useImperativeHandle(ref, () => ({
+    getValue: () => (controlled ? value : internalValue),
+    getName: () => name || id
+  }));
+
+
 
   const handleChange = (e : React.ChangeEvent<HTMLTextAreaElement> | React.ChangeEvent<HTMLInputElement> | string) => {
     if (typeof e !== "string"){
       const newValue = e.target.value;
 
-      if (!isControlled) {
+      if (!controlled) {
         setInternalValue(newValue);
       }
 
@@ -128,6 +138,9 @@ function Input({
     else{
       const event = {target: {name, value: e}}; 
       onChange?.(event);
+      if (!controlled) {
+        setInternalValue(formatToSqlDate(e));
+      }
     }
   };
 
@@ -159,7 +172,7 @@ function Input({
   }, [externalTrigger]);
 
   const TextArea = (<textarea id={id || name} name={name} required={required}
-        value={controlled ? value : internalValue}
+        value={controlled ? (value??'') : (internalValue??'')}
           onChange={(e) => {
             handleChange(e)
           }}
@@ -215,7 +228,7 @@ function Input({
                       :
     <>
     <input id={id || name} name={name} type={inputType} required={required} ref={internalRef}
-          value={controlled ? value : internalValue}
+          value={controlled ? (value??'') : (internalValue??'')}
           onChange={(e) => {
             handleChange(e)
           }}
@@ -248,6 +261,19 @@ function Input({
   
   );
 
+  const TextIcon = (
+    <InputIcon
+      type={type} 
+      placeholder={placeholder}
+      value={controlled ? (value?value.toString():'') : (internalValue?internalValue.toString():'')}
+      onChange={(e: any) => handleChange(e)}
+      readOnly={props.readonly}
+      className={className}
+      icon={props.icon?props.icon:'?'}
+    />
+  );
+
+
   
   return (
     <div className={`flex flex-col gap-1 group ${props.containerClassName?props.containerClassName:""} ${props.arrow ? "flex-row items-center":""}`}>
@@ -259,7 +285,7 @@ function Input({
 
       {props.arrow && <Icon id='arrow-left' className="hover:text-[color:var(--hover-color)]" onClick={()=>{props.setValue && typeof value === 'number' && props.setValue(value-1)}} />}
 
-      {textarea ? TextArea : Text}
+      {textarea ? TextArea : type?.includes("icon") ? TextIcon : Text}
 
       {props.arrow && <Icon id='arrow-right' className="hover:text-[color:var(--hover-color)]"
       onClick={()=>{props.setValue && typeof value === 'number' && props.setValue(value+1)}} />}
@@ -269,7 +295,8 @@ function Input({
       )}
     </div>
   );
-}
+});
 
 Input.displayName = "Input";
+InputIcon.displayName = "InputIcon";
 export default Input;

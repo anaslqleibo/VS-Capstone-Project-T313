@@ -29,7 +29,7 @@ export async function PATCH(request: NextRequest, context: RouteContext<'/api/us
   try {
     const { id } = await context.params;
     const body = await request.json();
-    const { first_name, last_name, email, phone, preferred_name, gender, date_of_birth, address, emergency_person, emergency_contact } = body;
+    const { first_name, last_name, email, phone, preferred_name, gender, date_of_birth, address, emergency_person, emergency_contact, pay_rate_id, role } = body;
 
     const updates = [];
     const vals = [];
@@ -38,7 +38,7 @@ export async function PATCH(request: NextRequest, context: RouteContext<'/api/us
     let query = '';
     
     
-    if (!first_name && !last_name && !email && !phone && !preferred_name && !gender && !date_of_birth && !address && !emergency_person && !emergency_contact){
+    if (!first_name && !last_name && !email && !phone && !preferred_name && !gender && !date_of_birth && !address && !emergency_person && !emergency_contact && !pay_rate_id && !role){
       return NextResponse.json(
       { error: "Please provide atleast one field to update!" },
       { status: 401 }
@@ -60,6 +60,10 @@ export async function PATCH(request: NextRequest, context: RouteContext<'/api/us
     if (phone) {
       updates.push('phone = ?');
       vals.push(phone);
+    }
+    if (role && (role === 'user' || role === 'admin')) {
+      updates.push('role = ?');
+      vals.push(role);
     }
     
     if (updates.length>0){
@@ -93,6 +97,10 @@ export async function PATCH(request: NextRequest, context: RouteContext<'/api/us
     if (emergency_contact) {
       updates.push('emergency_contact = ?');
       vals.push(emergency_contact);
+    }
+    if (pay_rate_id) {
+      updates.push('pay_rate_id = ?');
+      vals.push(pay_rate_id);
     }
   
     if (updates.length > 0){

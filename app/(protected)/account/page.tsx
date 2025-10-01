@@ -430,7 +430,7 @@ const AccountPage = () => {
                   </div>}
                 </div>
 
-                <div className="-mb-4 mt-4 flex justify-end">
+                <div className="flex justify-end">
                   <Button htmlType="submit" className="w-fit py-4 px-6" fontSize="0.8em">Update</Button>
                 </div>
                 

@@ -432,7 +432,7 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
 }
 
 function createButtons(type: string|null, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isAdmin?:boolean, formValues?: Record<string, any>, handleChange?: (field: string, value: any) => void, isEditing?: boolean, setEditing?:(e:boolean)=>void){
-    
+    // console.log(formValues);
     let buttons = null;
     if (type === ModalTypes.LeaveDetails){
         const handleDelete = () => {
@@ -797,7 +797,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                 };
             }
              
-            console.log(formValues);
+            // console.log(formValues);
 
             return {
                 ...prev,

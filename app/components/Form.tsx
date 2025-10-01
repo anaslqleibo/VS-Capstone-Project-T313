@@ -5,7 +5,7 @@ import React from "react";
 
 interface FormProps {
   children: React.ReactNode;
-  onSubmit: ((e : React.FormEvent<HTMLFormElement>) => string) | ((e : React.FormEvent<HTMLFormElement>) => Promise<void>);
+  onSubmit: ((e : React.FormEvent<HTMLFormElement>, f:any) => string) | ((e : React.FormEvent<HTMLFormElement>, f:any) => Promise<void>);
   scrollToError?: boolean;
   showToast?:Dispatch<SetStateAction<boolean>>;
   setToastMessage?:Dispatch<SetStateAction<string>>;
@@ -23,23 +23,23 @@ interface ValidatableProps {
 function Form({ children, onSubmit, scrollToError = true, className, showAllErrorOnToast=false, ...props } : FormProps) {
   const [errors, setErrors] = useState<{ [key: number]: string }>({});
   const [externalTrigger, setExternalTrigger] = useState(0);
-  const childArray : ReactNode[] = [];
+  const childArray : { element: ReactNode; ref: React.RefObject<any> }[] = [];
 
   // Validate one child, returns error string or null
-  const validateChild = (child : React.ReactNode) => {
+  const validateChild = (child : React.ReactNode, value: string) => {
     let errorMsg = "";
 
     if (isValidElement<ValidatableProps>(child)) {
       const props = child.props;
 
       if (typeof props.customValidate === "function") {
-        errorMsg+= props.customValidate(child.props.value ?? "") || "";
+        errorMsg+= props.customValidate(value ?? "") || "";
       }
 
       if (typeof props.validate === "function") {
-        errorMsg += props.validate(child.props.value ?? "") || "";
+        errorMsg += props.validate(value ?? "") || "";
       } else{
-        errorMsg += validateInput(props) || "";
+        errorMsg += validateInput({...props, value}) || "";
       }
 
       return errorMsg===""?null:errorMsg;
@@ -52,9 +52,17 @@ function Form({ children, onSubmit, scrollToError = true, className, showAllErro
 
     // Validate all children with validate function
     const newErrors:string[] = [];
-    childArray.forEach((child, index) => {
-      const error = validateChild(child);
-      if (error) newErrors.push(error);
+    const formDataCollector: Record<string, any> = {};
+
+    childArray.forEach(({ element, ref }, index) => {
+      if (ref?.current) {
+        const name = ref.current.getName?.();
+        const value = ref.current.getValue?.();
+        if (name) formDataCollector[name] = value;
+
+        const error = validateChild(element, value);
+        if (error) newErrors.push(error);
+      }
     });
 
     setErrors(newErrors);
@@ -65,7 +73,7 @@ function Form({ children, onSubmit, scrollToError = true, className, showAllErro
       setExternalTrigger(1); // set the trigger to remove any error message on each input
       // errorOnSubmit = onSubmit?.(e);
       
-      onSubmit?.(e);
+      onSubmit?.(e, formDataCollector);
 
     } else if (scrollToError) {
       // Scroll to first error input
@@ -107,10 +115,14 @@ function Form({ children, onSubmit, scrollToError = true, className, showAllErro
       // Detect input-like components
      
       if (isInputLike(el)) {
-        childArray.push(el);
+        const inputRef = React.createRef<any>();
+
+        childArray.push({ element: el, ref: inputRef });
+
         const error = errors[currentIndex] ?? null;
         return cloneElement(el, {
           key: currentIndex,
+          ref: inputRef,
           error,
           "data-error-index": error ? currentIndex : undefined,
           externalTrigger: externalTrigger

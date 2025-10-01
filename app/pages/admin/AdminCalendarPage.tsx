@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { AdminCalendarFilter, Calendar, CalendarFilter } from '@/app/components/Calendar';
+import { AdminCalendarFilter, Calendar, CalendarFilter, weeklyPayType } from '@/app/components/Calendar';
 import getStatusColor, { Status } from '@/app/components/utils/getStatusColor';
 import formatDate, { formatDateDayJS, sqlDateFormatToRegularFormat } from '@/app/components/utils/formatDate';
 import Dropdown from '@/app/components/Dropdown';
@@ -23,14 +23,14 @@ import { useAuth } from '@/app/contexts/AuthContext';
 import Spinner from '@/app/components/Spinner';
 import Modal from '@/app/components/Modal';
 import Toast from '@/app/components/Toast';
-import { FaClipboardList, FaFlag, FaFontAwesomeFlag, FaList, FaMap, FaMapPin, FaRegClipboard, FaUser } from 'react-icons/fa';
+import { FaClipboardList,  FaMapPin, FaUser } from 'react-icons/fa';
 
 
 export default function AdminCalendarPage() {
   const modalContainer = useRef<HTMLDivElement>(null);
   const account = useAuth().user;
 
-  const [activeFilter, setActiveFilter] = useState<AdminCalendarFilter>({status: ["All shifts"], location:["All locations"], month:dayjs(), employee: ["All employees"]});
+  const [activeFilter, setActiveFilter] = useState<AdminCalendarFilter>({status: ["All shifts"], location:["All locations"], month:dayjs(), employee: ["All employees"], show_unpublished: false});
   
   const setStatus = (status:string[]) => {
     setActiveFilter((prev) => ({
@@ -47,7 +47,11 @@ export default function AdminCalendarPage() {
       ...prev, month : month
     }));
   }
-
+  const setShowUnpublished = (shown: boolean) => {
+    setActiveFilter((prev) => ({
+      ...prev, show_unpublished : shown
+    }));
+  }
   const setEmployee = (employee:string[]) => {
     setActiveFilter((prev) => ({
       ...prev, employee : employee
@@ -58,16 +62,36 @@ export default function AdminCalendarPage() {
   const [locations, setLocations] = useState<string[]>([]);
   const [events, setEvents] = useState<EventInput[]|undefined>(undefined);
   const [allEvents, setAllEvents] = useState<EventInput[]|undefined>(undefined);
-
-  const [showUnpublished, setShowUnpublished] = useState(false);
+  const [loadingEvents, setLoadingEvents] = useState(false);
 
   useEffect(() => {
     async function fetchEvents() {
-      const shifts = await getEventInputShifts(account!.id);
+      const shifts = await getEventInputShifts(account!.id, (activeFilter.month.month()+1).toString());
       const leaves = await getEventInputLeaves(account!.id);
       setAllEvents([...shifts, ...leaves]);
-    }
+      if (activeFilter.show_unpublished) setEvents([...shifts, ...leaves]);
+      else setEvents([...shifts.filter(e=>e.extendedProps?.published===1), ...leaves]);
 
+    } 
+
+    (async ()=>{
+      setLoadingEvents(true);
+
+      try{
+        fetchEvents();
+      }
+      finally{
+        setLoadingEvents(false);
+      }
+    })();
+  }, [activeFilter.month]);
+
+  useEffect(()=>{
+    if (activeFilter.show_unpublished) setEvents(allEvents);
+    else setEvents(allEvents?.filter(e=>e.extendedProps?.published===1));
+  }, [activeFilter.show_unpublished])
+
+  useEffect(() => {
     async function getLocations() {
       const locations = await fetchLocations();
       setLocations(locations.map((location) => location.name));
@@ -79,24 +103,11 @@ export default function AdminCalendarPage() {
       setEmployees(employees.map((employee) => (employee.first_name + ' ' + employee.last_name)));
     }
     
-
-    fetchEvents();
     getLocations();
     getEmployees();
   }, []);
 
-  useEffect(() => {
-    if (showUnpublished) {
-      setEvents(allEvents);
-    } else {
-      if (allEvents)
-        setEvents(allEvents.filter((s) => s.extendedProps?.published || s.extendedProps?.type==='leave' || s.extendedProps?.type==='unavailability'));
-      else setEvents([]);
-    }
-  }, [showUnpublished, allEvents]);
 
-  const modal = useModal();
-  const {modalShown, setModalShown} = modal;
 
   const setYear = (year:number) => {
     setMonth(formatDateDayJS(year, activeFilter.month.month(), activeFilter.month.date()));
@@ -109,30 +120,9 @@ export default function AdminCalendarPage() {
   const monthSelectedDropdown = (activeFilter.month.year() === dayjs().year()) ? activeFilter.month.format('MMMM') : activeFilter.month.format('MMMM') + ", " + activeFilter.month.year(); 
 
   const isOverMd = useIsOverMd();
-  useEffect(()=>{
-    modal.setModalShown(false);
-
-  }, [isOverMd])
-
-  const updateEventData = (event: EventInput, mode="update") => {
-    if (allEvents && events){
-      if (mode==='create'){
-        setAllEvents([event, ...allEvents]);
-        setEvents([event, ...events]);
-      
-      }
-      else if (mode==='delete'){
-          setAllEvents(allEvents.filter(e => e.extendedProps?.id !== event.extendedProps?.id ));
-          setEvents(events.filter(e => e.extendedProps?.id !== event.extendedProps?.id ));
-      }
-      else{
-          setAllEvents(allEvents.map(e => e.extendedProps?.id === event.extendedProps?.id ? event : e));
-          setEvents(events.map(e => e.extendedProps?.id === event.extendedProps?.id ? event : e));
-      }
-    }
-  }
 
   const [openModal, setOpenModal] = useState(false);
+  const [modalType, setModalType] = useState<'publish'|'weekly-pay'>('publish');
   const [showToast, setToastShown] = useState(false);
   const [message, setMessage] = useState("");
   const [toastType, setToastType] = useState<"success"|"error">("success");
@@ -179,12 +169,15 @@ export default function AdminCalendarPage() {
     };
   }, [targetRef.current, events]);
 
+  const [weeklyPay, setWeeklyPay] = useState<weeklyPayType[]>([]);
+  const [weeklyPayIndex, setWeeklyPayIndex] = useState<number|null>(null);
+
   return (
       <Layout modalContainer={modalContainer}>
         <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
         <div className="relative flex-[1] h-full bg-[#f4f4f4]">
+           {loadingEvents ? <div className="absolute rounded-lg top-0 left-0 w-full h-full z-20"> <Spinner/> </div> : ''}
           <div className='p-4 h-full flex flex-col'>
-            
             {account && <h2 className="text-2xl mb-4">Welcome, <span className="text-primary font-semibold">{account.first_name+ ' ' + account.last_name}</span></h2>}
            
 
@@ -202,7 +195,7 @@ export default function AdminCalendarPage() {
                   </thead>
                   <tbody>
                     { 
-                      trHeights.length>0 && trHeights.map((height, index)=><tr key={index} style={{height: height+"px"}}><td className='border px-3 text-hover font-semibold border-light-grey'>$200</td></tr>)
+                      trHeights.length>0 && trHeights.map((height, index)=><tr key={index} style={{height: height+"px"}}><td className='border px-3 text-hover font-semibold border-light-grey cursor-pointer hover:border-primary hover:bg-hover hover:text-white duration-400 transition-colors' onClick={()=>{setWeeklyPayIndex(index); setModalType('weekly-pay'); setOpenModal(true); }}>${weeklyPay[index].total??0}</td></tr>)
                     }
                   </tbody>
                 </table>
@@ -212,13 +205,13 @@ export default function AdminCalendarPage() {
               <div className='flex flex-col flex-1'>
                 <div id='top-section' className='flex justify-between items-end'>
                 <div>
-                  <div className='flex justify-between items-center mb-2 md:mb-0'>
+                  <div className='flex justify-between items-center mb-2 md:mb-1'>
                     <div className="flex items-start flex-row flex-wrap gap-3 ">
                       <Dropdown items={['All employees', ...employees]} placeholder="Select employee" actAsFilter setFilter={setEmployee} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All employees' simplifyOnMobile replacementIcon={<FaUser/>}/>
 
                       <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All locations' simplifyOnMobile replacementIcon={<FaMapPin/>}/>
 
-                      <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-1)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} containerClassName='md:rounded-b-none min-w-fit' initialSelectedItem='All shifts' disableTyping simplifyOnMobile replacementIcon={<FaClipboardList/>}/>
+                      <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-2)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} containerClassName='md:rounded-b-none min-w-fit' initialSelectedItem='All shifts' disableTyping simplifyOnMobile replacementIcon={<FaClipboardList/>}/>
 
                       <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='hidden md:block' containerClassName='rounded-b-none' custom disableTyping customSelected={monthSelectedDropdown}>
                         <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
@@ -258,26 +251,42 @@ export default function AdminCalendarPage() {
 
                 {(allEvents && allEvents.find(e => e.extendedProps?.published===0)) ?
                 <div className='flex flex-col items-end gap-2'>
-                  <Checkbox checked={showUnpublished} onChange={setShowUnpublished} label='Show unpublished shifts' className='text-sm'/>
-                  {showUnpublished && <Button className='rounded-b-none rounded-t-md py-2 px-4' fontSize='0.8em' onClick={()=>setOpenModal(true)}>Publish all shifts</Button> }  
+                  <Checkbox checked={activeFilter.show_unpublished} onChange={(e)=>setShowUnpublished(e)} label='Show unpublished shifts' className='text-sm -mt-7'/>
+                  {activeFilter.show_unpublished && <Button className='rounded-b-none rounded-t-md py-2 px-4' fontSize='0.8em' onClick={()=>{setModalType('publish'); setOpenModal(true);}}>Publish all shifts</Button> }  
 
-                </div> : 'All shifts published'
+                </div> :<div className='h-full text-white font-semibold rounded-t-md rounded-b-none bg-light-grey px-4 flex items-center'>All shifts published for this month</div>
                 }
                 </div>
-                <Calendar key={isOverMd ? 'month' : 'list'}  events={events??[]} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'} bruh={setTrHeights}></Calendar>
+                <Calendar key={isOverMd ? 'month' : 'list'}  events={events??[]} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'} setColHeights={setTrHeights} setWeeklyPay={setWeeklyPay}></Calendar>
               </div>
             </div>
             
             { modalContainer.current &&       
-              <Modal details={{}} shown={openModal} setShown={setOpenModal} modalContainer={modalContainer.current} setParentOpen={setOpenModal} displayToast={displayToast} title="Publish all shifts confirmation">
-                <div className='mt-4'>You are about to publish multiple shifts. Would you like to publish only the shifts scheduled for this month ({activeFilter.month.format("MMMM YYYY")}) or all upcoming shifts?</div>
-                
+              <Modal details={{}} shown={openModal} setShown={setOpenModal} modalContainer={modalContainer.current} setParentOpen={setOpenModal} displayToast={displayToast} title={modalType==='publish'?"Publish all shifts confirmation":"Weekly pay details"}>
 
-                <div className='flex items-center justify-end gap-4 mt-6'> 
-                  <Button type="cta" fontSize="0.8em"  className="py-3 px-5" onClick={()=>publishShift((activeFilter.month.month()+1).toString(), activeFilter.month.year().toString())}>This Month Only</Button>
-                  <Button type="cta" htmlType='submit' fontSize="0.8em" className="py-3 px-5" onClick={()=>publishShift()}>All Shifts</Button>
+                {modalType === 'publish' ? 
+                <>
+                  <div className='mt-4'>You are about to publish multiple shifts. Would you like to publish only the shifts scheduled for this month ({activeFilter.month.format("MMMM YYYY")}) or all upcoming shifts?</div>
                   
-                </div>
+
+                  <div className='flex items-center justify-end gap-4 mt-6'> 
+                    <Button type="cta" fontSize="0.8em"  className="py-3 px-5" onClick={()=>publishShift((activeFilter.month.month()+1).toString(), activeFilter.month.year().toString())}>This Month Only</Button>
+                    <Button type="cta" htmlType='submit' fontSize="0.8em" className="py-3 px-5" onClick={()=>publishShift()}>All Shifts</Button>
+                    
+                  </div>
+                </> :''}
+
+                {modalType === 'weekly-pay' ? 
+                <>
+                  {(weeklyPayIndex!==null && weeklyPay.length>0 && weeklyPay[weeklyPayIndex]) ? 
+                  weeklyPay[weeklyPayIndex].assignees.map(a=>
+                  <div className='flex gap-2'>
+                    <span className='font-medium w-36 text-right mr-2'>{a.name?a.name:'Open shifts'}:</span> 
+                    <span className='text-primary'>{a.duration?(a.duration/60+'h'):'0h'}</span>- 
+                    <span className='text-hover'>${a.total_pay}</span></div>) : 'x'}
+                </>
+                : ""}
+                
               </Modal>
             }
             

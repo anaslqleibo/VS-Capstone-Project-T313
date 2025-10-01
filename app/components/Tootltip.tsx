@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useLayoutEffect } from "react";
+import React, { useState, useRef, useLayoutEffect, useEffect } from "react";
 import { createPortal } from "react-dom";
 
 interface TooltipProps {
@@ -7,6 +7,9 @@ interface TooltipProps {
   children: React.ReactNode;
   position?: "top" | "bottom" | "left" | "right";
   textWhenContentEmpty?:string;
+  timeoutHide?:number;
+  timeoutShow?:number;
+  inline?:boolean;
 }
 
 export default function Tooltip({
@@ -14,11 +17,14 @@ export default function Tooltip({
   children,
   position = "top",
   textWhenContentEmpty,
+  timeoutHide,
+  timeoutShow,
+  inline,
 }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const [tooltipSize, setTooltipSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
-  const targetRef = useRef<HTMLSpanElement>(null);
+  const targetRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
 
   // Measure tooltip size after it's rendered
@@ -29,6 +35,8 @@ export default function Tooltip({
     }
   }, [visible, content]);
 
+
+  const [timer, setTimer] = useState<any>(null);
   const showTooltip = () => {
     if (targetRef.current) {
       const rect = targetRef.current.getBoundingClientRect();
@@ -36,11 +44,23 @@ export default function Tooltip({
         top: rect.top + window.scrollY,
         left: rect.left + rect.width / 2 + window.scrollX,
       });
-      setVisible(true);
+
+      if (timeoutShow) 
+        setTimer(setTimeout(() => {
+        setVisible(true);
+      }, timeoutShow));
+      else setVisible(true);
     }
   };
 
-  const hideTooltip = () => setVisible(false);
+  useEffect(()=>{
+    if (visible && timeoutHide){
+      setTimer(setTimeout(() => {
+        hideTooltip();
+      }, timeoutHide));
+    }
+  }, [visible])
+  const hideTooltip = () => {clearTimeout(timer);setVisible(false)};
 
   // Calculate dynamic position
   const getTooltipStyle = () => {
@@ -82,9 +102,9 @@ export default function Tooltip({
 
   return (
     <>
-      <span ref={targetRef} onMouseEnter={showTooltip} onMouseLeave={hideTooltip} className="inline-block">
+      <div ref={targetRef} onMouseEnter={showTooltip} onMouseLeave={hideTooltip} className={inline?'inline':""}>
         {children}
-      </span>
+      </div>
 
       {createPortal(
         <div ref={tooltipRef} style={getTooltipStyle()}>

@@ -85,6 +85,31 @@ export async function fetchPayRates(pay_rate_id?: string) {
   return data as PayRate[];
 }
 
+export async function addNewUser(user:User, with_other_fields = false, assign_position = false) {
+  try{
+    const res = await fetch(`/api/users`,  {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({...user, with_other_fields, assign_position}),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      const message = data.error || `Request failed with status ${res.status}`;
+      return { success: false, err: message };
+    }
+    
+    return { success: true, new_id: data.new_id };
+  } catch (err) {
+    console.error("Failed to add new pay rate:", err);
+    const message =  err instanceof Error ? err.message : typeof err === "string" ? err : "";
+    console.log(message);
+    console.log(err);
+    return { success: false, err: message };
+  }
+}
+
 export async function updateUser(user: User) {
   try{
     const res = await fetch(`/api/users/${user.id}`,  {
@@ -96,6 +121,23 @@ export async function updateUser(user: User) {
     return res.ok;
   } catch (err) {
     console.error('Failed to update shift status:', err);
+    return false;
+  }
+}
+
+export async function deleteUser(email:string) {
+  try{
+    const res = await fetch(`/api/users/`,  {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({email}),
+    });
+
+    const { success } = await res.json();
+    return success;
+    
+  } catch (err) {
+    console.error("Failed to delete user:", err);
     return false;
   }
 }
@@ -115,7 +157,7 @@ export async function updatePassword(user_id: string, password: string) {
   }
 }
 
-export async function updatePayRate(user_id: string, job_title: string, age_group: string, level: string, specialty?:string) {
+export async function updateUsersPayRate(user_id: string, job_title: string, age_group: string, level: string, specialty?:string) {
   try{
     const res = await fetch(`/api/users/${user_id}/update_pay_rate`,  {
       method: 'PATCH',
@@ -129,6 +171,56 @@ export async function updatePayRate(user_id: string, job_title: string, age_grou
     
   } catch (err) {
     console.error("Failed to update user's pay rate:", err);
+    return false;
+  }
+}
+
+export async function updatePayRate(pay_rate:PayRate) {
+  try{
+    const res = await fetch(`/api/payrates/${pay_rate.id}`,  {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pay_rate),
+    });
+
+    const { success } = await res.json();
+    return success;
+  } catch (err) {
+    console.error("Failed to update pay rate:", err);
+    return false;
+  }
+}
+
+export async function insertPayRate(pay_rate:PayRate) {
+  try{
+    const res = await fetch(`/api/payrates`,  {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pay_rate),
+    });
+
+    const { success, new_id } = await res.json();
+    if(success)
+      return new_id;
+    else return false;
+    
+  } catch (err) {
+    console.error("Failed to add new pay rate:", err);
+    return false;
+  }
+}
+
+export async function deletePayRate(pay_rate_id:string) {
+  try{
+    const res = await fetch(`/api/payrates/`+pay_rate_id,  {
+      method: 'DELETE',
+    });
+
+    const { success } = await res.json();
+    return success;
+    
+  } catch (err) {
+    console.error("Failed to delete pay rate:", err);
     return false;
   }
 }

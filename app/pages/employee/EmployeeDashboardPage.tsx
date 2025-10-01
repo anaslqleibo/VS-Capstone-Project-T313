@@ -82,19 +82,16 @@ export default function EmployeeDashboardPage() {
   }, [showUnavailability, user]);
 
 
-
   const [openModal, setOpenModal] = useState(false);
 
   const setYear = (year:number) => {
     setMonth(formatDateDayJS(year, activeFilter.month.month(), activeFilter.month.date()));
   }
-
   const handleMonthChange = (e : PickerValidDate) => {
     setMonth(e);
   }
 
   const monthSelectedDropdown = (activeFilter.month.year() === dayjs().year()) ? activeFilter.month.format('MMMM') : activeFilter.month.format('MMMM') + ", " + activeFilter.month.year(); 
-
   const isOverMd = useIsOverMd();
 
   const [showToast, setToastShown] = useState(false);
@@ -122,11 +119,10 @@ export default function EmployeeDashboardPage() {
                 
                   <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={7}  containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All locations' simplifyOnMobile replacementIcon={<FaMapPin/>} />
 
-                  <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-1)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All shifts' simplifyOnMobile replacementIcon={<FaClipboardList/>} disableTyping/>
+                  <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-2)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All shifts' simplifyOnMobile replacementIcon={<FaClipboardList/>} disableTyping/>
 
-                  <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} className=' hidden md:block' containerClassName='rounded-b-none' custom customSelected={monthSelectedDropdown} disableTyping>
+                  <Dropdown id="dropdown-month" placeholder="Select month" actAsFilter setMonth={activeFilter.month} className=' hidden md:block' containerClassName='rounded-b-none' custom customSelected={monthSelectedDropdown} disableTyping>
                     <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
-
                     
                     <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)} sx={{
                       gap: "16px 24px",
