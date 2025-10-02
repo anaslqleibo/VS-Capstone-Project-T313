@@ -46,13 +46,13 @@ interface CalendarProps{
     // onClicks ?: ((...e:any) => void)[];
 }
 
-export type weeklyPayType = {total: number, assignees: {name?: string, total_pay?:number, duration?:number}[]};
+export type weeklyPayType = {date_start: string, date_end: string, total: number, assignees: {name?: string, total_pay?:number, duration?:number}[]};
 
 function constructEventsArray(events: EventInput[], role: Role) {
   const newEvents: EventInput[] = [];
   
   events.forEach(e => {
-    const {id, status, original_status, type, assignee_id, assignee_name, date, start_time, end_time, time, location_id, location_name, address, notes, repeat, published, total_payment} = e.extendedProps || {};
+    const {id, status, original_status, type, assignee_id, assignee_name, date, start_time, end_time, time, location_id, location_name, address, notes, repeat, published, pay_rate, total_payment} = e.extendedProps || {};
 
     const shiftExtProps : ShiftExtendedProps = {
         id: id,
@@ -70,6 +70,7 @@ function constructEventsArray(events: EventInput[], role: Role) {
         address,
         notes,
         published,
+        pay_rate,
         total_payment,
         day:repeat,
         recurrence:repeat
@@ -251,7 +252,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
             });
 
 
-        const weeks = [];
+        const weeks : weeklyPayType[] = [];
         let lastShiftIndex=0;
 
         for (let i=0; i<(diff/7); i++){
@@ -262,7 +263,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
 
             // console.log('start range:', rangeStart.format('YYYY-MM-DD'));
             // console.log('end range:', rangeEnd.format('YYYY-MM-DD'));
-            const weeklyPayDetails:weeklyPayType = {total: 0, assignees: []};
+            const weeklyPayDetails:weeklyPayType = {date_start: rangeStart.format('DD MMM'), date_end: rangeEnd.subtract(1,'day').format('DD MMM YYYY'), total: 0, assignees: []};
 
             for (let j=lastShiftIndex; j < shifts.length; j++){
                 // console.log(shifts[j].start);
@@ -293,7 +294,11 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
             weeks.push(weeklyPayDetails);
         }
 
-        console.log(weeks);
+        weeks.forEach((w, idx)=>{
+            const openShift = w.assignees.find(a=>!a.name);
+            if (openShift) weeks[idx].assignees = [openShift, ...w.assignees.filter(a=>a.name)];
+        })
+
         setWeeklyPay&&setWeeklyPay(weeks);
 
     },[isAdmin, events, visibleRange, showSelectedFilter]);
@@ -403,7 +408,8 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
         }}
         />
 
-        {activeModal.isOpen && modalContainer.current && createModal(getModalTypesByStatus(activeModal.status, activeModal.details?.type as EventTypes),true,modalContainer.current,activeModal.details, setOpen, updateEvent, activeModal.event, displayToast)}
+        {activeModal.isOpen && modalContainer.current && createModal(getModalTypesByStatus(activeModal.status, activeModal.details?.type as EventTypes),true,modalContainer.current,activeModal.details, setOpen, updateEvent, activeModal.event, displayToast, undefined, '')}
+        {/* add these classes for smaller screens max-h-84 pr-4     */}
 
     </>
     );

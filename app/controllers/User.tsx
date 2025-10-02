@@ -1,3 +1,6 @@
+import dayjs from "dayjs";
+import { headers } from "next/headers";
+
 // Temporary utility class to detect account access, can be replaced later
 export type Role = "admin" | "user";
 export type User = {
@@ -73,6 +76,23 @@ export async function fetchAllUsers() {
   return data;
 }
 
+export async function fetchUsersPayRate(user_id: string, date:dayjs.Dayjs) {
+  const isWeekday = date.day()>0 && date.day()<6;
+  const isSaturday = date.day()===6;
+  const isSunday = date.day()===0;
+
+  
+  const res =  await fetch('/api/payrates/user/'+user_id);
+
+  if (!res.ok) {
+    throw new Error('This user has not been assigned to a job position!');
+  }
+  const data = await res.json();
+
+  const payRate = (data[0] as {weekday:number, saturday: number, sunday:number, public_holiday: number});
+  const rate = (isWeekday?payRate.weekday:isSaturday?payRate.saturday:isSunday?payRate.sunday:payRate.public_holiday);
+  return rate;
+}
 
 export async function fetchPayRates(pay_rate_id?: string) {
 

@@ -195,7 +195,10 @@ export default function AdminCalendarPage() {
                   </thead>
                   <tbody>
                     { 
-                      trHeights.length>0 && trHeights.map((height, index)=><tr key={index} style={{height: height+"px"}}><td className='border px-3 text-hover font-semibold border-light-grey cursor-pointer hover:border-primary hover:bg-hover hover:text-white duration-400 transition-colors' onClick={()=>{setWeeklyPayIndex(index); setModalType('weekly-pay'); setOpenModal(true); }}>${weeklyPay[index].total??0}</td></tr>)
+                      trHeights.length>0 && trHeights.map((height, index)=>
+                      <tr key={index} style={{height: height+"px"}}>
+                        <td className='max-w-24 border px-3 text-hover font-semibold border-light-grey cursor-pointer hover:border-primary hover:bg-hover text-center hover:text-white duration-400 transition-colors' onClick={()=>{setWeeklyPayIndex(index); setModalType('weekly-pay'); setOpenModal(true); }}>${Math.round(weeklyPay[index].total*100)/100}</td>
+                        </tr>)
                     }
                   </tbody>
                 </table>
@@ -254,7 +257,7 @@ export default function AdminCalendarPage() {
                   <Checkbox checked={activeFilter.show_unpublished} onChange={(e)=>setShowUnpublished(e)} label='Show unpublished shifts' className='text-sm -mt-7'/>
                   {activeFilter.show_unpublished && <Button className='rounded-b-none rounded-t-md py-2 px-4' fontSize='0.8em' onClick={()=>{setModalType('publish'); setOpenModal(true);}}>Publish all shifts</Button> }  
 
-                </div> :<div className='h-full text-white font-semibold rounded-t-md rounded-b-none bg-light-grey px-4 flex items-center'>All shifts published for this month</div>
+                </div> :<div className='h-full text-white text-sm py-2 font-semibold rounded-t-md rounded-b-none bg-light-grey px-4 flex items-center'>All shifts published for this month</div>
                 }
                 </div>
                 <Calendar key={isOverMd ? 'month' : 'list'}  events={events??[]} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'} setColHeights={setTrHeights} setWeeklyPay={setWeeklyPay}></Calendar>
@@ -279,11 +282,21 @@ export default function AdminCalendarPage() {
                 {modalType === 'weekly-pay' ? 
                 <>
                   {(weeklyPayIndex!==null && weeklyPay.length>0 && weeklyPay[weeklyPayIndex]) ? 
-                  weeklyPay[weeklyPayIndex].assignees.map(a=>
-                  <div className='flex gap-2'>
-                    <span className='font-medium w-36 text-right mr-2'>{a.name?a.name:'Open shifts'}:</span> 
-                    <span className='text-primary'>{a.duration?(a.duration/60+'h'):'0h'}</span>- 
-                    <span className='text-hover'>${a.total_pay}</span></div>) : 'x'}
+
+                  <div>
+                    <div className='font-medium text-secondary mb-4'>
+                      <div className={``}>Date: {weeklyPay[weeklyPayIndex].date_start + ' - ' + weeklyPay[weeklyPayIndex].date_end}</div> 
+                      <div className={``}>Total: ${weeklyPay[weeklyPayIndex].total}</div> 
+                    </div>
+                    
+                  {weeklyPay[weeklyPayIndex].assignees.length>0 ? weeklyPay[weeklyPayIndex].assignees.map((a,idx)=>
+                    <div key={idx} className='flex gap-2'>
+                      <span className={`text-right mr-2 w-48 ${!a.name?'text-gray-600':''}`}>{a.name?a.name:'Open/unassigned shifts'}:</span> 
+                      <span className={`${!a.name?'text-gray-600':'text-primary font-medium'} `}>{a.duration?(Math.floor(a.duration/60)+'h'+ ((a.duration%60>0)?(' '+a.duration%60+'m'):'')):'0h'}</span>- 
+                      <span className={`${!a.name?'text-gray-600':'text-hover font-medium'} `}>${a.total_pay}</span></div>) : 'There are no shifts this week'}
+                  </div>
+
+                  : ''}
                 </>
                 : ""}
                 

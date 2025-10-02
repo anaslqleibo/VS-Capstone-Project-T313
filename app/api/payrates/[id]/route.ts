@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
-import RouteContext from "next";
-
 
 export async function GET(request: NextRequest, context: RouteContext<'/api/payrates/[id]'>) {
   try {

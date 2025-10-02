@@ -61,6 +61,7 @@ export default function Toast({title, type, message, timeout, shown, setShown, .
             setShown(false);
             }, timeout ?? 5000);
         }
+        else if (timeRef.current) clearTimeout(timeRef.current);
 
             return () => {
                 if (timeRef.current) {
@@ -70,7 +71,7 @@ export default function Toast({title, type, message, timeout, shown, setShown, .
         }, [shown]);
     }
     return (
-        <div className={`bg-white border-2 rounded-xl flex-col mx-auto absolute z-200 top-6 left-1/2 -translate-x-1/2 p-4 min-w-[70%] md:min-w-[50%] md:w-fit w-64 shadow-[0_4px_15px_rgba(0,0,0,0.1)] transition-[transform, opacity] duration-500 ease-out ${shown ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0 pointer-events-none"}`} style={ {borderColor: activeColor, color: activeColor} }>
+        <div className={`bg-white border-2 rounded-xl flex-col mx-auto absolute z-200 top-6 left-1/2 -translate-x-1/2 p-4 min-w-[70%] md:min-w-[50%] md:w-fit w-64 shadow-[0_4px_15px_rgba(0,0,0,0.1)] transition-[transform, opacity] duration-500 ease-out ${shown ? "translate-y-0 opacity-100" : "-translate-y-10 opacity-0 pointer-events-none"}`} style={ {borderColor: activeColor, color: activeColor} } onClick={()=>setShown(false)}>
 
 
             <div className="flex justify-between mb-2">

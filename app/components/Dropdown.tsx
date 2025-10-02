@@ -259,8 +259,8 @@ export function LocationDropdownWithAddress({detail, setUpdatedDetail, onSelect,
     const loc: Location =
       locations.find((l) => l.name === name) || {
         id: "-1",
-        name: "Not found",
-        address: "Not found",
+        name: "Loading...",
+        address: "Loading...",
       };
 
     setSelectedLocation(loc);
@@ -277,6 +277,7 @@ export function LocationDropdownWithAddress({detail, setUpdatedDetail, onSelect,
         readonly
       /> : '') : <Input
         value={selectedLocation?.address ?? ""}
+        onChange={()=>{}} // <=== required so that Input component becomes controlled
         className="py-2 px-3 border-1"
         containerClassName="w-full"
         readonly

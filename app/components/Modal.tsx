@@ -25,6 +25,7 @@ import Radio from "@mui/material/Radio";
 import { createLeave, deleteLeave, Unavailability, updateLeaveStatus } from "../controllers/Leave";
 import Checkbox from "./Checkbox";
 import Spinner from "./Spinner";
+import { fetchUsersPayRate } from "../controllers/User";
 
 
 // TODO: Still missing some code, please go through everything and finish what's still missing
@@ -130,6 +131,7 @@ interface ModalProps{
     noOverlay?:boolean;
     hasItems?:(e:boolean)=>void;
     onClose?:()=>void;
+    maxContentHeight?:string;
 }
 
 function createAdminComponent(status: Status, employee?:string, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isEditing=false, setEditing?:(e:boolean)=>void, formValues?: Record<string, any>, handleChange?: (field: string, value: any) => void, initialDetails?:ShiftExtendedProps, setLoading?:(e:boolean)=>void){
@@ -205,7 +207,7 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
             {isEditing ? 
              <>
                 <Dropdown items={[ ...Object.values(Status).filter(((status)=>status!=='Leave'&&status!=='Unavailable'&&status!=='Unpublished'))]} placeholder="Select shift" maxVisibleItems={6} className='min-w-32' initialSelectedItem={formValues?.original_status ?? 'Select a status'} onChange={(e)=>handleChange!('status', e)} colorBasedOnValue syncCurrentWithInitialSelected={true}/>
-                {initialDetails?.published ? <Checkbox label="Set unpublished" checked={!castedFormValues.published} onChange={(e)=>{handleChange!('published', e ? 0 : 1)}} className="text-xs md:text-sm"/> : ''}
+                {initialDetails?.published ? <Checkbox label="Published" checked={castedFormValues.published?castedFormValues.published:false} onChange={(e)=>{handleChange!('published', e ? 1 : 0)}} className="text-xs md:text-sm"/> : ''}
                 
              </>
             : 
@@ -214,7 +216,7 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
         
         
         <div className="flex gap-3 text-[color:var(--primary-color)] [&>*]:hover:text-[color:var(--hover-color)]">
-            {isEditing ? <div id="btnSave" onClick={()=>{handleSave()}}><FaSave /></div> :
+            {isEditing ? <div id="btnSave" onClick={()=>{handleSave()}} className="hidden md:block"><FaSave /></div> :
             <>
             <FaRegBell/>
             <FaEdit onClick={()=>{
@@ -252,7 +254,7 @@ function createDetailEditor(label: string, field: keyof ShiftExtendedProps, deta
     if (castedFormValues === -1) return;
 
     if (type === "textarea")
-        return (<><p className="text-sm font-semibold text-gray-600 mt-1 mb-1">{label}</p>
+        return (<><p className="text-sm font-semibold text-gray-600 mt-3 mb-1">{label}</p>
     <textarea readOnly={!isEditing} className="text-gray-500 font-normal text-sm border-2 border-gray-500 bg-gray-100 rounded-md min-w-full p-2 min-h-[72px] resize-none focus:outline-0" value={castedFormValues.notes??''} onChange={(e)=>handleChange!("notes", e.target.value)}></textarea></>);
     else{
         if (isEditing){
@@ -281,6 +283,19 @@ function createDetailEditor(label: string, field: keyof ShiftExtendedProps, deta
                     <LocationDropdownWithAddress detail={detail} setUpdatedDetail={handleChange} />
                 </div>
                 
+                );
+            }
+            else if (label.toLowerCase().includes('pay')){
+                return (
+                    <div className="flex items-center gap-2 text-sm mt-3 w-full">
+                        <div className="font-semibold text-gray-600">
+                            {label}
+                        </div>
+                        
+                        <div className="font-medium text-hover">
+                            {detail}
+                        </div>
+                    </div>
                 );
             }
             else{
@@ -424,7 +439,9 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
             {createDetailEditor("Time: ", 'time' , castedDetails.time, "", isEditing, formValues, handleChange, displayToast)}
             {createDetailEditor("Location: ", 'location_name' ,castedDetails.location_name, "", isEditing, formValues, handleChange, displayToast)}
             {createDetailEditor("Address: ", 'address' ,castedDetails.address, "", isEditing, formValues, handleChange, displayToast)}
-            {isAdmin && castedDetails.total_payment && createDetailEditor("Pay: ", 'total_payment' ,'$'+castedDetails.total_payment.toFixed(2), "", isEditing, formValues, handleChange, displayToast)}
+            
+            {isAdmin && castedDetails.pay_rate && createDetailEditor("Active pay rate: ", 'pay_rate' ,'$'+castedDetails.pay_rate.toFixed(2)+'/h', "", isEditing, formValues, handleChange, displayToast)}
+            {isAdmin && castedDetails.total_payment && createDetailEditor("Total Pay: ", 'total_payment' ,'$'+castedDetails.total_payment.toFixed(2), "", isEditing, formValues, handleChange, displayToast)}
             {createDetailEditor("Notes: ", 'notes',castedDetails.notes, "textarea", isEditing, formValues, handleChange, displayToast)}
             </>
         );
@@ -756,11 +773,11 @@ export function createModalNoOverlay(type:ModalTypes|null, modalContainer: HTMLD
     return (<Modal noOverlay={true} type={type} details={details} modalContainer={modalContainer} displayToast={displayToast} setShown={setShown}/>);
 }
 
-export function createModal(type:ModalTypes|null, startOpen: boolean, modalContainer: HTMLDivElement, details?:Record<string, any>, setParentOpen?: (e:boolean)=>void, setEvents?:setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, hasItems?:(e:boolean)=>void){
-    return (<Modal type={type} details={details} startOpen={startOpen} modalContainer={modalContainer} setParentOpen={setParentOpen} setEvents={setEvents} event={event} displayToast={displayToast} hasItems={hasItems}/>);
+export function createModal(type:ModalTypes|null, startOpen: boolean, modalContainer: HTMLDivElement, details?:Record<string, any>, setParentOpen?: (e:boolean)=>void, setEvents?:setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, hasItems?:(e:boolean)=>void, maxContentHeight?:string){
+    return (<Modal type={type} details={details} startOpen={startOpen} modalContainer={modalContainer} setParentOpen={setParentOpen} setEvents={setEvents} event={event} displayToast={displayToast} hasItems={hasItems} maxContentHeight={maxContentHeight}/>);
 }
 
-export default function Modal({type, details, startOpen, title, modalContainer, setParentOpen, ...props} : ModalProps){
+export default function Modal({type, details, startOpen, title, modalContainer, setParentOpen, maxContentHeight, ...props} : ModalProps){
     const [shown, setShown] = useState(startOpen ?? false);
     const [isEditing, setIsEditing] = useState(false);
     const [formValues, setFormValues] = useState<ShiftExtendedProps|LeaveExtendedProps|undefined>(details ? ('status' in details ? details as ShiftExtendedProps : details as LeaveExtendedProps) : undefined);
@@ -771,8 +788,15 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
     const handleChange = (field: string, value: any) => {
         setFormValues((prev : any) => {
-            if (value && formValues && "start_time" in formValues && (field === "start_time" || field === "end_time") && !(!formValues?.start_time || !formValues?.end_time)){
+            if (value && formValues && "start_time" in formValues && (field === "start_time" || field === "end_time" || field === 'pay_rate') && !(!formValues?.start_time || !formValues?.end_time)){
+                if (formValues.start_time && formValues.end_time && 'pay_rate' in formValues && formValues.pay_rate){
+                
+                    const newPayRate = field === 'pay_rate' ? value : formValues.pay_rate;
+                    handleChange('total_payment', Math.round((newPayRate * dayjs(formValues.end_time.substring(0,5), 'HH:mm').diff(dayjs(formValues.start_time.substring(0,5), "HH:mm"), 'minute')/60)*100)/100);
+                }
+            }
 
+            if (value && formValues && "start_time" in formValues && (field === "start_time" || field === "end_time") && !(!formValues?.start_time || !formValues?.end_time)){
                 return {
                     ...prev,
                     [field]: value,
@@ -833,7 +857,28 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
         }
 
     }, [user])
-    
+
+    useEffect(()=>{
+          if (formValues?.assignee_name && formValues.date){
+            const date = dayjs(formValues.date);
+            (async () => {
+                try{
+                    const payRate = await fetchUsersPayRate(formValues.assignee_id, dayjs(formValues.date));
+                    handleChange('pay_rate', Math.round(payRate * 100) / 100);
+                }
+                catch (e){
+                    console.log(e);
+                    props.displayToast && props.displayToast(e+'', 'error');
+                    handleChange('assignee_name','');
+                }
+                finally{
+                    // add loading 
+                }
+            })();
+            
+            
+        }
+    }, [formValues?.assignee_name, formValues?.date])
     const [loading, setLoading] = useState(false);
 
     const ModalJSX = (<div className={`${props.noOverlay ? ' ': 'fixed -translate-y-1/2 top-1/2'} md:translate-none md:relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto w-80 sm:w-full sm:max-w-lg`} ref={containerRef}>
@@ -858,12 +903,12 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                 
             </div>
             
+            <div className={`overflow-y-auto ${isEditing ? maxContentHeight : ''}`}>
+                {type && details && type !== ModalTypes.Notifications && createDetails(type, details, admin, props.setEvents, props.event, props.displayToast, closeModal, isEditing, setEditing, formValues, handleChange, "location_id" in details ? details as ShiftExtendedProps : undefined, setLoading)}
+                    
 
-            {type && details && type !== ModalTypes.Notifications && createDetails(type, details, admin, props.setEvents, props.event, props.displayToast, closeModal, isEditing, setEditing, formValues, handleChange, "location_id" in details ? details as ShiftExtendedProps : undefined, setLoading)}
-                
-
-            {props.children}
-
+                {props.children}
+            </div>
             
         </div>
     </div>

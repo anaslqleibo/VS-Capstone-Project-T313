@@ -34,7 +34,7 @@ export async function GET(request : NextRequest, context: RouteContext<'/api/shi
 
 export async function PUT(req: NextRequest, _context: any) {
   try {
-    const { id, assignee_id, status, date, start_time, end_time, notes, location_id, published} : Shift = await req.json();
+    const { id, assignee_id, status, date, start_time, end_time, notes, location_id, pay_rate, total_payment, published} : Shift = await req.json();
 
     const updates = [];
     const vals = [];
@@ -78,6 +78,14 @@ export async function PUT(req: NextRequest, _context: any) {
     if (published !== undefined) {
       updates.push('published = ?');
       vals.push(published);
+    }
+    if (pay_rate !== undefined) {
+      updates.push('pay_rate = ?');
+      vals.push(pay_rate);
+    }
+    if (total_payment !== undefined) {
+      updates.push('total_payment = ?');
+      vals.push(total_payment);
     }
     vals.push(id);
 
