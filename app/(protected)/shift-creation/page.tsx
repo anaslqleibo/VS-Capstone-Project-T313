@@ -43,7 +43,6 @@ export default function ShiftCreationPage() {
   const [isPublished, setIsPublished] = useState<boolean>(false);
 
   const handleMarkAcceptedChanged = (e:boolean) => {
-    console.log(assignee);
     if (assignee?.id){
 
       if (openShift){
@@ -121,9 +120,10 @@ export default function ShiftCreationPage() {
       }
     }
 
+    const shiftStatus = openShift ? "Open" as ShiftStatus : (assignee?.id ? (markAccepted ? "Accepted" as ShiftStatus :  "Pending" as ShiftStatus) : "Unassigned" as ShiftStatus);
     const shift : Shift= {
       assignee_id: assignee?.id.toString() ?? '',
-      status: openShift ? "Open" as ShiftStatus : (assignee?.id ? (markAccepted ? "Accepted" as ShiftStatus :  "Pending" as ShiftStatus) : "Unassigned" as ShiftStatus),  
+      status: shiftStatus, 
       date: dayjs(date).format("YYYY-MM-DD"),
       start_time: dayjs(start).format("HH:mm:ss"),
       end_time: dayjs(end).format("HH:mm:ss"),
@@ -132,8 +132,8 @@ export default function ShiftCreationPage() {
       location_name: location.name,
       address: location.address,
       published: isPublished,
-      pay_rate: payRateShown,
-      total_payment: Math.round((payRateShown * end.diff(start, 'minute')/60)*100)/100,
+      pay_rate: (openShift || shiftStatus === Status.Unassigned) ? 0 : payRateShown,
+      total_payment: (openShift || shiftStatus === Status.Unassigned) ? 0 :Math.round((payRateShown * end.diff(start, 'minute')/60)*100)/100,
     };
 
     let proceed = true;
@@ -208,7 +208,7 @@ export default function ShiftCreationPage() {
       if (assignee && date){
         (async () => {
           try{
-            if (!assignee.pay_rate_id){
+            if (!assignee.pay_rate_id || openShift){
               setPayRateShown(0);
               return;
             }
@@ -227,6 +227,7 @@ export default function ShiftCreationPage() {
           }
         })();
         
+        if(openShift)return;
       }
 
       if (assignee && date && start && end){
@@ -252,7 +253,7 @@ export default function ShiftCreationPage() {
       }
     }
 
-    if (!openShift) getAvailability();
+    getAvailability();
   }, [assignee, date, start, end, openShift])
 
   useEffect(()=>{
@@ -342,16 +343,16 @@ export default function ShiftCreationPage() {
                   
                     <>
                     <div className="flex flex-col">
-                    <div className="font-semibold">Pay rate ({date? (date.day()>0 && date.day()<6?'Weekday': date.day()===6?"Saturday":'Sunday'):''}): </div>
+                    <div className="font-semibold">Pay rate ({date? (date.day()>0 && date.day()<6?'Weekday': date.day()===6?"Saturday":'Sunday'):''}): {openShift?<div className="text-warning text-xs">(Pay rate will be updated once the shift is assigned)</div>:''}</div>
                      { payRateLoading ? <div className="relative mt-2 mb-4"><Spinner notCentered={true} className="w-6 h-6 border-2 left-0"/></div> :
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-primary text-lg">${payRateShown}</span>
-                      {(start && end) ? <span className="font-semibold text-secondary text-md">× {Math.round((end.diff(start, 'minute')/60)*100)/100} hours = </span> : ''}
+                      {(start && end && !openShift) ? <span className="font-semibold text-secondary text-md">× {Math.round((end.diff(start, 'minute')/60)*100)/100} hours = </span> : ''}
                     </div>  }
                   </div>
                 
                   
-                  {(start && end && !payRateLoading) ?
+                  {(start && end && !payRateLoading && !openShift) ?
                   <div className="flex flex-col">
                     <div className="font-semibold">Total payment: </div>
                     <span className="font-bold text-primary text-lg">${Math.round((payRateShown * end.diff(start, 'minute')/60)*100)/100}</span>

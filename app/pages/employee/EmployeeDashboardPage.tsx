@@ -119,7 +119,7 @@ export default function EmployeeDashboardPage() {
                 
                   <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={7}  containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All locations' simplifyOnMobile replacementIcon={<FaMapPin/>} />
 
-                  <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-2)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All shifts' simplifyOnMobile replacementIcon={<FaClipboardList/>} disableTyping/>
+                  <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-3)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All shifts' simplifyOnMobile replacementIcon={<FaClipboardList/>} disableTyping/>
 
                   <Dropdown id="dropdown-month" placeholder="Select month" actAsFilter setMonth={activeFilter.month} className=' hidden md:block' containerClassName='rounded-b-none' custom customSelected={monthSelectedDropdown} disableTyping>
                     <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>

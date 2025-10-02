@@ -4,13 +4,14 @@ export enum Status {
     Accepted = 'Accepted',
     Pending = 'Pending',
     DeclinedShift = 'Declined',
-    Assigned = "Assigned",
     Unassigned = 'Unassigned',
     OpenShift = 'Open',
     Request = 'Request',
     Leave = 'Leave',
     Unavailable = 'Unavailable',
     Unpublished = 'Unpublished',
+    Assigned = "Assigned",
+
 }
 
 export function stringToStatus(status: string): Status {

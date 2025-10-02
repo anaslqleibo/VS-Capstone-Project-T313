@@ -206,7 +206,7 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
         <div className={`text-sm font-semibold text-gray-600 mt-1 flex items-center ${isEditing ? 'gap-2' : 'gap-1'}`}>Status: 
             {isEditing ? 
              <>
-                <Dropdown items={[ ...Object.values(Status).filter(((status)=>status!=='Leave'&&status!=='Unavailable'&&status!=='Unpublished'))]} placeholder="Select shift" maxVisibleItems={6} className='min-w-32' initialSelectedItem={formValues?.original_status ?? 'Select a status'} onChange={(e)=>handleChange!('status', e)} colorBasedOnValue syncCurrentWithInitialSelected={true}/>
+                <Dropdown items={[ ...Object.values(Status).filter(((status)=>status!=='Leave'&&status!=='Unavailable'&&status!=='Assigned'&&status!=='Unpublished'))]} placeholder="Select shift" maxVisibleItems={6} className='min-w-32' initialSelectedItem={formValues?.original_status ?? 'Select a status'} onChange={(e)=>handleChange!('status', e)} colorBasedOnValue syncCurrentWithInitialSelected={true}/>
                 {initialDetails?.published ? <Checkbox label="Published" checked={castedFormValues.published?castedFormValues.published:false} onChange={(e)=>{handleChange!('published', e ? 1 : 0)}} className="text-xs md:text-sm"/> : ''}
                 
              </>
@@ -254,7 +254,7 @@ function createDetailEditor(label: string, field: keyof ShiftExtendedProps, deta
     if (castedFormValues === -1) return;
 
     if (type === "textarea")
-        return (<><p className="text-sm font-semibold text-gray-600 mt-3 mb-1">{label}</p>
+        return (<><p className={`text-sm font-semibold text-gray-600 ${isEditing?"mt-3":"mt-1"} mb-1`}>{label}</p>
     <textarea readOnly={!isEditing} className="text-gray-500 font-normal text-sm border-2 border-gray-500 bg-gray-100 rounded-md min-w-full p-2 min-h-[72px] resize-none focus:outline-0" value={castedFormValues.notes??''} onChange={(e)=>handleChange!("notes", e.target.value)}></textarea></>);
     else{
         if (isEditing){
@@ -440,8 +440,8 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
             {createDetailEditor("Location: ", 'location_name' ,castedDetails.location_name, "", isEditing, formValues, handleChange, displayToast)}
             {createDetailEditor("Address: ", 'address' ,castedDetails.address, "", isEditing, formValues, handleChange, displayToast)}
             
-            {isAdmin && castedDetails.pay_rate && createDetailEditor("Active pay rate: ", 'pay_rate' ,'$'+castedDetails.pay_rate.toFixed(2)+'/h', "", isEditing, formValues, handleChange, displayToast)}
-            {isAdmin && castedDetails.total_payment && createDetailEditor("Total Pay: ", 'total_payment' ,'$'+castedDetails.total_payment.toFixed(2), "", isEditing, formValues, handleChange, displayToast)}
+            {isAdmin && castedDetails.pay_rate!==undefined && createDetailEditor("Active pay rate: ", 'pay_rate' ,'$'+castedDetails.pay_rate.toFixed(2)+'/h', "", isEditing, formValues, handleChange, displayToast)}
+            {isAdmin && castedDetails.total_payment!==undefined && createDetailEditor("Total Pay: ", 'total_payment' ,'$'+castedDetails.total_payment.toFixed(2), "", isEditing, formValues, handleChange, displayToast)}
             {createDetailEditor("Notes: ", 'notes',castedDetails.notes, "textarea", isEditing, formValues, handleChange, displayToast)}
             </>
         );
@@ -788,8 +788,9 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
     const handleChange = (field: string, value: any) => {
         setFormValues((prev : any) => {
+
             if (value && formValues && "start_time" in formValues && (field === "start_time" || field === "end_time" || field === 'pay_rate') && !(!formValues?.start_time || !formValues?.end_time)){
-                if (formValues.start_time && formValues.end_time && 'pay_rate' in formValues && formValues.pay_rate){
+                if (formValues.start_time && formValues.end_time && 'pay_rate' in formValues && formValues.pay_rate!==undefined){
                 
                     const newPayRate = field === 'pay_rate' ? value : formValues.pay_rate;
                     handleChange('total_payment', Math.round((newPayRate * dayjs(formValues.end_time.substring(0,5), 'HH:mm').diff(dayjs(formValues.start_time.substring(0,5), "HH:mm"), 'minute')/60)*100)/100);
@@ -805,7 +806,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
             }
 
-            if (prev && ((prev.status === Status.OpenShift || prev.status === Status.Unassigned) && (field==="status" && value!==prev.status)) && formValues?.assignee_name === undefined){
+            if (prev && ((prev.status === Status.OpenShift || prev.status === Status.Unassigned) && (field==="status" && stringToStatus(value)!==Status.OpenShift && stringToStatus(value)!==Status.Unassigned)) && formValues?.assignee_name === undefined){
                 return {
                     ...prev,
                     [field]: value,
@@ -814,6 +815,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
             }
 
             if ((field==="status" && (value===Status.OpenShift || value===Status.Unassigned))){
+                // alert(value);
                 return {
                     ...prev,
                     [field]: value,
@@ -867,7 +869,6 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                     handleChange('pay_rate', Math.round(payRate * 100) / 100);
                 }
                 catch (e){
-                    console.log(e);
                     props.displayToast && props.displayToast(e+'', 'error');
                     handleChange('assignee_name','');
                 }
