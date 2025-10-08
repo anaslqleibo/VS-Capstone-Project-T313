@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
 import { RowDataPacket } from "mysql2";
+import { queueEmail, buildShiftEmail } from "@/app/lib/crm-email"; // ⬅️ NEW
 
 export async function GET(request : NextRequest, context: RouteContext<'/api/shifts/shift/[id]'>) {
     try{
@@ -36,6 +37,31 @@ export async function DELETE(req: NextRequest, context: RouteContext<'/api/shift
         { error: "Shift not found" },
         { status: 404 }
       );
+    }
+
+    // NEW: Look up deleted shift details for email (if record still cached)
+    const [userShift] = await executeQuery(
+      `SELECT u.email, CONCAT(u.first_name, " ", u.last_name) as name, s.date, s.start_time, s.end_time, s.address, s.notes
+       FROM users u JOIN shifts s ON u.id = s.assignee_id WHERE s.id = ?`,
+      [id]
+    ) as any[];
+
+    if (userShift?.email) {
+      const { subject, html } = buildShiftEmail({
+        event: "canceled",
+        userName: userShift.name,
+        date: userShift.date,
+        start: userShift.start_time,
+        end: userShift.end_time,
+        address: userShift.address,
+        notes: userShift.notes,
+      });
+
+      await queueEmail({
+        to: userShift.email,
+        subject,
+        html,
+      });
     }
 
     return NextResponse.json({ 
