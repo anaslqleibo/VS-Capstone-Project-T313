@@ -1,9 +1,10 @@
 import { executeQuery } from "@/app/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { headers, cookies } from "next/headers";
-import { queueEmail, buildLeaveEmail } from "@/app/lib/crm-email";
+import { queueEmail } from "@/app/lib/email";
 import { sendEmail } from "@/app/lib/email";
 import { verifyToken } from "@/app/lib/auth";
+import { buildLeaveEmail } from "@/app/lib/leave-email";
 
 // 12h time + readable date (same as shifts)
 function formatWhen(date: string, start: string, end: string) {
@@ -29,9 +30,9 @@ export async function POST(req: NextRequest) {
     //Resolve user id from JWT or fallback to body.assignee_id
     let effectiveUserId: number | null = null;
     try {
-      const hdrs = headers();
+      const hdrs = await headers();
       const bearer = getBearerTokenFromHeaders(hdrs);
-      const cookieToken = cookies().get("token")?.value;
+      const cookieToken = (await cookies()).get("token")?.value;
       const token = bearer || cookieToken || null;
 
       if (token) {

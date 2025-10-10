@@ -224,16 +224,16 @@ export default function ShiftCreationPage() {
        
 
         <div className="p-6 h-full md:flex md:flex-col">
-          <h2 className="text-2xl mb-[30px]">
+          {/* <h2 className="text-2xl mb-[30px]">
             Welcome,{" "}
             <span className="text-[color:var(--primary-color)] font-semibold">
               {account?.first_name + " " + account?.last_name}
             </span>
-          </h2>
+          </h2> */}
 
-          <div className="flex flex-col justify-between md:flex-row gap-4">
-            <div className={`bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg md:w-fit md:flex-1/2 ${borderColor}`}>
-            <div className="mt-3 sm:mt-0 sm:text-left flex flex-col gap-2">
+          <div className="flex flex-col justify-between md:flex-row gap-4 h-full">
+            <div className={`bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg md:w-fit md:flex-1/2 ${borderColor} overflow-y-auto h-full`}>
+              <div className="mt-3 sm:mt-0 sm:text-left flex flex-col gap-2">
               <h1 className="text-3xl mb-2 font-semibold text-[color:var(--primary-color)]">Create shift</h1>
 
               <div className="flex items-center gap-2">
@@ -319,8 +319,8 @@ export default function ShiftCreationPage() {
                 />
               </div>
 
-              <div className="flex flex-col items-end">
-                <Button className="w-1/2" onClick={handleCreateShift}>
+              <div className="flex flex-col items-end sticky bottom-0 right-0">
+                <Button className="w-fit px-8 py-4 shadow-lg" onClick={handleCreateShift}>
                   Create
                 </Button>
               </div>
@@ -329,7 +329,7 @@ export default function ShiftCreationPage() {
           <div className="flex flex-col gap-2 md:flex-1/2">
 
             {
-              status!=="default" && 
+              status!=="default" && assignee && 
               <div className={`border-2 border-b-2 ${borderColor} font-semibold px-4 py-2 rounded-md flex items-center justify-between`}>
                 { !unavailDetails && assignee?.last_name + " is available at the selected date and time"}
                 { unavailDetails && (unavailDetails as any).shift && assignee?.last_name + " has an active shift at the selected date and time"}

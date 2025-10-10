@@ -3,6 +3,9 @@ import { executeQuery } from "@/app/lib/db";
 import { Shift } from "@/app/controllers/Shifts";
 import { User } from "@/app/controllers/User";
 import { isAdmin } from "../../users/[id]/is_admin";
+import { buildShiftEmail } from "@/app/lib/shift-email";
+import { sendEmail } from "@/app/lib/email";
+import { formatWhen } from "@/app/components/utils/formatDate";
 
 
 export async function GET(request : NextRequest, context: RouteContext<'/api/shifts/[user_id]'>) {
@@ -33,9 +36,11 @@ export async function GET(request : NextRequest, context: RouteContext<'/api/shi
 };
 
 
-export async function PUT(req: NextRequest, _context: any) {
+export async function PUT(req: NextRequest, context: RouteContext<'/api/shifts/[user_id]'>) {
   try {
     const { id, assignee_id, status, date, start_time, end_time, notes, location_id} : Shift = await req.json();
+    const { user_id } = await context.params;
+    const assignee_changed = user_id==='1'?true:false;
 
     const updates = [];
     const vals = [];
@@ -79,8 +84,12 @@ export async function PUT(req: NextRequest, _context: any) {
     vals.push(id);
 
 
-    console.log(vals);
-    console.log(updates);
+    // Retrieve assignee's initial email as well as shift details
+    const [userShift] = await executeQuery(
+      `SELECT DATE_FORMAT(s.date, '%Y-%m-%d') as date, s.start_time as start_time, s.end_time as end_time, l.address as address, s.notes as notes FROM shifts s LEFT JOIN users u ON u.id = s.assignee_id INNER JOIN locations l ON l.id = s.location_id WHERE s.id = ?`,
+      [id]
+    ) as any[];
+
     const result = await executeQuery(`UPDATE shifts SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, vals) as any;
 
     if (result.affectedRows === 0) {
@@ -90,6 +99,91 @@ export async function PUT(req: NextRequest, _context: any) {
       );
     }
 
+    let newAssignee = null;
+    if (assignee_id && assignee_changed){
+      const [res] = await executeQuery(
+        `SELECT email, CONCAT(first_name, " ", last_name) as name FROM users WHERE id = ?`,
+        [assignee_id]
+      ) as any[];
+
+      newAssignee = res;
+    }
+    
+    if (location_id){
+        const [loc] = await executeQuery(
+          `SELECT address FROM locations WHERE id = ?`,
+          [location_id]
+        ) as any[];
+        
+      if (newAssignee)
+        newAssignee.location = loc.address;
+      else newAssignee = {location: loc.address};
+    }
+
+
+    const assigneeReassigned = assignee_changed&&assignee_id&&newAssignee;
+
+    const noAssignee = status === 'Open' || status === 'Unassigned';
+
+    if (noAssignee && userShift === undefined)
+      return NextResponse.json({ 
+      success: true, 
+      message: "Shift updated successfully"
+    });
+
+    const { subject, html } = buildShiftEmail({
+      event: noAssignee ? 'cancelled' : (assignee_changed ? "created" : "updated"),
+      userName: assigneeReassigned ? newAssignee.name : userShift.name,
+      date: date ? date : userShift.date,
+      start: start_time ? start_time.substring(0,5) : userShift.start_time.substring(0,5),
+      end: end_time ? end_time.substring(0,5) : userShift.end_time.substring(0,5),
+      address: location_id ? newAssignee.location : userShift.address,
+      notes: notes? notes: userShift.notes,
+      status: status?status: userShift.status,
+    });
+
+      // --- Direct SMTP send (kept) ---
+    console.log("[SHIFT UPDATE] before SMTP");
+    try {
+
+      // Send to prevous/old assignee
+      if (assignee_changed && userShift?.email && userShift?.email !== newAssignee.email){
+        const { subject, html } = buildShiftEmail({
+          event: "cancelled",
+          userName: userShift.name,
+          date: date ? date : userShift.date,
+          start: start_time ? start_time.substring(0,5) : userShift.start_time.substring(0,5),
+          end: end_time ? end_time.substring(0,5) : userShift.end_time.substring(0,5),
+          address: location_id ? newAssignee.location : userShift.address,
+          notes: notes? notes: userShift.notes,
+        });
+        await sendEmail({
+          to: userShift.email,
+          subject,
+          html,
+          text: `Shift cancelled — ${formatWhen(userShift.date, userShift.start_time, userShift.end_time)}`,
+        });
+      }
+
+      if ((newAssignee && newAssignee.email) || userShift.email)
+        await sendEmail({
+          to: (assigneeReassigned ? newAssignee.email : userShift.email) ,
+          subject,
+          html,
+          text: `${noAssignee ? 'Shift cancelled' :( assignee_changed?'New shift assigned':'Shift details updated')} — ${formatWhen(userShift.date, userShift.start_time, userShift.end_time)}`,
+        });
+
+      console.log("[SHIFT UPDATE] SMTP sent");
+    } catch (e) {
+      console.warn("[EMAIL SMTP] Failed to send email:", e);
+
+    // await queueEmail({
+    //   to: userShift.email,
+    //   subject,
+    //   html,
+    // });
+    }
+    
     return NextResponse.json({ 
       success: true, 
       message: "Shift updated successfully"

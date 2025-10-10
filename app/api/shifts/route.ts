@@ -2,9 +2,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
-import { isAdmin } from "../users/[id]/is_admin";
 import { sendEmail } from "@/app/lib/email"; // existing
-import { queueEmail, buildShiftEmail } from "@/app/lib/crm-email"; // NEW
+import { queueEmail } from "@/app/lib/email"; // NEW
+import { buildShiftEmail } from "@/app/lib/shift-email";
 
 // Tiny helper to format a nice "when" string without timezone headaches
 function formatWhen(date: string, start: string, end: string) {
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
           to: employee.email,
           subject,
           html,
-          text: `New shift assigned — ${when}${address ? ` @ ${address}` : ""}`,
+          text: `New shift assigned — ${when}`,
         });
         console.log("[SHIFT CREATE] SMTP sent");
       } catch (e) {

@@ -1,8 +1,6 @@
 import { executeQuery } from "@/app/lib/db";
 import { NextRequest, NextResponse } from "next/server";
-// NEW: email helpers
-import { queueEmail } from "@/app/lib/crm-email";
-import { sendEmail } from "@/app/lib/email";
+import { sendEmail, queueEmail } from "@/app/lib/email";
 
 // 12-hour time + readable date, same style as shifts/leaves
 function formatWhen(date: string, start: string, end: string) {

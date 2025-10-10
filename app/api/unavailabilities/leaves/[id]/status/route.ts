@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
-import { queueEmail, buildLeaveEmail } from "@/app/lib/crm-email";
+import { queueEmail } from "@/app/lib/email";
+import { buildLeaveEmail } from "@/app/lib/leave-email";
 
 export async function PATCH(req: Request, context: RouteContext<'/api/unavailabilities/leaves/[id]/status'>) {
   try {

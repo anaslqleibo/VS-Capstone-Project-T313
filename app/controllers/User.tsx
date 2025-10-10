@@ -21,12 +21,15 @@ export type User = {
 export type PayRate = {
   id: string;
   job_title: string;
-  day_type: string;
-  amount: number;
+  weekday?: number;
+  saturday?: number;
+  sunday?: number;
+  public_holiday?: number;
   age_group: string;
   level: number;
   specialty?:string;
 }
+
 
 export async function fetchLoggedInAccount(){
   const res = await fetch(`/api/verify`);

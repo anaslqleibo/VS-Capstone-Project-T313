@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
-import { queueEmail, buildShiftEmail } from "@/app/lib/crm-email"; // ⬅️ NEW
+import { queueEmail } from "@/app/lib/email"; // ⬅️ NEW
+import { buildShiftEmail } from "@/app/lib/shift-email";
 
 export async function PATCH(req: NextRequest, context: RouteContext<'/api/shifts/shift/[id]/status'>) {
   try {
@@ -36,13 +37,9 @@ export async function PATCH(req: NextRequest, context: RouteContext<'/api/shifts
     ) as any[];
 
     if (shift?.email) {
-      const event =
-        status.toLowerCase() === "canceled"
-          ? "canceled"
-          : "updated";
-
+  
       const { subject, html } = buildShiftEmail({
-        event,
+        event: 'cancelled',
         userName: shift.name,
         date: shift.date,
         start: shift.start_time,

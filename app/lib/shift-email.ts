@@ -1,42 +1,67 @@
 // app/lib/shift-email.ts
-import { sendEmail } from "@/app/lib/email";
+import dayjs from "dayjs";
+import { formatDateToHour12, formatWhen } from "../components/utils/formatDate";
+import { ShiftStatus } from "../controllers/Shifts";
 
-export type ShiftEvent = "created" | "updated" | "canceled";
 
-function formatWhen(start: Date, end: Date) {
-  const fmt = new Intl.DateTimeFormat("en-AU", {
-    weekday: "short", day: "2-digit", month: "short", year: "numeric",
-    hour: "2-digit", minute: "2-digit"
-  });
-  return `${fmt.format(start)} → ${fmt.format(end)}`;
-}
+export type ShiftEvent = "created" | "updated" | "cancelled";
 
-export async function sendShiftNotification(args: {
-  event: ShiftEvent;
-  employeeEmail: string;
-  employeeName?: string;
-  start: Date;
-  end: Date;
-  location?: string | null;
+/**
+ * Build subject + HTML for shift notification
+ */
+export function buildShiftEmail({
+  event,
+  userName,
+  date,
+  start,
+  end,
+  address,
+  notes,
+  status,
+}: {
+  event: "created" | "updated" | "cancelled";
+  userName: string;
+  date: string;
+  start: string;
+  end: string;
+  address?: string | null;
   notes?: string | null;
+  status?: ShiftStatus;
 }) {
-  const when = formatWhen(args.start, args.end);
   const title =
-    args.event === "created" ? `New shift assigned`
-    : args.event === "updated" ? `Your shift was updated`
-    : `Your shift was canceled`;
+    event === "created"
+      ? "New shift assigned"
+      : event === "updated"
+      ? "New shift updates"
+      : "Shift cancelled";
 
-  const subject = `${title} — ${when}`;
+  const contentTitle =
+    event === "created"
+      ? (status==='Pending'?"You have a new pending shift":"You have been assigned a new shift")
+      : event === "updated"
+      ? "Your assigned shift has been updated. See details below."
+      : "Your shift listed below has been cancelled";
+
+
+  const fmt = new Intl.DateTimeFormat("en-AU", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  const {startStr, endStr} = formatDateToHour12(date, start, end);
+
+  const subject = `${title} — ${formatWhen(date,start,end)}`;
   const html = `
-    <p>Hi ${args.employeeName ?? "there"},</p>
-    <p>${title.toLowerCase()}.</p>
+    <p>Hi ${userName ?? "there"},</p>
+    <p>${contentTitle}.</p>
     <ul>
-      <li><b>When:</b> ${when}</li>
-      ${args.location ? `<li><b>Location:</b> ${args.location}</li>` : ""}
-      ${args.notes ? `<li><b>Notes:</b> ${args.notes}</li>` : ""}
+      <li><b>Date:</b> ${dayjs(date).format('dddd, D MMM YYYY')}</li>
+      <li><b>Time:</b> ${startStr} – ${endStr}</li>
+      ${(event!=='cancelled' && address) ? `<li><b>Address:</b> ${address}</li>` : ""}
+      ${(event!=='cancelled' && notes) ? `<li><b>Notes:</b> ${notes}</li>` : ""}
     </ul>
-    <p>Please check the portal for details.</p>
+    <p>Please check the staff portal for full details.</p>
   `;
-
-  await sendEmail({ to: args.employeeEmail, subject, html, text: `${title} — ${when}` });
+  return { subject, html };
 }

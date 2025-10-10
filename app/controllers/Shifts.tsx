@@ -62,9 +62,9 @@ export async function createShift(shift: Shift) {
   return await res.json();
 }
 
-export async function updateShift(shift: Shift | ShiftAssignee) {
+export async function updateShift(shift: Shift | ShiftAssignee, assignee_changed = false) {
   try {
-    const res = await fetch(`/api/shifts/${shift.id}`, {
+    const res = await fetch(`/api/shifts/${assignee_changed?'1':'0'}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(shift),

@@ -155,7 +155,7 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
             try{
                 setLoading && setLoading(true);
                 const updatedShift : Shift = { ...castedFormValues, status: statusToString(castedFormValues.status) };
-                const result = await updateShift(updatedShift);
+                const result = await updateShift(updatedShift, castedFormValues.assignee_name !== initialDetails?.assignee_name);
 
                 if (result){
                     displayToast!(`Updated shift successfully!`, 'success');
@@ -303,6 +303,8 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
 
     const castedDetails = 'location_id' in formValues ? formValues as ShiftExtendedProps : formValues as LeaveExtendedProps;
 
+    
+
     if ('day' in castedDetails && (castedDetails.type === "leave" || type === ModalTypes.UnavailabilityDetails))
     {
         return (
@@ -313,7 +315,7 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
             </>
         );
     }
-    else if ((castedDetails.type === "leave" || type === ModalTypes.LeaveDetails || type == ModalTypes.PendingDetails))
+    else if (castedDetails.type === "leave" && (type === ModalTypes.LeaveDetails || type == ModalTypes.PendingDetails))
     {
         return (
             <>
@@ -650,9 +652,9 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         }
         const handleDecline = async () => {
             const confirmation = window.confirm("This action cannot be undone. Are you sure you want to decline this shift?");
+          
             const result = await updateShiftStatus(event?.extendedProps?.id as string, Status.DeclinedShift);
 
-            if (!confirmation) return;
 
             if (result){
                 if (event) setEvents!(event, "delete"); 
