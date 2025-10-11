@@ -6,15 +6,6 @@ import { sendEmail } from "@/app/lib/email";
 import { verifyToken } from "@/app/lib/auth";
 import { buildLeaveEmail } from "@/app/lib/leave-email";
 
-// 12h time + readable date (same as shifts)
-function formatWhen(date: string, start: string, end: string) {
-  const startDate = new Date(`${date}T${start}`);
-  const endDate = new Date(`${date}T${end}`);
-  const timeFmt = new Intl.DateTimeFormat("en-AU", { hour: "numeric", minute: "2-digit", hour12: true });
-  const dateFmt = new Intl.DateTimeFormat("en-AU", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
-  return { dateStr: dateFmt.format(startDate), startStr: timeFmt.format(startDate), endStr: timeFmt.format(endDate) };
-}
-
 function getBearerTokenFromHeaders(h: Headers) {
   const auth = h.get("authorization") || h.get("Authorization");
   if (!auth) return null;

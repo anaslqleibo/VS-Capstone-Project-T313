@@ -315,7 +315,7 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
             </>
         );
     }
-    else if (castedDetails.type === "leave" && (type === ModalTypes.LeaveDetails || type == ModalTypes.PendingDetails))
+    else if (castedDetails.type === "leave")
     {
         return (
             <>
@@ -516,9 +516,10 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
     {
         const handleAssign = () => {handleChange!('assignee_name', ''); setEditing && setEditing(true)};
         const handlePickup = async () => {
-            const result = await updateShiftStatus(event?.extendedProps?.id as string, Status.Accepted);
+            if(!formValues) return;
+            const result = await updateShiftStatus(formValues.id, Status.Accepted, formValues.assignee_id);
             
-            if (result){
+            if (result.success){
                 if (event) {
                     const updatedEvent = {
                         ...event,
@@ -535,9 +536,13 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
                     closeModal!();
                     displayToast!(`Picked up shift at ${event.extendedProps?.location_name}, ${event.extendedProps?.time} successfully!`, 'success');
                 }
+                else {
+                    closeModal!();
+                    displayToast!(`Picked up shift at ${formValues.location_name}, ${formValues.time} successfully!`, 'success');
+                }
             }
             else{
-                displayToast!('Failed to pick-up shift!', 'error');
+                displayToast!(result.err, 'error');
             }
             
         }
@@ -576,6 +581,10 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
 
                         closeModal!();
                         displayToast!(`Accepted leave successfully!`, 'success');
+                    }
+                    else {
+                        closeModal!();
+                        displayToast!(`Picked up shift at ${formValues.location_name}, ${formValues.time} successfully!`, 'success');
                     }
                 }
                 else{
@@ -625,9 +634,10 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
     else if (type === ModalTypes.PendingDetails)
     {
         const handleAccept = async () => {
-            const result = await updateShiftStatus(event?.extendedProps?.id as string, Status.Accepted);
+            if (!formValues) return;
+            const result = await updateShiftStatus(formValues.id as string, Status.Accepted);
 
-            if (result){
+            if (result.success){
                 if (event) {
                     const updatedEvent = {
                         ...event,
@@ -644,25 +654,30 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
                     closeModal!();
                     displayToast!(`Accepted shift at ${event.extendedProps?.location_name}, ${event.extendedProps?.time} successfully!`, 'success');
                 }
+                else {
+                    closeModal!();
+                    displayToast!(`Accepted shift at ${formValues.location_name}, ${formValues.time} successfully!`, 'success');
+                }
             }
             else{
-                displayToast!('Failed to accept your pending shift!', 'error');
+                displayToast!(result.err, 'error');
             }
             
         }
         const handleDecline = async () => {
             const confirmation = window.confirm("This action cannot be undone. Are you sure you want to decline this shift?");
           
-            const result = await updateShiftStatus(event?.extendedProps?.id as string, Status.DeclinedShift);
+            if (!formValues) return;
+            const result = await updateShiftStatus(formValues.id as string, Status.DeclinedShift);
 
 
-            if (result){
+            if (result.success){
                 if (event) setEvents!(event, "delete"); 
                 closeModal!();
                 displayToast!('Shift declined!', 'success');
             }
             else{
-                displayToast!('Failed to decline shift!', 'error');
+                displayToast!(result.err, 'error');
             }
             
         }
@@ -768,6 +783,10 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
     const admin = user?.role === "admin";
     const setEditing = (edit:boolean) => {
         setIsEditing(admin && edit);
+    }
+
+    if (!admin && formValues && formValues.status === 'Open' && user){
+        formValues.assignee_id = user.id.toString();
     }
 
     const buttons = type!==undefined && createButtons(type, props.setEvents, props.event, props.displayToast, closeModal, admin, formValues, handleChange, isEditing, setEditing);

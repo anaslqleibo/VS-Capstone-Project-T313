@@ -93,7 +93,7 @@ export default function ShiftCreationPage() {
       return;
     }
 
-    if (!assignee?.id){
+    if (!assignee?.id && !openShift){
       if (modalConfirmation){
         setModalConfirmation(false);
       }
@@ -143,7 +143,7 @@ export default function ShiftCreationPage() {
       setNotes("");
     } catch (err) {
       console.error("Shift creation failed:", err);
-      alert("Something went wrong. Check console for details.");
+      displayToast("Something went wrong. Check console for details.", "error");
     }
     finally{
       setLoading(false);

@@ -19,7 +19,7 @@ export function buildShiftEmail({
   notes,
   status,
 }: {
-  event: "created" | "updated" | "cancelled";
+  event: "created" | "updated" | "cancelled" | "accepted" | "declined" | "pickedup";
   userName: string;
   date: string;
   start: string;
@@ -33,14 +33,26 @@ export function buildShiftEmail({
       ? "New shift assigned"
       : event === "updated"
       ? "New shift updates"
-      : "Shift cancelled";
+      : event === "cancelled"
+      ? "Shift cancelled"
+      : event === "accepted"
+      ? "Shift accepted"
+      : event === "declined"
+      ? "Shift declined"
+      : "Open shift picked-up";
 
   const contentTitle =
     event === "created"
       ? (status==='Pending'?"You have a new pending shift":"You have been assigned a new shift")
       : event === "updated"
       ? "Your assigned shift has been updated. See details below."
-      : "Your shift listed below has been cancelled";
+      : event === "cancelled"
+      ? "Your shift listed below has been cancelled"
+      : event === "accepted"
+      ? userName + " has accepted their shift:"
+      : event === "declined"
+      ? userName + " has declined their shift:"
+      : userName + " has picked up an open shift:";
 
 
   const fmt = new Intl.DateTimeFormat("en-AU", {
@@ -50,10 +62,12 @@ export function buildShiftEmail({
   });
 
   const {startStr, endStr} = formatDateToHour12(date, start, end);
+  const forAdmin = event == 'accepted'|| event === 'declined'|| event === 'pickedup';
 
   const subject = `${title} — ${formatWhen(date,start,end)}`;
   const html = `
-    <p>Hi ${userName ?? "there"},</p>
+    ${forAdmin ? '' : '<p>Hi '+(userName ?? "there")+',</p>'}
+    
     <p>${contentTitle}.</p>
     <ul>
       <li><b>Date:</b> ${dayjs(date).format('dddd, D MMM YYYY')}</li>

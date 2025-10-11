@@ -6,6 +6,7 @@ import { isAdmin } from "../../users/[id]/is_admin";
 import { buildShiftEmail } from "@/app/lib/shift-email";
 import { sendEmail } from "@/app/lib/email";
 import { formatWhen } from "@/app/components/utils/formatDate";
+import { insertNotification, storeNotification } from "@/app/lib/notification-db";
 
 
 export async function GET(request : NextRequest, context: RouteContext<'/api/shifts/[user_id]'>) {
@@ -183,6 +184,8 @@ export async function PUT(req: NextRequest, context: RouteContext<'/api/shifts/[
     //   html,
     // });
     }
+    
+    insertNotification(id??'', status);
     
     return NextResponse.json({ 
       success: true, 

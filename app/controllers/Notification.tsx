@@ -1,18 +1,19 @@
 import Icon from "@/public/icons/Icons";
 import getStatusColor, { stringToStatus } from "@/app/components/utils/getStatusColor";
-import formatDate from "@/app/components/utils/formatDate";
+import formatDate, { formatDateToHour12 } from "@/app/components/utils/formatDate";
 import { Status } from "@/app/components/utils/getStatusColor";
 import Tooltip from "../components/Tootltip";
+import dayjs from "dayjs";
 
 
-type NotificationType = 'Assigned' | 'Unassigned' | 'Accepted' | 'Declined' | 'Request' | 'Leave Request' | 'Leave Accepted' | 'Leave Declined';
+export type NotificationType = 'Assigned' | 'Unassigned' | 'Open' | 'Accepted' | 'Declined' | 'Request' | 'Leave Request' | 'Leave Accepted' | 'Leave Declined';
 
 export type NotificationProps = {
     id?:string;
     type: NotificationType,
-    date?: Date | string,
+    date?: string,
     shift_id?: string,
-    shift_date?: Date | string,
+    shift_date?: string,
     assignee_name?: string;
     days_left?: number,
     onClick?: ()=>void;
@@ -20,6 +21,18 @@ export type NotificationProps = {
     location_name?: string;
     start_time?: string;
     end_time?: string;
+}
+
+export async function checkNewNotification(user_id?: string) {
+    const res = await fetch(`/api/notifications/${user_id}`,{
+        method: "POST"
+    });
+    
+    if (!res.ok) {
+    throw new Error('Failed to fetch notifications');
+    }
+    const data = await res.json();
+    return data.found;
 }
 
 export async function fetchNotifications(user_id?: string) {
@@ -67,7 +80,7 @@ export function createNotifications(fromAdminView=false, notifications : Notific
     );
 }
 
-export function createAdminNotification({type, date = new Date(), shift_date = new Date(), days_left = 1, assignee_name='Steve', location_name, start_time, end_time, onClick} : NotificationProps){
+export function createAdminNotification({type, date, shift_date, days_left = 1, assignee_name='Steve', location_name, start_time, end_time, onClick} : NotificationProps){
     const circle = ()=>{
         const s = type.split(' ');
         const status = stringToStatus(s.length > 1 ? s[1] : s[0]);
@@ -80,62 +93,87 @@ export function createAdminNotification({type, date = new Date(), shift_date = n
         if (onClick) onClick();
     }
 
-    const tooltipContent = <>Date: {shift_date}<br/> Location: {location_name} <br/> Start time: {start_time} <br/> End time: {end_time}</>;
+    const isLeave = type.split(' ').length>1;
+
+    const { startStr, endStr } = formatDateToHour12(shift_date, start_time??'00:00', end_time??'00:00');
+
+    const dateFormatted = dayjs(shift_date).format('ddd, D MMM YYYY');
+    const tooltipContent = isLeave ? 
+    <>
+        Date: {dateFormatted}<br/>
+        From: {startStr} <br/> 
+        To: {endStr}
+    </> : <>
+        Date: {dateFormatted}<br/> 
+        Location: {location_name} <br/> 
+        Start time: {startStr} <br/> 
+        End time: {endStr}
+    </>;
+
     const shift = (
-        <Tooltip content={tooltipContent} position="top">
-            <span className="font-semibold">{type.split(' ').length>1? 'leave': 'shift'}</span>
+        <Tooltip content={tooltipContent} position="top" inline={true}>
+            <span className="font-semibold">{isLeave? 'leave': 'shift'}</span>
         </Tooltip>
     );
 
     let content;
     switch (type) {
-    case "Accepted":
-        content = (
-        <span>
-            {assignee_name} has accepted their {shift} on
-        </span>
-        );
-        break;
-    case "Unassigned":
-        content = (
-        <div>
-            <span className="text-danger">
-            You have an unassigned {shift} scheduled in {days_left} day
-            {days_left > 1 ? "s" : ""}.<br />
-            Please assign it before the shift date.
+        case "Accepted":
+            content = (
+            <span>
+                {assignee_name} has accepted their {shift} on
             </span>
-        </div>
-        );
-        break;
-    case "Request":
-        content = (
-        <span>
-            {assignee_name} requested to take a {shift} on
-        </span>
-        );
-        break;
-    case "Declined":
-        content = (
-        <span>
-            {assignee_name} declined their {shift} on
-        </span>
-        );
-        break;
-    case "Assigned":
-        return "";
-    case "Leave Accepted":
-        return "";
-    case "Leave Declined":
-        return "";
-    case "Leave Request":
-        content = (
-        <span>
-            {assignee_name} has requested a {shift} on
-        </span>
-        );
-        break;
-    default:
-        content = <p></p>;
+            );
+            break;
+        case "Unassigned":
+        case "Open":
+            content = (
+            <div>
+                <span className="text-danger">
+                There is an {type.toLowerCase()} {shift} scheduled  {days_left>0?'in ' + days_left + ' day' + (days_left > 1 ? "s" : ""):'today'}.<br />
+
+                {days_left>0?'Please assign it before the shift date.':'Please resolve this as soon as possible!'}
+                </span>
+            </div>
+            );
+            break;
+        case "Request":
+            content = (
+            <span>
+                {assignee_name} requested to take a {shift} on
+            </span>
+            );
+            break;
+        case "Declined":
+            content = (
+            <span>
+                {assignee_name} declined their {shift} on
+            </span>
+            );
+            break;
+        case "Assigned":
+            content = (
+            <div>
+                <span className="text-danger">
+                {assignee_name} has a pending {shift} scheduled in {days_left} day
+                {days_left > 1 ? "s" : ""}.<br />
+                Please have the assignee accept/decline the shift.
+                </span>
+            </div>
+            );
+            break;
+        case "Leave Request":
+            content = (
+            <span>
+                {assignee_name} has requested a {shift} on
+            </span>
+            );
+            break;
+        case "Leave Accepted":
+        case "Leave Declined":
+            return "";
+        default:
+            content = <p></p>;
     }
 
  
@@ -144,7 +182,7 @@ export function createAdminNotification({type, date = new Date(), shift_date = n
             circle()}
             <div>
             {content}
-            {type!=='Unassigned' && <span className="text-[color:var(--secondary-color)]"> {formatDate(date)}</span>}
+            {type!=='Unassigned' && type !== 'Open' && <span className="text-[color:var(--secondary-color)]"> {formatDate(date)}</span>}
             </div>
             
         </div> 
@@ -154,7 +192,7 @@ export function createAdminNotification({type, date = new Date(), shift_date = n
 
 
 
-export function createStaffNotification({type, date = new Date(), shift_date = new Date(), days_left=1, onClick} : NotificationProps){
+export function createStaffNotification({type, date, shift_date, days_left=1, onClick} : NotificationProps){
     const circle = ()=>{
         const s = type.split(' ');
         const status = stringToStatus(s.length > 1 ? s[1] : s[0]);
@@ -169,20 +207,14 @@ export function createStaffNotification({type, date = new Date(), shift_date = n
 
     let content;
     switch(type){
-        case 'Accepted':
-            return '';
-            break;
-        case 'Unassigned':
-            content = <div>You have <span className="text-[color:var(--secondary-color)]"> {days_left} day{days_left>1 ? "s":""}</span> left to Accept/Deny a shift!</div>
-            break;
-        case 'Request':
-            return '';
-            break;
-        case 'Declined':
-            return '';
+        case 'Open':
+            content = <div>A new open shift has been created. Please review the details and accept it if you’re available.</div>
             break;
         case 'Assigned':
-            content = 'You received a new shift on';
+            if (days_left > 3)
+                content = <div>You've been offered a new shift! Tap to view the details and confirm if you're available to take the shift.</div>
+            else
+                content = <div>You have <span className="text-[color:var(--secondary-color)]"> {days_left} day{days_left>1 ? "s":""}</span> left to accept/decline a shift!</div>
             break;
         case 'Leave Accepted':
             content = 'Your leave request has been accepted on';
@@ -190,21 +222,24 @@ export function createStaffNotification({type, date = new Date(), shift_date = n
         case 'Leave Declined':
             content = 'Your leave request has been declined on';
             break;
+        case 'Accepted':
         case 'Leave Request':
+        case 'Unassigned':
+        case 'Declined':
+        case 'Request':
             return '';
-            break;
         default:
             content=<p></p>;
     }
  
     return (
-        <div className="flex items-center" onClick={handleClick}>{
-            circle()}
+        <div className="flex items-center" onClick={handleClick}>
+            <div className="w-fit">{circle()}</div>
             <div>
-            {content}
-            <span className="text-[color:var(--secondary-color)]"> {formatDate(date)}</span>
+                {content}
+
+                {(type==='Open'||type==='Assigned') ? '' : <span className="text-[color:var(--secondary-color)]"> {formatDate(date)}</span>}
             </div>
-            
         </div> 
     );
     

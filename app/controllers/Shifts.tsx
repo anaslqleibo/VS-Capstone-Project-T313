@@ -77,18 +77,26 @@ export async function updateShift(shift: Shift | ShiftAssignee, assignee_changed
   }
 }
 
-export async function updateShiftStatus(shift_id: string, status: ShiftStatus) {
+export async function updateShiftStatus(shift_id: string, status: ShiftStatus, assignee_id?:string) {
   try {
     const res = await fetch(`/api/shifts/shift/${shift_id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, assignee_id}),
     });
 
-    return res.ok;
+    const data = await res.json();
+
+    if (!res.ok) {
+      const message = data.error || `Request failed with status ${res.status}`;
+      return { success: false, err: message };
+    }
+    
+    return { success: true };
   } catch (err) {
     console.error('Failed to update shift status:', err);
-    return false;
+    const message =  err instanceof Error ? err.message : typeof err === "string" ? err : "";
+    return { success: false, err: message };
   }
 }
 

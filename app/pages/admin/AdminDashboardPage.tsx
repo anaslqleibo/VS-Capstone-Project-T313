@@ -20,8 +20,15 @@ export default function AdminDashboardPage() {
     if (id === undefined) return;
     if (displayShift && displayShift.id?.toString() === id.toString()) return;
     
-    const shift = await fetchShiftExtProps(id);
-    setDisplayShift(shift);
+    try{
+      setLoading(true);
+      const shift = await fetchShiftExtProps(id);
+      setDisplayShift(shift);
+    }
+    finally{
+      setLoading(false);
+    }
+    
   }
   
   useEffect(()=>{
@@ -44,8 +51,11 @@ export default function AdminDashboardPage() {
       setToastShown(true);
   }
 
+  const [loading, setLoading] = useState(false);
   return (
       <Layout modalContainer={modalContainer}>
+        {loading && <div className="absolute rounded-lg top-0 left-0 w-full h-full bg-[#ffffff56] z-300"> <Spinner /> </div>}
+
         <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
         
         <div className="relative flex-[1] h-full bg-[#f4f4f4] overflow-y-auto">

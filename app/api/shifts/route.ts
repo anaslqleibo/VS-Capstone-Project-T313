@@ -5,6 +5,8 @@ import { executeQuery } from "@/app/lib/db";
 import { sendEmail } from "@/app/lib/email"; // existing
 import { queueEmail } from "@/app/lib/email"; // NEW
 import { buildShiftEmail } from "@/app/lib/shift-email";
+import { insertNotification } from "@/app/lib/notification-db";
+import { isAdmin } from "../users/[id]/is_admin";
 
 // Tiny helper to format a nice "when" string without timezone headaches
 function formatWhen(date: string, start: string, end: string) {
@@ -58,19 +60,14 @@ export async function POST(req: NextRequest) {
     });
 
     // 1) Insert the shift (kept as close to your original as possible)
-    await executeQuery(
+    const admin = await isAdmin(assignee_id);
+
+    const res = await executeQuery(
       `INSERT INTO shifts (assignee_id, status, location_id, date, start_time, end_time, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        assignee_id,
-        (status !== "Open" && status !== "Unassigned") ? (status || "Accepted") : status,
-        location_id,
-        date,
-        start_time,
-        end_time,
-        notes,
-      ]
-    );
+       VALUES (?, ?, ?, ?, ?, ?, ?)`, 
+      [(status !== "Open" && status !== "Unassigned") ? assignee_id : null, (status !== "Open" && status !== "Unassigned" && admin) ? "Accepted" : status, location_id, date, start_time, end_time, notes]
+    ) as any;
+
     console.log("[SHIFT CREATE] inserted");
 
     // 2) Get the newly created shift id if you need it (optional)
@@ -145,6 +142,8 @@ export async function POST(req: NextRequest) {
     }
 
     console.log("[SHIFT CREATE] done");
+
+    insertNotification(res.insertId, status);
     return NextResponse.json({ message: "Shift created successfully" }, { status: 200 });
   } catch (err) {
     console.error("Shift creation error:", err);
