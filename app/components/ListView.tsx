@@ -3,6 +3,7 @@ import Icon from "@/public/icons/Icons";
 import React, { forwardRef, JSX, ReactElement, ReactNode, RefObject, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import { notificationMarkAsRead } from "../controllers/Notification";
+import { useAuth } from "../contexts/AuthContext";
 
 interface ListViewProps {
   title: string;
@@ -10,7 +11,7 @@ interface ListViewProps {
   containerRef: React.RefObject<HTMLDivElement|null>;
   setShown?:(e:boolean)=>void;
   children?: React.ReactNode;
-  idList?: string;
+  idList?: string[];
   hasItems?:(e:boolean)=>void;
 }
 
@@ -48,6 +49,7 @@ export type ListViewHandle = {
   toggleShown: (value: boolean) => void;
 };
 
+
 const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
   { title, closeButton = true, containerRef, hasItems, ...props },
   ref
@@ -55,13 +57,16 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
 
   const [items, setItems] = useState<Item[]>(
     flattenChildren(props.children).map((child, index) => ({
-      id: props.idList ? props.idList[index] : uuidv4(),
+      id: (props.idList && props.idList[index]) ? props.idList[index] : uuidv4(),
       content: child as Item["content"],
     }))
   );
 
+  
+  const user_id = useAuth().user?.id;
   function onMarkAsRead(id: string){
-    notificationMarkAsRead(id);
+    console.log(items);
+    if (user_id) notificationMarkAsRead(id, user_id?.toString());
   }
 
   const [removalQueue, setRemovalQueue] = useState<RemovalQueue>({});
@@ -115,7 +120,7 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
   const isMarkedForRemoval = (id: string) =>
     Object.prototype.hasOwnProperty.call(removalQueue, id);
   
-  return (<div className='w-full md:w-max h-fit flex flex-col text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg overflow-hidden text-left shadow-xl transition-all my-auto' ref={containerRef}>
+  return (<div className='w-full md:max-w-140 md:w-120 h-fit flex flex-col text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg overflow-hidden text-left shadow-xl transition-all my-auto' ref={containerRef}>
                   <div className="w-full h-fit px-4 py-2 border-b border-gray-200 text-xl text-[color:var(--secondary-color))] font-semibold flex items-center justify-between gap-20">
                     {title || "Title"}
 
@@ -145,11 +150,11 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
                             <li className="w-full px-4 py-2 border-b bg-white border-gray-200 hover:bg-gray-100 hover:cursor-pointer flex items-center justify-between gap-5 transition-all duration-300 ease-in-out group translate-0"
                               onClick={handleParentClick}
                               ref={r => {notificationItems.current[id] = r;}}>
-                              <div>{item.content}</div>
+                              <div className="flex-14/15">{item.content}</div>
 
                               <Icon
                                 id="read"
-                                className={`md:invisible ${!marked && "group-hover:visible"}`}
+                                className={`md:invisible ${!marked && "group-hover:visible"} flex-1/15`}
                                 onClick={(e:React.MouseEvent) => {
                                   e.preventDefault();
                                   e.stopPropagation();

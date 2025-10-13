@@ -110,7 +110,7 @@ export default function ShiftCreationPage() {
       return;
     }
 
-    if (!assignee?.id){
+    if (!assignee?.id && !openShift){
       if (modalConfirmation){
         setModalConfirmation(false);
       }
@@ -167,7 +167,7 @@ export default function ShiftCreationPage() {
       setOpenShift(false);
     } catch (err) {
       console.error("Shift creation failed:", err);
-      alert("Something went wrong. Check console for details.");
+      displayToast("Something went wrong. Check console for details.", "error");
     }
     finally{
       setLoading(false);
@@ -419,7 +419,7 @@ export default function ShiftCreationPage() {
           <div className="flex flex-col gap-2 md:flex-1/2">
 
             {
-              status!=="default" && 
+              status!=="default" && assignee && 
               <div className={`border-2 border-b-2 ${borderColor} font-semibold px-4 py-2 rounded-md flex items-center justify-between`}>
                 { !unavailDetails && assignee?.last_name + " is available at the selected date and time"}
                 { unavailDetails && (unavailDetails as any).shift && assignee?.last_name + " has an active shift at the selected date and time"}

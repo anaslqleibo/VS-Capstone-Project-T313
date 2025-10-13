@@ -1,5 +1,8 @@
 import { ShiftStatus } from "@/app/controllers/Shifts";
 
+/**
+ * An enum object of all types of shift
+ */
 export enum Status {
     Accepted = 'Accepted',
     Pending = 'Pending',
@@ -14,6 +17,11 @@ export enum Status {
 
 }
 
+/**
+ * Converts a string to a Status object
+ * @param status A string that represents a shift status
+ * @returns Status object from the string param 'status'
+ */
 export function stringToStatus(status: string): Status {
     switch (status) {
         case 'Pending':
@@ -39,6 +47,11 @@ export function stringToStatus(status: string): Status {
     }
 }
 
+/**
+ * Converts a Status object to its string representation
+ * @param status Status object to turn into string
+ * @returns A string representing the Status object
+ */
 export function statusToString(status: Status): ShiftStatus {
     switch (status) {
         case Status.Pending:
@@ -62,6 +75,12 @@ export function statusToString(status: Status): ShiftStatus {
     }
 }
 
+/**
+ * Get the unique status color of a shift status
+ * @param status Status object of the shift
+ * @param returnHex Set to true to return a variable that stores the hex color (use this if you need to apply opacity)
+ * @returns A string of a CSS color variable, e.g., "var(--color-primary)" 
+ */
 function getStatusColor(status:Status, returnHex:boolean=true){
     if (returnHex){
         switch(status){

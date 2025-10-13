@@ -34,6 +34,7 @@ export type PayRate = {
   specialty?:string;
 }
 
+
 export async function fetchLoggedInAccount(){
   const res = await fetch(`/api/verify`);
 
@@ -54,6 +55,17 @@ export async function fetchAccount(userId: string) {
   }
   const data = await res.json();
   return data[0] as User;
+}
+
+export async function fetchEmail(userId: string) {
+  
+  const res = await fetch(`/api/users/${userId}/email`);
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch user email');
+  }
+  const data = await res.json();
+  return data.email;
 }
 
 export async function fetchAllEmployees() {

@@ -232,17 +232,17 @@ const AccountPage = () => {
                 <div className="grid grid-cols-2 md:flex md:gap-8 -mt-4">
                   <h5 className="font-semibold text-sm">
                     <span className="text-xs text-gray-500">Active job title: </span> 
-                    <div>{(payRate && 'job_title' in payRate) ? payRate.job_title : "-"}</div>
+                    <div>{(payRate && payRate.job_title) ? payRate.job_title : "-"}</div>
                   </h5>
 
                   <h5 className="font-semibold text-sm">
                     <span className="text-xs text-gray-500">Age group:</span> 
-                    <div>{(payRate && 'age_group' in payRate) ? payRate.age_group : "-"}</div>
+                    <div>{(payRate && payRate.age_group) ? payRate.age_group : "-"}</div>
                   </h5>
 
                   <h5 className="font-semibold text-sm">
                     <span className="text-xs text-gray-500">Level:</span> 
-                    <div>{(payRate && 'level' in payRate) ? payRate.level : "-"}</div>
+                    <div>{(payRate && payRate.level) ? payRate.level : "-"}</div>
                   </h5>
 
                   {(payRate && payRate.specialty) ? 
@@ -257,8 +257,7 @@ const AccountPage = () => {
                 {/* key/value grid */}
                 {payRateLoading ? <Spinner/> :
                 <div className="grid grid-cols-2 md:flex md:flex-row gap-4 md:gap-16 bg-gray-100 p-4 rounded-md -mt-4 ease-in-out duration-400 hover:bg-[color:#dce6fc]">
-                  
-                  {payRate ? 
+                   {payRate ? 
                     <>
                     <div>
                       <div className="text-xs text-gray-500">Weekday</div>

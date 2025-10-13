@@ -14,6 +14,11 @@ interface User {
   role: Role;
 }
 
+// tiny helper to detect bcrypt hashes ($2a/$2b/$2y)
+function isBcryptHash(value: unknown): value is string {
+  return typeof value === "string" && /^\$2[aby]\$/.test(value);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
@@ -35,9 +40,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user by email
+    // Get user by email (CASE-INSENSITIVE)
     const users = await executeQuery(
-      "SELECT id, first_name, last_name, email, password, role FROM users WHERE email = ?",
+      "SELECT id, first_name, last_name, email, password, role FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1",
       [email]
     ) as User[];
 
@@ -50,9 +55,25 @@ export async function POST(request: NextRequest) {
 
     const user = users[0];
 
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    
+    // Verify password: support BOTH bcrypt and plaintext
+    let isPasswordValid = false;
+    if (isBcryptHash(user.password)) {
+      isPasswordValid = await bcrypt.compare(password, user.password);
+    } else {
+      // plaintext stored in DB → compare directly
+      isPasswordValid = user.password === password;
+
+      // OPTIONAL: auto-upgrade plaintext to bcrypt on successful login
+      if (isPasswordValid) {
+        try {
+          const newHash = await bcrypt.hash(password, 10);
+          await executeQuery("UPDATE users SET password = ? WHERE id = ?", [newHash, user.id]);
+        } catch (rehashErr) {
+          // non-fatal; proceed even if rehash fails
+          console.warn("[LOGIN] Rehash failed for user id:", user.id, rehashErr);
+        }
+      }
+    }
 
     if (!isPasswordValid) {
       return NextResponse.json(
@@ -92,4 +113,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}

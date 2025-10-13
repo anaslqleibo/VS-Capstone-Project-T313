@@ -1,11 +1,35 @@
 import Icon from "@/public/icons/Icons";
-import getStatusColor, { stringToStatus } from "@/app/components/utils/getStatusColor";
-import formatDate from "@/app/components/utils/formatDate";
-import { Status } from "@/app/components/utils/getStatusColor";
+import { Status, stringToStatus } from "@/app/components/utils/getStatusColor";
+import formatDate, { formatDateToHour12 } from "@/app/components/utils/formatDate";
 import Tooltip from "../components/Tootltip";
+import dayjs from "dayjs";
+import { insertNotification } from "../lib/notification-db";
+import { ShiftStatus } from "./Shifts";
+import { sendEmail } from "../lib/email";
+import { fetchEmail } from "./User";
 
 
-type NotificationType = 'Assigned' | 'Unassigned' | 'Accepted' | 'Declined' | 'Request' | 'Leave Request' | 'Leave Accepted' | 'Leave Declined';
+export type NotificationType = 'Assigned' | 'Unassigned' | 'Open' | 'Accepted' | 'Declined' | 'Request' | 'Leave Request' | 'Leave Accepted' | 'Leave Declined' | 'None';
+
+export function shiftStatusToNotificationType(status: Status) : NotificationType{
+    switch (status){
+        case Status.Accepted:
+            return 'Accepted';
+        case Status.DeclinedShift:
+            return 'Declined';
+        case Status.Assigned:
+        case Status.Pending:
+            return 'Assigned';
+        case Status.OpenShift:
+            return 'Open';
+        case Status.Request:
+            return 'Request'
+        case Status.Unassigned:
+            return 'Unassigned';
+        default:
+            return 'None'
+    }
+}
 
 export type NotificationProps = {
     id?:string;
@@ -22,6 +46,18 @@ export type NotificationProps = {
     end_time?: string;
 }
 
+export async function checkNewNotification(user_id?: string) {
+    const res = await fetch(`/api/notifications/${user_id}`,{
+        method: "POST"
+    });
+    
+    if (!res.ok) {
+    throw new Error('Failed to fetch notifications');
+    }
+    const data = await res.json();
+    return data.found;
+}
+
 export async function fetchNotifications(user_id?: string) {
     const res = await fetch(`/api/notifications/${user_id}`);
     
@@ -32,12 +68,12 @@ export async function fetchNotifications(user_id?: string) {
     return data as NotificationProps[];
 }
 
-export async function notificationMarkAsRead(id: string, is_admin=false) {
+export async function notificationMarkAsRead(id: string, user_id:string) {
     try {
         const res = await fetch(`/api/notifications/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_admin }),
+        body: JSON.stringify({ user_id }),
         });
 
         return res.ok;
@@ -82,16 +118,19 @@ export function createAdminNotification({type, date, shift_date, days_left = 1, 
 
     const isLeave = type.split(' ').length>1;
 
+    const { startStr, endStr } = formatDateToHour12(shift_date, start_time??'00:00', end_time??'00:00');
+
+    const dateFormatted = dayjs(shift_date).format('ddd, D MMM YYYY');
     const tooltipContent = isLeave ? 
     <>
-        Date: {shift_date}<br/>
-        Start time: {start_time} <br/> 
-        End time: {end_time}
+        Date: {dateFormatted}<br/>
+        From: {startStr} <br/> 
+        To: {endStr}
     </> : <>
-        Date: {shift_date}<br/> 
+        Date: {dateFormatted}<br/> 
         Location: {location_name} <br/> 
-        Start time: {start_time} <br/> 
-        End time: {end_time}
+        Start time: {startStr} <br/> 
+        End time: {endStr}
     </>;
 
     const shift = (
@@ -102,53 +141,62 @@ export function createAdminNotification({type, date, shift_date, days_left = 1, 
 
     let content;
     switch (type) {
-    case "Accepted":
-        content = (
-        <span>
-            {assignee_name} has accepted their {shift} on
-        </span>
-        );
-        break;
-    case "Unassigned":
-        content = (
-        <div>
-            <span className="text-danger">
-            You have an unassigned {shift} scheduled in {days_left} day
-            {days_left > 1 ? "s" : ""}.<br />
-            Please assign it before the shift date.
+        case "Accepted":
+            content = (
+            <span>
+                {assignee_name} has accepted their {shift} on
             </span>
-        </div>
-        );
-        break;
-    case "Request":
-        content = (
-        <span>
-            {assignee_name} requested to take a {shift} on
-        </span>
-        );
-        break;
-    case "Declined":
-        content = (
-        <span>
-            {assignee_name} declined their {shift} on
-        </span>
-        );
-        break;
-    case "Assigned":
-        return "";
-    case "Leave Accepted":
-        return "";
-    case "Leave Declined":
-        return "";
-    case "Leave Request":
-        content = (
-        <span>
-            {assignee_name} has requested a {shift} on
-        </span>
-        );
-        break;
-    default:
-        content = <p></p>;
+            );
+            break;
+        case "Unassigned":
+        case "Open":
+            content = (
+            <div>
+                <span className="text-danger">
+                There is an {type.toLowerCase()} {shift} scheduled  {days_left>0?'in ' + days_left + ' day' + (days_left > 1 ? "s" : ""):'today'}.<br />
+
+                {days_left>0?'Please assign it before the shift date.':'Please resolve this as soon as possible!'}
+                </span>
+            </div>
+            );
+            break;
+        case "Request":
+            content = (
+            <span>
+                {assignee_name} requested to take a {shift} on
+            </span>
+            );
+            break;
+        case "Declined":
+            content = (
+            <span>
+                {assignee_name} declined their {shift} on
+            </span>
+            );
+            break;
+        case "Assigned":
+            content = (
+            <div>
+                <span className="text-danger">
+                {assignee_name} has a pending {shift} scheduled in {days_left} day
+                {days_left > 1 ? "s" : ""}.<br />
+                Please have the assignee accept/decline the shift.
+                </span>
+            </div>
+            );
+            break;
+        case "Leave Request":
+            content = (
+            <span>
+                {assignee_name} has requested a {shift} on
+            </span>
+            );
+            break;
+        case "Leave Accepted":
+        case "Leave Declined":
+            return "";
+        default:
+            content = <p></p>;
     }
 
  
@@ -157,7 +205,7 @@ export function createAdminNotification({type, date, shift_date, days_left = 1, 
             circle()}
             <div>
             {content}
-            {type!=='Unassigned' && <span className="text-[color:var(--secondary-color)]"> {formatDate(date)}</span>}
+            {type!=='Unassigned' && type !== 'Open' && <span className="text-[color:var(--secondary-color)]"> {formatDate(date)}</span>}
             </div>
             
         </div> 
@@ -166,6 +214,45 @@ export function createAdminNotification({type, date, shift_date, days_left = 1, 
 }
 
 
+export function generateStaffNotificationMessage({type, date, shift_date, days_left=1} : NotificationProps){
+    const notificationDate = <span className="text-[color:var(--secondary-color)]">{formatDate(date)}</span>;
+    
+    let message;
+    switch(type){
+        case 'Open':
+            message = <div>A new open shift has been created. Please review the details and accept it if you’re available.</div>
+            break;
+        case 'Assigned':
+            if (days_left > 3)
+                message = <div>You've been offered a new shift! Tap to view the details and confirm if you're available to take the shift.</div>
+            else
+                message = <div>You have <span className="text-[color:var(--secondary-color)]"> {days_left} day{days_left>1 ? "s":""}</span> left to accept/decline a shift!</div>
+            break;
+        case 'Leave Accepted':
+            message = <>Your leave request has been accepted on {notificationDate}</>;
+            break;
+        case 'Leave Declined':
+            message = <>Your leave request has been declined on {notificationDate}</>;
+            break;
+        case 'Accepted':
+            message = <>You have accepted your new shift on {notificationDate}</>;
+            break;
+        case 'Leave Request':
+            message = <>Your leave request have been submitted successfully on {notificationDate}</>;
+            break;
+        case 'Declined':
+            message = <>You have declined an assigned shift on {notificationDate}</>;
+            break;
+        case 'Request':
+            message = <>You have requested to take a shift on {notificationDate}</>;
+            break;
+        case 'Unassigned':
+            return '';
+        default:
+            message=<p></p>;
+    }
+    return message;
+}
 
 export function createStaffNotification({type, date, shift_date, days_left=1, onClick} : NotificationProps){
     const circle = ()=>{
@@ -180,45 +267,28 @@ export function createStaffNotification({type, date, shift_date, days_left=1, on
         if (onClick) onClick();
     }
 
-    let content;
-    switch(type){
-        case 'Accepted':
-            return '';
-            break;
-        case 'Unassigned':
-            content = <div>You have <span className="text-[color:var(--secondary-color)]"> {days_left} day{days_left>1 ? "s":""}</span> left to Accept/Deny a shift!</div>
-            break;
-        case 'Request':
-            return '';
-            break;
-        case 'Declined':
-            return '';
-            break;
-        case 'Assigned':
-            content = 'You received a new shift on';
-            break;
-        case 'Leave Accepted':
-            content = 'Your leave request has been accepted on';
-            break;
-        case 'Leave Declined':
-            content = 'Your leave request has been declined on';
-            break;
-        case 'Leave Request':
-            return '';
-            break;
-        default:
-            content=<p></p>;
-    }
- 
+    const message = generateStaffNotificationMessage({type,date,shift_date,days_left});
     return (
-        <div className="flex items-center" onClick={handleClick}>{
-            circle()}
+        <div className="flex items-center" onClick={handleClick}>
+            <div className="w-fit">{circle()}</div>
             <div>
-            {content}
-            <span className="text-[color:var(--secondary-color)]"> {formatDate(date)}</span>
+                {message}
             </div>
-            
         </div> 
     );
-    
+}
+
+export async function notifyManually(via_web:boolean, via_email:boolean, shift_id?: string, assignee_id?: string, status?: ShiftStatus, subject?: string, html?:string){
+    try{
+        const res = await fetch('/api/notifications/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ via_web, via_email, shift_id, assignee_id, status, subject, html}),
+        });
+
+        return res.ok;
+    }
+    catch(err){
+        return false;
+    }
 }

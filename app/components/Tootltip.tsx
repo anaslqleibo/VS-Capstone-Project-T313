@@ -19,7 +19,7 @@ export default function Tooltip({
   textWhenContentEmpty,
   timeoutHide,
   timeoutShow,
-  inline,
+  inline=true,
 }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const [coords, setCoords] = useState<{ top: number; left: number }>({ top: 0, left: 0 });

@@ -19,7 +19,8 @@ import { FaThLarge } from "react-icons/fa";
 import { fetchNotifications, NotificationProps } from "../controllers/Notification";
 import { fetchShiftExtProps, ShiftStatus } from "../controllers/Shifts";
 import { stringToStatus } from "./utils/getStatusColor";
-import Accordion from "./Accordion";
+import Toast from "./Toast";
+import Spinner from "./Spinner";
 
 
 export default function Sidebar({modalContainer} : PageProps){
@@ -84,18 +85,38 @@ export default function Sidebar({modalContainer} : PageProps){
       if (id === undefined) return;
       if (displayShift && displayShift.id?.toString() === id.toString()) return;
       
-      const shift = await fetchShiftExtProps(id);
-      setDisplayShift(shift);
+      try{
+        setLoading(true);
+        const shift = await fetchShiftExtProps(id);
+        setDisplayShift(shift);
+      }
+      finally{
+        setLoading(false);
+      }
+      
+    }
+    
+    async function loadNotifications(){
+      if (user){
+        const result = await fetchNotifications(user.id.toString());
+        setNotifications(result.map(notif=>({...notif, onClick: ()=>loadShift(notif?.shift_id)})));
+      }
     }
     
     useEffect(()=>{
-      async function loadNotifications(){
-        if (user){
-          const result = await fetchNotifications(user.id.toString());
-          setNotifications(result.map(notif=>({...notif, onClick: ()=>loadShift(notif?.shift_id)})));
-        }
+       if (role === 'user'){  
+        (async () => {
+          try{
+            await loadNotifications();
+          }
+          finally{
+            setLoadNotification(false);
+          }
+        })();
       }
+    }, [role])
 
+    useEffect(()=>{
       if (role === 'user' && loadNotification){  
         (async () => {
           try{
@@ -114,8 +135,22 @@ export default function Sidebar({modalContainer} : PageProps){
       setLoadNotification(true);
     }
 
+    const [showToast, setToastShown] = useState(false);
+    const [message, setMessage] = useState("");
+    const [toastType, setToastType] = useState<"success"|"error">("success");
+
+    const displayToast = (message: string, toastType: "success"|"error") => {
+        setMessage(message);
+        setToastType(toastType);
+        setToastShown(true);
+    }
+    const [loading, setLoading] = useState(false);
     return (
       <>
+        {loading && <div className="absolute rounded-lg top-0 left-0 w-full h-full bg-[#ffffff56] z-300"> <Spinner /> </div>}
+
+        <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
+      
         <aside className="relative bg-[color:var(--primary-color)] text-white md:w-[220px] md:px-[15px] md:py-[20px] md:flex md:flex-col md:items-center md:h-full w-full h-fit">
         <div className="my-auto flex items-center p-4 md:my-1 md:p-0">
 
@@ -129,7 +164,7 @@ export default function Sidebar({modalContainer} : PageProps){
         </div>}
         
 
-        {open && modalContainer.current && role==="user" && notifications && createModal(displayShift ? getModalTypesByStatus(stringToStatus(displayShift.status), displayShift.type as EventTypes) : ModalTypes.Notifications, true, modalContainer.current, displayShift ? displayShift : notifications, setOpen, undefined, undefined, undefined, (e:boolean)=>{!e && setNotifications([])})}
+        {open && modalContainer.current && role==="user" && notifications && createModal(displayShift ? getModalTypesByStatus(stringToStatus(displayShift.status), displayShift.type as EventTypes) : ModalTypes.Notifications, true, modalContainer.current, displayShift ? displayShift : notifications, setOpen, undefined, undefined, displayToast, (e:boolean)=>{!e && setNotifications([])})}
         
         <nav className='relative hidden w-full md:flex flex-col mb-2 overflow-y-auto items-center h-full [&>button]:w-full [&>button]:flex [&>button]:items-center [&>button]:p-[10px] [&>button]:text-white [&>button]:font-bold [&>button]:mb-[15px] [&>button]:rounded-[10px] [&>button]:transition-colors [&>button]:duration-200 [&>button]:hover:bg-[#1e2266] [&>button]:gap-5'>
           

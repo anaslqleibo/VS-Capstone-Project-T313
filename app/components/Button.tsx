@@ -15,6 +15,14 @@ interface ToggleProps {
     onChange?: (() => void);
 }
 
+/**
+ * A custom button component with a checkmark icon that switches between 'true' or 'false' state
+ * @param size Set the icon's size, e.g., 1em 
+ * @param onClick Takes in a function in the form of { true: () => void; false: () => void }, where the key 'true' will be called when the button is 'selected' and key 'false' gets called when it becomes 'unselected'
+ * @param disabled If true, will disable the component
+ * @param children ReactNode placed before the checkmark icon
+ * @param className Set the class names for the component
+ */
 export function Toggle({size = '0.6em', onClick, className, checked, onChange, ...props} : ToggleProps){
     let validSize = size;
     if (validSize && !validSize.endsWith('em'))
@@ -58,6 +66,16 @@ interface SelectableProps{
     children?: React.ReactNode;
     className?:string;
 }
+
+/**
+ * A custom button component that switches between 'selected' or 'not selected' state indicated by the block background color
+ * @param onClick Takes in a function in the form of { true: () => void; false: () => void }, where the key 'true' will be called when the button is 'selected' and key 'false' gets called when it becomes 'unselected'
+ * @param fontSize Set the the text fontSize, e.g., 0.8em, 24px
+ * @param startActive If true, will set the component state as 'selected' on initial launch
+ * @param disabled If true, will disable the component
+ * @param children The button's text in the form of string
+ * @param className Set the class names for the button
+ */
 export function Selectable({onClick, fontSize, startActive, className, ...props} : SelectableProps){
     const [active, setActive] = useState(startActive??false);
 
@@ -88,6 +106,9 @@ export function Selectable({onClick, fontSize, startActive, className, ...props}
     
 }
 
+/**
+ * 
+ */
 interface DropdownProps{
     fontSize ?: string;
     onItemClicks?: ((e: any) => void)[];
@@ -97,6 +118,17 @@ interface DropdownProps{
     disabled ?: boolean;
     children?: React.ReactNode; 
 }
+
+/**
+ * A custom button component that when clicked will display a child container with elements passed in 'items'
+ * @param fontSize Sets the text font size, e.g., 0.8em, 24px
+ * @param onItemClicks List of function to handle each item click. Length MUST be equal to the 'items' array's length
+ * @param items List of elements displaying in the dropdown container in the form of strings
+ * @param actAsFilter If true, when an item is clicked it will set that clicked item as the current selected item, acting as a filter mechanism 
+ * @param setFilter Custom SetState string object to which will pass in the selected item string to the function
+ * @param disabled If true, will disable the component
+ * @param children A string that replaces the first text shown as the 'title' or selected item of the component, MUST be a string
+ */
 export function ButtonDropdown({fontSize, onItemClicks, items, actAsFilter = false, ...props} : DropdownProps){
     const [open, setOpen] = useState(false);
     const [text, setText] = useState(props.children || "Add Task")
@@ -171,7 +203,21 @@ interface ButtonProps{
 }
 
 
-
+/**
+ * Custom button component
+ * @param type Sets the type of custom button, e.g. cta, toggle, dropdown, etc
+ * @param fontSize Sets the text font size, e.g., 1em
+ * @param onClick Sets the function that gets called when the button is clicked
+ * @param onToggleClick Exclusive parameter to pass in if the 'type' is set to 'toggle'
+ * @param items Exclusive parameter to pass in if the 'type' is set to 'dropdown'
+ * @param onItemClicks Exclusive parameter to pass in if the 'type' is set to 'dropdown'
+ * @param size Exclusive parameter to pass in if the 'type' is set to 'toggle'
+ * @param htmlType set the 'type' attribute of the button element
+ * @param disabled If true, will disable the component
+ * @param className Set the class names of the component
+ * @param startActive Exclusive parameter to pass in if the 'type' is set to 'selectable'
+ * @param children ReactNode placed inside the button element
+ */
 export default function Button({ type = 'cta', fontSize = '1em', onClick, items, onItemClicks, size, htmlType, disabled, children, ...props } : ButtonProps){
     
 
