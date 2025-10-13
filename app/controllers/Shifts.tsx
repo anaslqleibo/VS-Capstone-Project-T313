@@ -2,28 +2,36 @@ import { EventInput } from '@fullcalendar/core';
 import getStatusColor, { stringToStatus } from '../components/utils/getStatusColor';
 import { ShiftExtendedProps } from '../components/Modal';
 
-export type ShiftStatus = 'Pending' | 'Assigned' | 'Unassigned' | 'Accepted' | 'Open' | 'Request' | 'Declined' | 'Unpublished';
+export type ShiftStatus =
+  | 'Pending'
+  | 'Assigned'
+  | 'Unassigned'
+  | 'Accepted'
+  | 'Open'
+  | 'Request'
+  | 'Declined'
+  | 'Unpublished';
 
 export type Shift = {
-  id?: string; 
-  assignee_id: string; 
+  id?: string;
+  assignee_id: string;
   status: ShiftStatus;
   date: string;
-  start_time: string; 
-  end_time: string;   
+  start_time: string;
+  end_time: string;
   notes: string;
-  location_id: string; 
+  location_id: string;
   location_name: string;
   address: string;
-  assignee_name ?: string;
-  type?:string;
+  assignee_name?: string;
+  type?: string;
+  email_reason?: string;
 };
 
 export type ShiftAssignee = {
   id?: string;
-  assignee_id: string; 
-}
-
+  assignee_id: string;
+};
 
 export async function fetchShift(id: string) {
   const res = await fetch(`/api/shifts/shift/${id}`);
@@ -64,7 +72,7 @@ export async function createShift(shift: Shift) {
 
 export async function updateShift(shift: Shift | ShiftAssignee, assignee_changed = false) {
   try {
-    const res = await fetch(`/api/shifts/${assignee_changed?'1':'0'}`, {
+    const res = await fetch(`/api/shifts/${assignee_changed ? '1' : '0'}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(shift),
@@ -77,12 +85,12 @@ export async function updateShift(shift: Shift | ShiftAssignee, assignee_changed
   }
 }
 
-export async function updateShiftStatus(shift_id: string, status: ShiftStatus, assignee_id?:string) {
+export async function updateShiftStatus(shift_id: string, status: ShiftStatus, assignee_id?: string) {
   try {
     const res = await fetch(`/api/shifts/shift/${shift_id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status, assignee_id}),
+      body: JSON.stringify({ status, assignee_id }),
     });
 
     const data = await res.json();
@@ -91,11 +99,11 @@ export async function updateShiftStatus(shift_id: string, status: ShiftStatus, a
       const message = data.error || `Request failed with status ${res.status}`;
       return { success: false, err: message };
     }
-    
+
     return { success: true };
   } catch (err) {
     console.error('Failed to update shift status:', err);
-    const message =  err instanceof Error ? err.message : typeof err === "string" ? err : "";
+    const message = err instanceof Error ? err.message : typeof err === 'string' ? err : '';
     return { success: false, err: message };
   }
 }
@@ -113,39 +121,78 @@ export async function deleteShift(shift_id: string) {
   }
 }
 
+/**
+ * 🔁 Duplicate a shift by ID.
+ * Backend should be implemented at: POST /api/shifts/shift/:id/duplicate
+ * Returns { success: boolean, newShift?: Shift, err?: string }
+ */
+export async function duplicateShift(shift_id: string): Promise<{ success: boolean; newShift?: Shift; err?: string }> {
+  try {
+    const res = await fetch(`/api/shifts/shift/${shift_id}/duplicate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      return { success: false, err: data?.error || `HTTP ${res.status}` };
+    }
+
+    const data = (await res.json()) as { success: true; newShift: Shift };
+    return { success: true, newShift: data.newShift };
+  } catch (err) {
+    console.error('Failed to duplicate shift', err);
+    const message = err instanceof Error ? err.message : 'Unknown error';
+    return { success: false, err: message };
+  }
+}
+
 export function getEventInputShifts(user_id: number) {
   return fetchShifts(user_id).then((shifts) =>
     shifts.map((shift) => {
-      const shiftExtProps : ShiftExtendedProps = shiftToShiftExtProps(shift);
+      const shiftExtProps: ShiftExtendedProps = shiftToShiftExtProps(shift);
 
       return {
         id: shift.id,
         start: shift.date,
         extendedProps: shiftExtProps,
         color: getStatusColor(stringToStatus(shift.status)),
-      } as EventInput
-    }
-  ));
+      } as EventInput;
+    })
+  );
 }
 
-function shiftToShiftExtProps(shift: Shift){
-  const shiftExtProps : ShiftExtendedProps = {
+/** Convert DB Shift row → the extendedProps calendar expects */
+function shiftToShiftExtProps(shift: Shift) {
+  const shiftExtProps: ShiftExtendedProps = {
     id: shift.id,
     status: stringToStatus(shift.status),
-    type: shift.type??'shift',
+    type: shift.type ?? 'shift',
     date: shift.date.split('T')[0],
-    start_time: shift.start_time.slice(0, 5), // Updated to use start_time
-    end_time: shift.end_time.slice(0, 5),     // Updated to use end_time
+    start_time: shift.start_time.slice(0, 5),
+    end_time: shift.end_time.slice(0, 5),
     time: `${shift.start_time.slice(0, 5)}–${shift.end_time.slice(0, 5)}`,
     location_id: shift.location_id,
-    location_name: shift.location_name,           // Updated to use location
+    location_name: shift.location_name,
     address: shift.address,
     notes: shift.notes,
     assignee_id: shift.assignee_id,
-    assignee_name: shift.assignee_name
-    // employee field removed since it's not in the database
+    assignee_name: shift.assignee_name,
   };
- return shiftExtProps;
+  return shiftExtProps;
+}
+
+/** Helper: build a calendar event object from a Shift row */
+export function shiftToEventInput(shift: Shift): EventInput {
+  const ext = shiftToShiftExtProps(shift);
+  return {
+    id: shift.id,
+    start: shift.date,
+    extendedProps: ext,
+    color: getStatusColor(stringToStatus(shift.status)),
+    title: buildShiftEventTitle(shift.status, ext.time, ext.location_name, shift.assignee_name, ext.type as 'shift' | 'leave' | 'unavailability'),
+  };
 }
 
 export function buildShiftEvent(date: string, timeRange: string, otherProps: Partial<EventInput> = {}) {
@@ -157,6 +204,12 @@ export function buildShiftEvent(date: string, timeRange: string, otherProps: Par
   };
 }
 
-export function buildShiftEventTitle(status: string, time: string, location: string, employee?: string, type:'shift'|'leave'|'unavailability'='shift') {
+export function buildShiftEventTitle(
+  status: string,
+  time: string,
+  location: string,
+  employee?: string,
+  type: 'shift' | 'leave' | 'unavailability' = 'shift'
+) {
   return `${status} ${(status === 'Leave' || status === 'Unavailable') ? '' : type}${employee ? `\n${employee}` : ''}${time ? `\n${time}` : ''}${location ? `\n${location}` : ''}`;
 }

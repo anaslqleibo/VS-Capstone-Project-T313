@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
       start_time,
       end_time,
       notes,
+      email_reason
     } = await req.json();
 
     console.log("[SHIFT CREATE] payload:", {
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
       notes,
     });
 
-    // 1) Insert the shift (kept as close to your original as possible)
+    // 1) Insert the shift
     const admin = await isAdmin(assignee_id);
 
     const res = await executeQuery(

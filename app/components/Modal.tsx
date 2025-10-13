@@ -25,9 +25,172 @@ import Radio from "@mui/material/Radio";
 import { createLeave, deleteLeave, Unavailability, updateLeaveStatus } from "../controllers/Leave";
 import Checkbox from "./Checkbox";
 import Spinner from "./Spinner";
+import { duplicateShift, shiftToEventInput } from "../controllers/Shifts";
+import { FaCopy } from "react-icons/fa6"; // or from "react-icons/fa"
+import { createShift } from "../controllers/Shifts";
+
 
 
 // TODO: Still missing some code, please go through everything and finish what's still missing
+
+type DupDialogProps = {
+  open: boolean;
+  onClose: () => void;
+  onCreate: (payload: {
+    date: string;
+    start_time: string;
+    end_time: string;
+    assignee_id: string;
+    assignee_name?: string;
+    location_id: string;
+    location_name: string;
+    address: string;
+    notes: string;
+    status: string; // keep current or “Pending”
+  }) => Promise<void>;
+  initial: {
+    date: string;
+    start_time: string;
+    end_time: string;
+    assignee_id: string;
+    assignee_name?: string;
+    location_id: string;
+    location_name: string;
+    address: string;
+    notes: string;
+    status: string;
+  };
+};
+
+function DupDialog({ open, onClose, onCreate, initial }: DupDialogProps) {
+  const [date, setDate] = React.useState(dayjs(initial.date));
+  const [from, setFrom] = React.useState(dayjs(initial.start_time, "HH:mm"));
+  const [to, setTo] = React.useState(dayjs(initial.end_time, "HH:mm"));
+  const [assigneeId, setAssigneeId] = React.useState(initial.assignee_id);
+  const [assigneeName, setAssigneeName] = React.useState(initial.assignee_name ?? "");
+  const [locationId, setLocationId] = React.useState(initial.location_id);
+  const [locationName, setLocationName] = React.useState(initial.location_name);
+  const [address, setAddress] = React.useState(initial.address);
+  const [notes, setNotes] = React.useState(initial.notes ?? "");
+  const [status, setStatus] = React.useState(initial.status); // or default to "Pending"
+  const [busy, setBusy] = React.useState(false);
+
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-xl p-5 relative">
+        <button className="absolute right-3 top-2 text-xl" onClick={onClose}>×</button>
+        <h3 className="text-lg font-semibold mb-4">Duplicate shift</h3>
+
+        <div className="flex flex-col gap-3">
+          {/* Date */}
+          <div className="flex items-center gap-2">
+            <span className="w-24 text-sm font-medium text-gray-600">Date:</span>
+            <DatePicker
+              format="DD-MM-YYYY"
+              value={date}
+              onChange={(d)=> d && setDate(d)}
+              slotProps={{ textField: { sx: { minWidth: 170 } } }}
+            />
+          </div>
+
+          {/* Time */}
+          <div className="flex items-center gap-2">
+            <span className="w-24 text-sm font-medium text-gray-600">Time:</span>
+            <TimePicker
+              label="From"
+              format="hh:mm A"
+              value={from}
+              onChange={(t)=> t && setFrom(t)}
+              slotProps={{ textField: { sx: { minWidth: 150 } } }}
+            />
+            <span className="font-bold text-[color:var(--primary-color)]">–</span>
+            <TimePicker
+              label="To"
+              format="hh:mm A"
+              value={to}
+              onChange={(t)=> t && setTo(t)}
+              slotProps={{ textField: { sx: { minWidth: 150 } } }}
+            />
+          </div>
+
+          {/* Assignee */}
+          <div className="flex items-center gap-2">
+            <span className="w-24 text-sm font-medium text-gray-600">Assignee:</span>
+            <DropdownUser
+              detail={assigneeName}
+              setUpdatedDetail={(k: string, v: any) => {
+                if (k === "assignee_name") setAssigneeName(v);
+                if (k === "assignee_id") setAssigneeId(v);
+              }}
+            />
+          </div>
+
+          {/* Location + address */}
+          <div className="flex items-stretch gap-2">
+            <span className="w-24 text-sm font-medium text-gray-600 pt-2">Location:</span>
+            <div className="flex-1">
+              <LocationDropdownWithAddress
+                detail={locationName}
+                setUpdatedDetail={(k: string, v: any) => {
+                  if (k === "location_id") setLocationId(v);
+                  if (k === "location_name") setLocationName(v);
+                  if (k === "address") setAddress(v);
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <span className="block text-sm font-medium text-gray-600">Notes:</span>
+            <textarea
+              className="border rounded w-full p-2 text-sm"
+              value={notes}
+              onChange={(e)=> setNotes(e.target.value)}
+            />
+          </div>
+
+          {/* Status (optional – show if you want to override to Pending) */}
+          {/* <div className="flex items-center gap-2">
+            <span className="w-24 text-sm font-medium text-gray-600">Status:</span>
+            <Dropdown items={['Pending','Accepted','Open','Unassigned']} initialSelectedItem={status} onChange={(s)=> setStatus(s)} />
+          </div> */}
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button className="px-4 py-2 rounded bg-gray-200" onClick={onClose}>Cancel</button>
+          <button
+            disabled={busy}
+            className="px-4 py-2 rounded bg-[color:var(--primary-color)] text-white hover:bg-[color:var(--hover-color)]"
+            onClick={async ()=>{
+              setBusy(true);
+              await onCreate({
+                date: date.format("YYYY-MM-DD"),
+                start_time: from.format("HH:mm:ss"),
+                end_time: to.format("HH:mm:ss"),
+                assignee_id: assigneeId,
+                assignee_name: assigneeName,
+                location_id: locationId,
+                location_name: locationName,
+                address,
+                notes,
+                status, // or force "Pending"
+              });
+              setBusy(false);
+            }}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
 
 export enum ModalTypes{
     ShiftDetails = "Shift details",
@@ -190,6 +353,39 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
             
         }
     }
+
+
+    const handleDuplicate = async () => {
+  try {
+    const id = event?.extendedProps?.id as string;
+    if (!id) return;
+
+    setLoading && setLoading(true);
+    const { success, newShift, err } = await duplicateShift(id);
+    setLoading && setLoading(false);
+
+    if (!success || !newShift) {
+      displayToast && displayToast(err || "Failed to duplicate shift", "error");
+      return;
+    }
+
+    // Build the event object for calendar
+    const newEvent = shiftToEventInput(newShift);
+    setEvents && setEvents(newEvent, "create");
+    displayToast && displayToast("Shift duplicated", "success");
+  } catch (e) {
+    console.error("[UI] duplicate shift failed:", e);
+    setLoading && setLoading(false);
+    displayToast && displayToast("Failed to duplicate shift", "error");
+  }
+}
+
+
+
+
+
+
+    
     return (
         <>
     <div className="flex justify-between items-center">
@@ -207,13 +403,17 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
         <div className="flex gap-3 text-[color:var(--primary-color)] [&>*]:hover:text-[color:var(--hover-color)]">
             {isEditing ? <div id="btnSave" onClick={()=>{handleSave()}}><FaSave /></div> :
             <>
-            <FaRegBell/>
-            <FaEdit onClick={()=>{setEditing && setEditing(true); 
-            castedFormValues.assignee_id === null && handleChange!('assignee_name',' ')
+  <FaRegBell />
+<FaCopy onClick={() => (window as any).__openShiftDuplicate?.()} title="Duplicate shift" />
+  <FaEdit
+    onClick={() => {
+      setEditing && setEditing(true);
+      castedFormValues.assignee_id === null && handleChange!("assignee_name", " ");
+    }}
+  />
+  <FaTrash onClick={handleDelete} />
+</>
 
-             }}/>
-            <FaTrash onClick={handleDelete}/>
-            </>
             }
             
         </div>
@@ -725,171 +925,248 @@ export function createModal(type:ModalTypes|null, startOpen: boolean, modalConta
     return (<Modal type={type} details={details} startOpen={startOpen} modalContainer={modalContainer} setParentOpen={setParentOpen} setEvents={setEvents} event={event} displayToast={displayToast} hasItems={hasItems}/>);
 }
 
-export default function Modal({type, details, startOpen, title, modalContainer, setParentOpen, ...props} : ModalProps){
-    const [shown, setShown] = useState(startOpen ?? false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [formValues, setFormValues] = useState<ShiftExtendedProps|LeaveExtendedProps|undefined>(details ? ('status' in details ? details as ShiftExtendedProps : details as LeaveExtendedProps) : undefined);
-    
-    useEffect(() => {
-        setFormValues(details ? ('status' in details ? details as ShiftExtendedProps : details as LeaveExtendedProps) : undefined);
-    }, [details]);
 
-    const handleChange = (field: string, value: any) => {
-        setFormValues((prev : any) => {
-            if (value && formValues && "start_time" in formValues && (field === "start_time" || field === "end_time") && !(!formValues?.start_time || !formValues?.end_time)){
+interface ModalPortalProps {
+  children: ReactNode;
+  container: HTMLDivElement | HTMLElement;
+  isModalOpen: boolean;
+}
 
-                return {
-                    ...prev,
-                    [field]: value,
-                    time: (field === "start_time" ? value.slice(0,5) : formValues?.start_time.slice(0,5)) + "-" + (field === "end_time"?value.slice(0,5):formValues?.end_time.slice(0,5))
-                };
+function ModalPortal({ children, container, isModalOpen }: ModalPortalProps) {
+  const main = document.querySelector('main');
+  useEffect(() => {
+    if (!main) return;
 
-            }
+    if (isModalOpen) {
+      if (!main.contains(container)) {
+        main.appendChild(container);
+      }
+    } else {
+      if (main.contains(container)) {
+        main.removeChild(container);
+      }
+    }
 
-            if (prev && ((prev.status === Status.OpenShift || prev.status === Status.Unassigned) && (field==="status" && value!==prev.status)) && formValues?.assignee_name === undefined){
-                return {
-                    ...prev,
-                    [field]: value,
-                    'assignee_name':''
-                };
-            }
-
-            if ((field==="status" && (value===Status.OpenShift || value===Status.Unassigned))){
-                return {
-                    ...prev,
-                    [field]: value,
-                    'assignee_name':undefined
-                };
-            }
-
-            return {
-                ...prev,
-                [field]: value
-            };
-        });
+    return () => {
+      if (main && main.contains(container)) {
+        main.removeChild(container);
+      }
     };
+  }, [main, isModalOpen]);
 
-    const containerRef = useRef<HTMLDivElement>(null);
-    if (!props.noOverlay) useClickOutside(containerRef, ()=> props.setShown ? props.setShown(false) : setShown(false));
-
-    const [rendered, setRendered] = useState(false);
-    const [visible, setVisible] = useState(false);
-
-    if (!props.noOverlay) overlayAnimation(props.shown ? props.shown : shown, setRendered, setVisible, modalContainer, setParentOpen)
-
-    const closeModal = () => props.setShown ? props.setShown(false) : setShown(false);
-
-    const user = useAuth().user;
-    const admin = user?.role === "admin";
-    const setEditing = (edit:boolean) => {
-        setIsEditing(admin && edit);
-    }
-
-    if (!admin && formValues && formValues.status === 'Open' && user){
-        formValues.assignee_id = user.id.toString();
-    }
-
-    const buttons = type!==undefined && createButtons(type, props.setEvents, props.event, props.displayToast, closeModal, admin, formValues, handleChange, isEditing, setEditing);
-    
-    useEffect(()=>{
-        if (user && user?.role === 'user'){
-            setFormValues((prev: any) => ({
-                ...prev,
-                assignee_id: user.id
-            }));
-        }
-
-    }, [user])
-    
-    const [loading, setLoading] = useState(false);
-
-    const ModalJSX = (<div className={`${props.noOverlay ? ' ': 'fixed -translate-y-1/2 top-1/2'} md:translate-none md:relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto w-80 sm:w-full sm:max-w-lg`} ref={containerRef}>
-    {loading && <div className="absolute rounded-lg top-0 left-0 w-full h-full bg-[#ffffff8d]"> <Spinner custom showWater backgroundGradient/> </div>}
-
-    <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg">
-        <div className="w-full md:text-left">
-            <div className="flex items-center justify-between align-middle mb-2">
-                <h1 id="dialog-title" className="text-lg font-semibold text-gray-900">
-                    
-                    {type !== undefined ? (formValues?.type ? type?.replace("shift", formValues?.type) : type) : title??"Please set the tag 'title'"}
-                </h1>
-                
-                { 
-                <Icon
-                    id="x"
-                    width="1.5em"
-                    height="1.5em"
-                    className="text-black-700 hover:text-danger"
-                    onClick={closeModal}
-                />}
-                
-            </div>
-            
-
-            {type && details && type !== ModalTypes.Notifications && createDetails(type, details, admin, props.setEvents, props.event, props.displayToast, closeModal, isEditing, setEditing, formValues, handleChange, "location_id" in details ? details as ShiftExtendedProps : undefined, setLoading)}
-                
-
-            {props.children}
-
-            
-        </div>
-    </div>
-    {(buttons!=null || props.customButtons) && <div className="p-4 flex flex-row-reverse px-6 gap-3 rounded-lg bg-gray-50">
-        {type!==undefined ? buttons : props.customButtons}
-    </div>}    
-    </div>);
-
-    if (props.noOverlay) return ModalJSX;
-
-    return (
-        <ModalPortal container={modalContainer} isModalOpen={rendered}>
-            {rendered && <div role="dialog" aria-modal="true" aria-labelledby="dialog-title" className={`relative z-10 h-full transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} >
-            
-            <div aria-hidden="true" className={`absolute inset-0 bg-gray-200/75 backdrop-blur-sm transition-all duration-200 ${visible ? 'backdrop-opacity-100' : 'backdrop-opacity-0'}`}></div>
-
-            <div className="relative z-10 w-full overflow-y-auto h-full">
-            <div className="flex min-h-full justify-center p-4 text-center items-center sm:p-0">
-            
-                {type === ModalTypes.Notifications &&
-                    <ListView title="Notifications" containerRef={containerRef} setShown={setShown} idList={details ? details.map((d:any)=>d.id) : undefined} hasItems={props.hasItems}>{createNotifications(false, details as NotificationProps[])}</ListView>
-                }
-
-                {type !== ModalTypes.Notifications && ModalJSX}
-            </div>
-            </div>
-        </div>  }
-        </ModalPortal>
-        
-    );
+  return container ? createPortal(children, container) : null;
 }
 
-interface ModalPortal{
-    children: ReactNode;
-    container: HTMLDivElement | HTMLElement;
-    isModalOpen:boolean;
-}
 
-export function ModalPortal({children, container, isModalOpen}: ModalPortal ) {
-    const main = document.querySelector('main');
-    useEffect(() => {
-        if (!main) return;
+export default function Modal({type, details, startOpen, title, modalContainer, setParentOpen, ...props} : ModalProps){
+  const [shown, setShown] = useState(startOpen ?? false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [formValues, setFormValues] = useState<ShiftExtendedProps|LeaveExtendedProps|undefined>(
+    details ? ('status' in details ? details as ShiftExtendedProps : details as LeaveExtendedProps) : undefined
+  );
 
-        if (isModalOpen) {
-            if (!main.contains(container)) {
-                main.appendChild(container);
-            }
-        } else {
-            if (main.contains(container)) {
-                main.removeChild(container);
-            }
-        }
+  // 🆕 duplicate UI state
+  const [dupOpen, setDupOpen] = useState(false);
+  const [dupInitial, setDupInitial] = useState<any | null>(null);
 
-        return () => {
-            if (main.contains(container)) {
-                main.removeChild(container);
-            }
+  useEffect(() => {
+    setFormValues(details ? ('status' in details ? details as ShiftExtendedProps : details as LeaveExtendedProps) : undefined);
+  }, [details]);
+
+  const handleChange = (field: string, value: any) => {
+    setFormValues((prev : any) => {
+      if (value && formValues && "start_time" in formValues && (field === "start_time" || field === "end_time") && !(!formValues?.start_time || !formValues?.end_time)){
+        return {
+          ...prev,
+          [field]: value,
+          time: (field === "start_time" ? value.slice(0,5) : formValues?.start_time.slice(0,5)) + "-" + (field === "end_time"?value.slice(0,5):formValues?.end_time.slice(0,5))
         };
-    }, [main, isModalOpen]);
+      }
+      if (prev && ((prev.status === Status.OpenShift || prev.status === Status.Unassigned) && (field==="status" && value!==prev.status)) && formValues?.assignee_name === undefined){
+        return { ...prev, [field]: value, 'assignee_name':''
+        };
+      }
+      if ((field==="status" && (value===Status.OpenShift || value===Status.Unassigned))){
+        return { ...prev, [field]: value, 'assignee_name':undefined };
+      }
+      return { ...prev, [field]: value };
+    });
+  };
 
-    return container ? createPortal(children, container) : null;
+  const containerRef = useRef<HTMLDivElement>(null);
+  if (!props.noOverlay) useClickOutside(containerRef, ()=> props.setShown ? props.setShown(false) : setShown(false));
+
+  const [rendered, setRendered] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  if (!props.noOverlay) overlayAnimation(props.shown ? props.shown : shown, setRendered, setVisible, modalContainer, setParentOpen);
+
+  const closeModal = () => props.setShown ? props.setShown(false) : setShown(false);
+
+  const user = useAuth().user;
+  const admin = user?.role === "admin";
+  const setEditing = (edit:boolean) => { setIsEditing(admin && edit); };
+
+  if (!admin && formValues && formValues.status === 'Open' && user){
+    formValues.assignee_id = user.id.toString();
+  }
+
+  const buttons = type!==undefined && createButtons(
+    type, props.setEvents, props.event, props.displayToast, closeModal, admin, formValues, handleChange, isEditing, setEditing
+  );
+
+  useEffect(()=>{
+    if (user && user?.role === 'user'){
+      setFormValues((prev: any) => ({ ...prev, assignee_id: user.id }));
+    }
+  }, [user])
+
+  const [loading, setLoading] = useState(false);
+
+  // 🆕 open duplicate dialog with current event values
+  const handleDuplicateOpen = () => {
+    const ex: any = props.event?.extendedProps;
+    if (!ex) return;
+
+    setDupInitial({
+      date: ex.date,                       // "YYYY-MM-DD"
+      start_time: ex.start_time,           // "HH:mm"
+      end_time: ex.end_time,               // "HH:mm"
+      assignee_id: ex.assignee_id || "",
+      assignee_name: ex.assignee_name || "",
+      location_id: ex.location_id || "",
+      location_name: ex.location_name || "",
+      address: ex.address || "",
+      notes: ex.notes || "",
+      status: ex.status || "Pending",      // or force "Pending"
+    });
+    setDupOpen(true);
+  };
+
+  // expose a global so the toolbar icon can call it without refactor
+  useEffect(() => {
+    (window as any).__openShiftDuplicate = handleDuplicateOpen;
+    return () => { delete (window as any).__openShiftDuplicate; };
+  }, [props.event]);
+
+  const ModalJSX = (
+    <div
+      className={`${props.noOverlay ? ' ' : 'fixed -translate-y-1/2 top-1/2'} md:translate-none md:relative transform rounded-lg bg-white text-left shadow-xl transition-all my-auto w-80 sm:w-full sm:max-w-lg`}
+      ref={containerRef}
+    >
+      {loading && <div className="absolute rounded-lg top-0 left-0 w-full h-full bg-[#ffffff8d]"><Spinner custom showWater backgroundGradient/></div>}
+
+      <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 rounded-lg">
+        <div className="w-full md:text-left">
+          <div className="flex items-center justify-between align-middle mb-2">
+            <h1 id="dialog-title" className="text-lg font-semibold text-gray-900">
+              {type !== undefined ? (formValues?.type ? type?.replace("shift", formValues?.type) : type) : title??"Please set the tag 'title'"}
+            </h1>
+
+            <Icon id="x" width="1.5em" height="1.5em" className="text-black-700 hover:text-danger" onClick={closeModal} />
+          </div>
+
+          {type && details && type !== ModalTypes.Notifications && createDetails(
+            type, details, admin, props.setEvents, props.event, props.displayToast,
+            closeModal, isEditing, setEditing, formValues, handleChange,
+            "location_id" in details ? details as ShiftExtendedProps : undefined, setLoading
+          )}
+
+          {props.children}
+        </div>
+      </div>
+
+      {(buttons!=null || props.customButtons) && (
+        <div className="p-4 flex flex-row-reverse px-6 gap-3 rounded-lg bg-gray-50">
+          {type!==undefined ? buttons : props.customButtons}
+        </div>
+      )}
+
+      {/* 🆕 Duplicate Dialog */}
+      {dupOpen && dupInitial && (
+        <DupDialog
+          open={dupOpen}
+          initial={dupInitial}
+          onClose={() => setDupOpen(false)}
+          onCreate={async (payload) => {
+            try {
+              setLoading(true);
+              // create via existing create endpoint
+              const res = await createShift({
+                id: undefined,
+                assignee_id: payload.assignee_id,
+                status: payload.status as any,
+                date: payload.date,
+                start_time: payload.start_time,
+                end_time: payload.end_time,
+                notes: payload.notes,
+                location_id: payload.location_id,
+                location_name: payload.location_name,
+                address: payload.address,
+                assignee_name: payload.assignee_name,
+                type: "shift",
+                email_reason: "duplicate"
+
+              });
+
+              // optimistic event for calendar
+              const timeLabel = `${payload.start_time.slice(0,5)}–${payload.end_time.slice(0,5)}`;
+              const newEvent: EventInput = {
+                id: res?.id || `${Date.now()}`,
+                start: payload.date,
+                extendedProps: {
+                  id: res?.id || `${Date.now()}`,
+                  status: payload.status,
+                  type: "shift",
+                  date: payload.date,
+                  start_time: payload.start_time.slice(0,5),
+                  end_time: payload.end_time.slice(0,5),
+                  time: timeLabel,
+                  location_id: payload.location_id,
+                  location_name: payload.location_name,
+                  address: payload.address,
+                  notes: payload.notes,
+                  assignee_id: payload.assignee_id,
+                  assignee_name: payload.assignee_name,
+                },
+                color: getStatusColor(stringToStatus(payload.status as any)),
+                title: buildShiftEventTitle(payload.status, timeLabel, payload.location_name, payload.assignee_name, 'shift'),
+              };
+
+              props.setEvents && props.setEvents(newEvent, "create");
+              setDupOpen(false);
+              props.displayToast && props.displayToast("Shift duplicated", "success");
+            } catch (e) {
+              console.error("[Duplicate] create failed", e);
+              props.displayToast && props.displayToast("Failed to duplicate shift", "error");
+            } finally {
+              setLoading(false);
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+
+  if (props.noOverlay) return ModalJSX;
+
+  return (
+    <ModalPortal container={modalContainer} isModalOpen={rendered}>
+      {rendered && (
+        <div role="dialog" aria-modal="true" aria-labelledby="dialog-title" className={`relative z-10 h-full transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <div aria-hidden="true" className={`absolute inset-0 bg-gray-200/75 backdrop-blur-sm transition-all duration-200 ${visible ? 'backdrop-opacity-100' : 'backdrop-opacity-0'}`} />
+          <div className="relative z-10 w-full overflow-y-auto h-full">
+            <div className="flex min-h-full justify-center p-4 text-center items-center sm:p-0">
+              {type === ModalTypes.Notifications && (
+                <ListView title="Notifications" containerRef={containerRef} setShown={setShown} idList={details ? details.map((d:any)=>d.id) : undefined} hasItems={props.hasItems}>
+                  {createNotifications(false, details as NotificationProps[])}
+                </ListView>
+              )}
+              {type !== ModalTypes.Notifications && ModalJSX}
+            </div>
+          </div>
+        </div>
+      )}
+    </ModalPortal>
+  );
 }

@@ -37,6 +37,8 @@ export async function GET(request : NextRequest, context: RouteContext<'/api/shi
 };
 
 
+
+
 export async function PUT(req: NextRequest, context: RouteContext<'/api/shifts/[user_id]'>) {
   try {
     const { id, assignee_id, status, date, start_time, end_time, notes, location_id} : Shift = await req.json();
