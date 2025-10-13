@@ -1,3 +1,6 @@
+/**
+ * The type specified for validating an input attributes
+ */
 interface ParamTypes {
   value?: string | number;
   required?: boolean | undefined;
@@ -8,6 +11,10 @@ interface ParamTypes {
   customValidate?: Function;
 }
 
+/**
+ * Validates the input attributes
+ * @returns 
+ */
 export function validateInput({ value="", required, minLength, maxLength, pattern, type, customValidate } : ParamTypes) {
   if (required && !value) {
     return "This field is required.";

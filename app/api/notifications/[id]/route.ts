@@ -11,13 +11,13 @@ export async function GET(request : NextRequest, context: RouteContext<'/api/not
         
         if (admin) {
             notifications = await executeQuery(
-                `SELECT n.id as id, n.type as type, DATE_FORMAT(n.updated_at, '%Y-%m-%d') as date, s.id as shift_id, DATE_FORMAT(s.date, '%Y-%m-%d') as shift_date, DATEDIFF(s.date, NOW()) as days_left, CONCAT(u.first_name, ' ', u.last_name) AS assignee_name, s.start_time as start_time, s.end_time as end_time, l.name as location_name FROM notifications n INNER JOIN shifts s ON n.shift_id = s.id LEFT JOIN users u ON s.assignee_id = u.id LEFT JOIN locations l ON s.location_id = l.id WHERE n.is_read_by_admin = 0 AND n.type NOT IN ("Assigned", "Leave Accepted", "Leave Declined") AND ((n.type != "Unassigned" AND n.type != "Open") OR ((n.type = "Unassigned" OR n.type = "Open") AND DATEDIFF(s.date, CURRENT_DATE()) <= 7 AND DATEDIFF(s.date, CURRENT_DATE()) >= 0)) ORDER BY n.updated_at DESC LIMIT 10`,
+                `SELECT n.id as id, n.type as type, DATE_FORMAT(n.updated_at, '%Y-%m-%d') as date, s.id as shift_id, DATE_FORMAT(s.date, '%Y-%m-%d') as shift_date, DATEDIFF(s.date, NOW()) as days_left, CONCAT(u.first_name, ' ', u.last_name) AS assignee_name, s.start_time as start_time, s.end_time as end_time, l.name as location_name FROM notifications n INNER JOIN shifts s ON n.shift_id = s.id LEFT JOIN users u ON s.assignee_id = u.id LEFT JOIN locations l ON s.location_id = l.id LEFT JOIN user_notifications un ON un.notification_id = n.id AND un.user_id = ? WHERE (un.is_read = 0 OR un.is_read IS NULL) AND n.type NOT IN ("Assigned", "Leave Accepted", "Leave Declined") AND ((n.type != "Unassigned" AND n.type != "Open") OR ((n.type = "Unassigned" OR n.type = "Open") AND DATEDIFF(s.date, CURRENT_DATE()) <= 7 AND DATEDIFF(s.date, CURRENT_DATE()) >= 0)) ORDER BY n.updated_at DESC LIMIT 10`, [p.id]
             );
         }
         else {
             notifications = await executeQuery(
-                `SELECT n.id as id, n.type as type, DATE_FORMAT(n.updated_at, '%Y-%m-%d') as date, s.id as shift_id, DATE_FORMAT(s.date, '%Y-%m-%d') as shift_date, DATEDIFF(s.date, NOW()) as days_left, CONCAT(u.first_name, ' ', u.last_name) AS assignee_name, s.start_time as start_time, s.end_time as end_time, l.name as location_name FROM notifications n INNER JOIN shifts s ON n.shift_id = s.id LEFT JOIN users u ON s.assignee_id = u.id LEFT JOIN locations l ON s.location_id = l.id WHERE n.is_read_by_assignee = 0 AND n.type NOT IN ("Request","Accepted","Declined","Leave Request","Unassigned") AND (u.id = ? OR n.type = "Open") ORDER BY n.updated_at DESC LIMIT 10`,
-                [p.id]
+                `SELECT n.id as id, n.type as type, DATE_FORMAT(n.updated_at, '%Y-%m-%d') as date, s.id as shift_id, DATE_FORMAT(s.date, '%Y-%m-%d') as shift_date, DATEDIFF(s.date, NOW()) as days_left, CONCAT(u.first_name, ' ', u.last_name) AS assignee_name, s.start_time as start_time, s.end_time as end_time, l.name as location_name FROM notifications n INNER JOIN shifts s ON n.shift_id = s.id LEFT JOIN users u ON s.assignee_id = u.id LEFT JOIN locations l ON s.location_id = l.id LEFT JOIN user_notifications un ON un.notification_id = n.id AND un.user_id = ? WHERE (un.is_read = 0 OR un.is_read IS NULL) AND n.type NOT IN ("Request","Accepted","Declined","Leave Request","Unassigned") AND (u.id = ? OR n.type = "Open") ORDER BY n.updated_at DESC LIMIT 10`,
+                [p.id, p.id]
             );
         }
 
@@ -53,22 +53,32 @@ export async function PATCH(req: NextRequest, context: RouteContext<'/api/notifi
   try {
     const { id } = await context.params;
     const body = await req.json();
-    const { is_admin } = body;
+    const { user_id } = body; 
+    if (!user_id) {
+      return NextResponse.json({ error: "Missing user id" }, { status: 400 });
+    }
 
-    const update = is_admin ? 'is_read_by_admin' : 'is_read_by_assignee';
-    const result = await executeQuery(
-      `UPDATE notifications SET ${update} = 1 WHERE id = ?`,
-      [id]
-    ) as any;
+    // Check if record already exists
+    const existing = await executeQuery(
+      `SELECT * FROM user_notifications WHERE notification_id = ? AND user_id = ?`,
+      [id, user_id]
+    ) as any[];
 
-    if (result.affectedRows === 0) {
-      return NextResponse.json(
-        { error: "Notification not found" },
-        { status: 404 }
+    if (existing.length > 0) {
+      // Update existing record
+      await executeQuery(
+        `UPDATE user_notifications SET is_read = 1 WHERE notification_id = ? AND user_id = ?`,
+        [id, user_id]
+      );
+    } else {
+      // Insert new record
+      await executeQuery(
+        `INSERT INTO user_notifications (notification_id, user_id, is_read) VALUES (?, ?, 1)`,
+        [id, user_id]
       );
     }
 
-    return NextResponse.json({ success: true});
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error updating notification read status", error);
     return NextResponse.json(
@@ -76,4 +86,5 @@ export async function PATCH(req: NextRequest, context: RouteContext<'/api/notifi
       { status: 500 }
     );
   }
-};
+}
+

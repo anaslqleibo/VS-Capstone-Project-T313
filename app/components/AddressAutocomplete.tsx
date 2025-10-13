@@ -2,10 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { searchAddress } from "@/app/lib/nominatim";
 import { useClickOutside } from "./utils/useClickOutside";
 
-
+/**
+ * An input field for street address, equipped with autosuggestion
+ * @returns Input field with suggestions on addresses
+ */
 export default function AddressAutocomplete({value, onChange}:{value?:string, onChange?:(e:any)=>void}) {
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState<any[]>([]);
+
   const inputField = useRef(null);
 
   useEffect(() => {

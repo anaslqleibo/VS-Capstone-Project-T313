@@ -1,12 +1,35 @@
 import Icon from "@/public/icons/Icons";
-import getStatusColor, { stringToStatus } from "@/app/components/utils/getStatusColor";
+import { Status, stringToStatus } from "@/app/components/utils/getStatusColor";
 import formatDate, { formatDateToHour12 } from "@/app/components/utils/formatDate";
-import { Status } from "@/app/components/utils/getStatusColor";
 import Tooltip from "../components/Tootltip";
 import dayjs from "dayjs";
+import { insertNotification } from "../lib/notification-db";
+import { ShiftStatus } from "./Shifts";
+import { sendEmail } from "../lib/email";
+import { fetchEmail } from "./User";
 
 
-export type NotificationType = 'Assigned' | 'Unassigned' | 'Open' | 'Accepted' | 'Declined' | 'Request' | 'Leave Request' | 'Leave Accepted' | 'Leave Declined';
+export type NotificationType = 'Assigned' | 'Unassigned' | 'Open' | 'Accepted' | 'Declined' | 'Request' | 'Leave Request' | 'Leave Accepted' | 'Leave Declined' | 'None';
+
+export function shiftStatusToNotificationType(status: Status) : NotificationType{
+    switch (status){
+        case Status.Accepted:
+            return 'Accepted';
+        case Status.DeclinedShift:
+            return 'Declined';
+        case Status.Assigned:
+        case Status.Pending:
+            return 'Assigned';
+        case Status.OpenShift:
+            return 'Open';
+        case Status.Request:
+            return 'Request'
+        case Status.Unassigned:
+            return 'Unassigned';
+        default:
+            return 'None'
+    }
+}
 
 export type NotificationProps = {
     id?:string;
@@ -45,12 +68,12 @@ export async function fetchNotifications(user_id?: string) {
     return data as NotificationProps[];
 }
 
-export async function notificationMarkAsRead(id: string, is_admin=false) {
+export async function notificationMarkAsRead(id: string, user_id:string) {
     try {
         const res = await fetch(`/api/notifications/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ is_admin }),
+        body: JSON.stringify({ user_id }),
         });
 
         return res.ok;
@@ -191,6 +214,45 @@ export function createAdminNotification({type, date, shift_date, days_left = 1, 
 }
 
 
+export function generateStaffNotificationMessage({type, date, shift_date, days_left=1} : NotificationProps){
+    const notificationDate = <span className="text-[color:var(--secondary-color)]">{formatDate(date)}</span>;
+    
+    let message;
+    switch(type){
+        case 'Open':
+            message = <div>A new open shift has been created. Please review the details and accept it if you’re available.</div>
+            break;
+        case 'Assigned':
+            if (days_left > 3)
+                message = <div>You've been offered a new shift! Tap to view the details and confirm if you're available to take the shift.</div>
+            else
+                message = <div>You have <span className="text-[color:var(--secondary-color)]"> {days_left} day{days_left>1 ? "s":""}</span> left to accept/decline a shift!</div>
+            break;
+        case 'Leave Accepted':
+            message = <>Your leave request has been accepted on {notificationDate}</>;
+            break;
+        case 'Leave Declined':
+            message = <>Your leave request has been declined on {notificationDate}</>;
+            break;
+        case 'Accepted':
+            message = <>You have accepted your new shift on {notificationDate}</>;
+            break;
+        case 'Leave Request':
+            message = <>Your leave request have been submitted successfully on {notificationDate}</>;
+            break;
+        case 'Declined':
+            message = <>You have declined an assigned shift on {notificationDate}</>;
+            break;
+        case 'Request':
+            message = <>You have requested to take a shift on {notificationDate}</>;
+            break;
+        case 'Unassigned':
+            return '';
+        default:
+            message=<p></p>;
+    }
+    return message;
+}
 
 export function createStaffNotification({type, date, shift_date, days_left=1, onClick} : NotificationProps){
     const circle = ()=>{
@@ -205,42 +267,28 @@ export function createStaffNotification({type, date, shift_date, days_left=1, on
         if (onClick) onClick();
     }
 
-    let content;
-    switch(type){
-        case 'Open':
-            content = <div>A new open shift has been created. Please review the details and accept it if you’re available.</div>
-            break;
-        case 'Assigned':
-            if (days_left > 3)
-                content = <div>You've been offered a new shift! Tap to view the details and confirm if you're available to take the shift.</div>
-            else
-                content = <div>You have <span className="text-[color:var(--secondary-color)]"> {days_left} day{days_left>1 ? "s":""}</span> left to accept/decline a shift!</div>
-            break;
-        case 'Leave Accepted':
-            content = 'Your leave request has been accepted on';
-            break;
-        case 'Leave Declined':
-            content = 'Your leave request has been declined on';
-            break;
-        case 'Accepted':
-        case 'Leave Request':
-        case 'Unassigned':
-        case 'Declined':
-        case 'Request':
-            return '';
-        default:
-            content=<p></p>;
-    }
- 
+    const message = generateStaffNotificationMessage({type,date,shift_date,days_left});
     return (
         <div className="flex items-center" onClick={handleClick}>
             <div className="w-fit">{circle()}</div>
             <div>
-                {content}
-
-                {(type==='Open'||type==='Assigned') ? '' : <span className="text-[color:var(--secondary-color)]"> {formatDate(date)}</span>}
+                {message}
             </div>
         </div> 
     );
-    
+}
+
+export async function notifyManually(via_web:boolean, via_email:boolean, shift_id?: string, assignee_id?: string, status?: ShiftStatus, subject?: string, html?:string){
+    try{
+        const res = await fetch('/api/notifications/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ via_web, via_email, shift_id, assignee_id, status, subject, html}),
+        });
+
+        return res.ok;
+    }
+    catch(err){
+        return false;
+    }
 }

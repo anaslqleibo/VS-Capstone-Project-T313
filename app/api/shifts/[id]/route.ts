@@ -85,10 +85,12 @@ export async function GET(
 // ========== PUT /api/shifts/user/[id] ==========
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext<'/api/shifts/[id]'>
 ) {
   try {
-    const userId = params.id; // "assignee_changed" flag in your old code used this
+    const params = await context.params; // "assignee_changed" flag in your old code used this
+    const userId = params.id;
+    
     const body: ShiftUpdateBody = await req.json();
     const { id, assignee_id, status, date, start_time, end_time, notes, location_id } = body;
 

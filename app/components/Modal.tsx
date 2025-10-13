@@ -1,19 +1,19 @@
 "use client";
-import {  Dispatch, ReactNode, SetStateAction, useEffect, useRef, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import Icon from "@/public/icons/Icons";
-import Button from "./Button";
+import Button, { Selectable } from "./Button";
 import { overlayAnimation, useClickOutside } from "./utils/useClickOutside";
 import getStatusColor, { Status, statusToString, stringToStatus } from "./utils/getStatusColor";
 import React from "react";
 import { createPortal } from "react-dom";
 import ListView from "./ListView";
-import { createNotifications, NotificationProps } from "../controllers/Notification";
+import { createNotifications, generateStaffNotificationMessage, NotificationProps, notifyManually, shiftStatusToNotificationType } from "../controllers/Notification";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import Dropdown, { DayPicker, DropdownUser, LocationDropdownWithAddress } from "./Dropdown";
 import { EventInput } from "@fullcalendar/core";
-import { buildShiftEventTitle, deleteShift, Shift, updateShift, updateShiftStatus } from "../controllers/Shifts";
+import { buildShiftEventTitle, deleteShift, Shift, ShiftStatus, updateShift, updateShiftStatus } from "../controllers/Shifts";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { FaCalendar, FaCross, FaEdit, FaRegBell, FaSave, FaTrash } from "react-icons/fa";
+import { FaBell, FaEdit, FaRegBell, FaSave, FaTrash } from "react-icons/fa";
 import Input from "./Input";
 import dayjs from "dayjs";
 import { formatToSqlDate, sqlDateFormatToRegularFormat } from "./utils/formatDate";
@@ -22,16 +22,13 @@ import FormLabel from "@mui/material/FormLabel";
 import RadioGroup from "@mui/material/RadioGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Radio from "@mui/material/Radio";
-import { createLeave, deleteLeave, Unavailability, updateLeaveStatus } from "../controllers/Leave";
-import Checkbox from "./Checkbox";
+import { createLeave, deleteLeave, updateLeaveStatus } from "../controllers/Leave";
 import Spinner from "./Spinner";
 import { duplicateShift, shiftToEventInput } from "../controllers/Shifts";
 import { FaCopy } from "react-icons/fa6"; // or from "react-icons/fa"
 import { createShift } from "../controllers/Shifts";
+import { buildShiftEmail, buildShiftEmailPreview } from "../lib/shift-email";
 
-
-
-// TODO: Still missing some code, please go through everything and finish what's still missing
 
 type DupDialogProps = {
   open: boolean;
@@ -380,11 +377,6 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
   }
 }
 
-
-
-
-
-
     
     return (
         <>
@@ -403,16 +395,16 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
         <div className="flex gap-3 text-[color:var(--primary-color)] [&>*]:hover:text-[color:var(--hover-color)]">
             {isEditing ? <div id="btnSave" onClick={()=>{handleSave()}}><FaSave /></div> :
             <>
-  <FaRegBell />
-<FaCopy onClick={() => (window as any).__openShiftDuplicate?.()} title="Duplicate shift" />
-  <FaEdit
-    onClick={() => {
-      setEditing && setEditing(true);
-      castedFormValues.assignee_id === null && handleChange!("assignee_name", " ");
-    }}
-  />
-  <FaTrash onClick={handleDelete} />
-</>
+              {castedFormValues.assignee_name ? <FaRegBell onClick={() => (window as any).__openNotifyModal?.()} title='Notify assignee'/>: ''}
+              <FaCopy onClick={() => (window as any).__openShiftDuplicate?.()} title="Duplicate shift" />
+              <FaEdit
+                  onClick={() => {
+                    setEditing && setEditing(true);
+                    castedFormValues.assignee_id === null && handleChange!("assignee_name", " ");
+                  }}
+                title="Edit shift"/>
+              <FaTrash onClick={handleDelete} title="Delete shift"/>
+            </>
 
             }
             
@@ -969,6 +961,17 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
   const [dupOpen, setDupOpen] = useState(false);
   const [dupInitial, setDupInitial] = useState<any | null>(null);
 
+  const [notifyModal, setNotifyModal] = useState(false);
+  const [notifyWeb, setNotifyWeb] = useState(true);
+  const [notifyEmail, setNotifyEmail] = useState(false);
+  const [email, setEmail] = useState<{subject:string, html: string}|null>(null);
+  useEffect(() => {
+    if (notifyEmail && formValues && formValues.assignee_name && 'address' in formValues){
+      const castedFormValues = formValues as ShiftExtendedProps
+      setEmail(buildShiftEmail({event:"updated", userName: formValues?.assignee_name, date: formValues.date, start: formValues.start_time, end: formValues.end_time, address: castedFormValues.address, notes: castedFormValues.notes, status: statusToString(castedFormValues.status)}));
+    }
+  }, [notifyEmail])
+
   useEffect(() => {
     setFormValues(details ? ('status' in details ? details as ShiftExtendedProps : details as LeaveExtendedProps) : undefined);
   }, [details]);
@@ -1046,7 +1049,9 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
   // expose a global so the toolbar icon can call it without refactor
   useEffect(() => {
     (window as any).__openShiftDuplicate = handleDuplicateOpen;
-    return () => { delete (window as any).__openShiftDuplicate; };
+
+    (window as any).__openNotifyModal = ()=>setNotifyModal(true);
+    return () => { delete (window as any).__openShiftDuplicate; delete (window as any).__openNotifyModal; };
   }, [props.event]);
 
   const ModalJSX = (
@@ -1066,13 +1071,99 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
             <Icon id="x" width="1.5em" height="1.5em" className="text-black-700 hover:text-danger" onClick={closeModal} />
           </div>
 
-          {type && details && type !== ModalTypes.Notifications && createDetails(
+          { notifyModal ? 
+          <>
+            <div className="flex justify-between items-center">
+              <div className={`text-sm font-semibold text-gray-600 mt-1 flex items-center gap-1`}>Notify via: 
+                  <Selectable className="py-1 px-4" fontSize="0.9em" onClick={{true: ()=>setNotifyWeb(true), false: ()=>setNotifyWeb(false)}} startActive={true}>Website</Selectable>
+                  <Selectable className="py-1 px-4" fontSize="0.9em" onClick={{true: ()=>setNotifyEmail(true), false: ()=>setNotifyEmail(false)}}>Email</Selectable>
+              </div>
+            
+              <div className="flex text-[color:var(--primary-color)] [&>*]:hover:text-[color:var(--hover-color)]">
+                    <FaBell onClick={()=>setNotifyModal(false)} title={'Tap to go back'}/>
+              </div>
+            </div>
+
+            {notifyWeb && 
+            <div>
+              <div className="flex items-center mt-2">
+                <div className={`text-sm font-bold text-gray-800 flex items-center gap-1`}>
+                  Website
+                </div>
+              </div>
+
+              <div className="flex items-center pl-4 mt-2">
+                <div className={`text-sm font-medium text-gray-600 flex items-start gap-1`}>
+                  Message: 
+                  <span className="font-normal">
+                  {generateStaffNotificationMessage({type: shiftStatusToNotificationType(stringToStatus(formValues?.status??'')), date: dayjs().format('DD-MM-YYYY'), days_left: dayjs().diff(dayjs(formValues?.date), 'day')+1})}</span>
+                </div>
+              </div>
+            </div>
+            }
+
+            {notifyEmail &&
+              <div>
+              <div className="flex items-center mt-2">
+                <div className={`text-sm font-bold text-gray-800 flex items-center gap-1`}>
+                  Email
+                </div>
+              </div>
+
+              <div className="flex items-center pl-4 mt-2">
+                <div className={`text-sm font-medium text-gray-600 flex items-start gap-1`}>
+                  Subject: 
+                  <span className="font-normal">
+                  {email?.subject}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center pl-4 ">
+                <div className={`text-sm font-medium text-gray-600 flex items-start gap-1`}>
+                  Message: 
+                </div>
+              </div>
+
+              <div className="flex items-center pl-4 mt-1">
+                <div className={`text-sm font-normal text-gray-600 flex items-start gap-1`}>
+                  <div dangerouslySetInnerHTML={{__html: email?.html??''}}>
+                  </div>
+                </div>
+              </div>
+            </div>
+            }
+
+            <div className="flex flex-col items-end mt-4">
+              <Button fontSize="0.8em" className="px-6 py-3" disabled={!(notifyEmail||notifyWeb)} onClick={()=>{
+                (async ()=>{
+                  try{
+                    setLoading(true);
+                    const res = await notifyManually(notifyWeb, notifyEmail, formValues?.id, formValues?.assignee_id, formValues?.status as ShiftStatus, email?.subject, email?.html)
+                    if (res){
+                      props.displayToast && props.displayToast(formValues?.assignee_name + ' has been notified!', 'success');
+                      setNotifyModal(false);
+                    }
+                    else{
+                      props.displayToast && props.displayToast('Failed to send notification!', 'error');
+                    }
+                  }
+                  finally{
+                    setLoading(false);
+                  }
+                  
+                })();
+                
+                }}>Notify</Button>
+            </div>
+          </> : '' }
+
+          { !notifyModal && type && details && type !== ModalTypes.Notifications && createDetails(
             type, details, admin, props.setEvents, props.event, props.displayToast,
             closeModal, isEditing, setEditing, formValues, handleChange,
             "location_id" in details ? details as ShiftExtendedProps : undefined, setLoading
           )}
 
-          {props.children}
+          { !notifyModal ? props.children : ""}
         </div>
       </div>
 

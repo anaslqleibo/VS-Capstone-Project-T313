@@ -66,7 +66,7 @@ export default function AdminDashboardPage() {
             {
                 notifications ? 
                 <div className="flex flex-1 justify-center gap-4 flex-col md:flex-row items-center">
-                  { notifications && <ListView title="Notifications" containerRef={modalContainer} closeButton={false}>{createNotifications(true, notifications??[])}</ListView>}
+                  { notifications && <ListView title="Notifications" containerRef={modalContainer} closeButton={false} idList={notifications.map(n=>n.id?n.id:'')??[]}>{createNotifications(true, notifications??[])}</ListView>}
 
                   {/* <ListView title="Notifications" containerRef={modalContainer} closeButton={false}>{createNotifications(true)}</ListView> */}
 

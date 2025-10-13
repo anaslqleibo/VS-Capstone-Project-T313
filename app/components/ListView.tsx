@@ -3,6 +3,7 @@ import Icon from "@/public/icons/Icons";
 import React, { forwardRef, JSX, ReactElement, ReactNode, RefObject, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import { notificationMarkAsRead } from "../controllers/Notification";
+import { useAuth } from "../contexts/AuthContext";
 
 interface ListViewProps {
   title: string;
@@ -10,7 +11,7 @@ interface ListViewProps {
   containerRef: React.RefObject<HTMLDivElement|null>;
   setShown?:(e:boolean)=>void;
   children?: React.ReactNode;
-  idList?: string;
+  idList?: string[];
   hasItems?:(e:boolean)=>void;
 }
 
@@ -48,6 +49,7 @@ export type ListViewHandle = {
   toggleShown: (value: boolean) => void;
 };
 
+
 const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
   { title, closeButton = true, containerRef, hasItems, ...props },
   ref
@@ -55,13 +57,16 @@ const ListView = forwardRef<ListViewHandle, ListViewProps>(function ListView(
 
   const [items, setItems] = useState<Item[]>(
     flattenChildren(props.children).map((child, index) => ({
-      id: props.idList ? props.idList[index] : uuidv4(),
+      id: (props.idList && props.idList[index]) ? props.idList[index] : uuidv4(),
       content: child as Item["content"],
     }))
   );
 
+  
+  const user_id = useAuth().user?.id;
   function onMarkAsRead(id: string){
-    notificationMarkAsRead(id);
+    console.log(items);
+    if (user_id) notificationMarkAsRead(id, user_id?.toString());
   }
 
   const [removalQueue, setRemovalQueue] = useState<RemovalQueue>({});
