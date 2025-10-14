@@ -113,7 +113,8 @@ function filterEventsArray(events: EventInput[], showSelectedFilter: CalendarFil
             const matchEmployee = filter.employee.includes("All employees") ||
             filter.employee.includes(assignee_name);
 
-            const matchUnpublished = !filter.show_unpublished ? published === 1 : true;
+            const matchUnpublished = !filter.show_unpublished ? !!published : true;
+
             return matchStatus && matchLocation && matchEmployee && matchUnpublished;
         }
         

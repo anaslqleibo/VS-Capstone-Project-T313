@@ -49,66 +49,81 @@ function DupDialog({ open, onClose, onCreate, initial }: DupDialogProps) {
   const [locationName, setLocationName] = React.useState(initial.location_name);
   const [address, setAddress] = React.useState(initial.address);
   const [notes, setNotes] = React.useState(initial.notes ?? "");
-  const [status, setStatus] = React.useState<ShiftStatus>(initial.status as ShiftStatus); // or default to "Pending"
+  const [status, setStatus] = React.useState<ShiftStatus>(initial.status as ShiftStatus);
   const [busy, setBusy] = React.useState(false);
   const [published, setPublished] = useState(false);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-xl p-5 relative">
-        <button className="absolute right-3 top-2 text-xl" onClick={onClose}>×</button>
-        <h3 className="text-lg font-semibold mb-4">Duplicate shift</h3>
+    <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/30">
+      {/* Panel = flex column; body scrolls; footer stays below */}
+      <div className="bg-white rounded-2xl shadow-lg w-[calc(100vw-1.5rem)] max-w-[95vw] sm:max-w-2xl relative min-w-0 flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Duplicate shift</h3>
+          <button
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-gray-100"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
 
-        <div className="flex flex-col gap-3">
-          {/* Date */}
-          <div className="flex items-center gap-2">
-            <span className="w-24 text-sm font-medium text-gray-600">Date:</span>
-            <DatePicker
-              format="DD-MM-YYYY"
-              value={date}
-              onChange={(d)=> d && setDate(d)}
-              slotProps={{ textField: { sx: { minWidth: 170 } } }}
-            />
-          </div>
+        {/* BODY (scrollable) */}
+        <div
+          className="px-5 py-4 overflow-y-auto"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
+          {/* 2-col layout on desktop, single column on mobile */}
+          <div className="grid grid-cols-1 sm:[grid-template-columns:160px_minmax(0,1fr)] gap-y-3 gap-x-4 items-center [&_*]:min-w-0">
+            {/* Date */}
+            <label className="text-sm font-medium text-gray-600">Date:</label>
+            <div>
+              <DatePicker
+                format="DD-MM-YYYY"
+                value={date}
+                onChange={(d) => d && setDate(d)}
+                slotProps={{ textField: { fullWidth: true, sx: { minWidth: 0 } } }}
+              />
+            </div>
 
-          {/* Time */}
-          <div className="flex items-center gap-2">
-            <span className="w-24 text-sm font-medium text-gray-600">Time:</span>
-            <TimePicker
-              label="From"
-              format="hh:mm A"
-              value={from}
-              onChange={(t)=> t && setFrom(t)}
-              slotProps={{ textField: { sx: { minWidth: 150 } } }}
-            />
-            <span className="font-bold text-[color:var(--primary-color)]">–</span>
-            <TimePicker
-              label="To"
-              format="hh:mm A"
-              value={to}
-              onChange={(t)=> t && setTo(t)}
-              slotProps={{ textField: { sx: { minWidth: 150 } } }}
-            />
-          </div>
+            {/* Time */}
+            <label className="text-sm font-medium text-gray-600">Time:</label>
+            <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+              <TimePicker
+                label="From"
+                format="hh:mm A"
+                value={from}
+                onChange={(t) => t && setFrom(t)}
+                slotProps={{ textField: { fullWidth: true, sx: { minWidth: 0 } } }}
+              />
+              <span className="hidden sm:inline font-bold text-[color:var(--primary-color)]">–</span>
+              <TimePicker
+                label="To"
+                format="hh:mm A"
+                value={to}
+                onChange={(t) => t && setTo(t)}
+                slotProps={{ textField: { fullWidth: true, sx: { minWidth: 0 } } }}
+              />
+            </div>
 
-          {/* Assignee */}
-          <div className="flex items-center gap-2">
-            <span className="w-24 text-sm font-medium text-gray-600">Assignee:</span>
-            <DropdownUser
-              detail={assigneeName}
-              setUpdatedDetail={(k: string, v: any) => {
-                if (k === "assignee_name") setAssigneeName(v);
-                if (k === "assignee_id") setAssigneeId(v);
-              }}
-            />
-          </div>
+            {/* Assignee */}
+            <label className="text-sm font-medium text-gray-600">Assignee:</label>
+            <div>
+              <DropdownUser
+                detail={assigneeName}
+                setUpdatedDetail={(k: string, v: any) => {
+                  if (k === "assignee_name") setAssigneeName(v);
+                  if (k === "assignee_id") setAssigneeId(v);
+                }}
+              />
+            </div>
 
-          {/* Location + address */}
-          <div className="flex items-stretch gap-2">
-            <span className="w-24 text-sm font-medium text-gray-600 pt-2">Location:</span>
-            <div className="flex-1">
+            {/* Location (+ address handled by component) */}
+            <label className="text-sm font-medium text-gray-600">Location:</label>
+            <div>
               <LocationDropdownWithAddress
                 detail={locationName}
                 setUpdatedDetail={(k: string, v: any) => {
@@ -118,63 +133,66 @@ function DupDialog({ open, onClose, onCreate, initial }: DupDialogProps) {
                 }}
               />
             </div>
-          </div>
 
-          {/* Set as published */}
-          <div className="flex items-stretch gap-2">
-            <span className="w-24 text-sm font-medium text-gray-600 pt-2">Set as published:</span>
-            <div className="flex-1">
-              <Checkbox label='' checked={published} onChange={(e:boolean)=>setPublished(e)}/>
+            {/* Set as published */}
+            <label className="text-sm font-medium text-gray-600">Set as published:</label>
+            <div>
+              <Checkbox label="" checked={published} onChange={(e: boolean) => setPublished(e)} />
+            </div>
+
+            {/* Notes */}
+            <label className="text-sm font-medium text-gray-600 self-start">Notes:</label>
+            <div>
+              <textarea
+                className="border rounded w-full p-2 text-sm"
+                rows={4}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
             </div>
           </div>
-
-          {/* Notes */}
-          <div>
-            <span className="block text-sm font-medium text-gray-600">Notes:</span>
-            <textarea
-              className="border rounded w-full p-2 text-sm"
-              value={notes}
-              onChange={(e)=> setNotes(e.target.value)}
-            />
-          </div>
-
-          {/* Status (optional – show if you want to override to Pending) */}
-          {/* <div className="flex items-center gap-2">
-            <span className="w-24 text-sm font-medium text-gray-600">Status:</span>
-            <Dropdown items={['Pending','Accepted','Open','Unassigned']} initialSelectedItem={status} onChange={(s)=> setStatus(s)} />
-          </div> */}
         </div>
 
-        <div className="mt-5 flex justify-end gap-2">
-          <button className="px-4 py-2 rounded bg-gray-200" onClick={onClose}>Cancel</button>
-          <button
-            disabled={busy}
-            className="px-4 py-2 rounded bg-[color:var(--primary-color)] text-white hover:bg-[color:var(--hover-color)]"
-            onClick={async ()=>{
-              setBusy(true);
-              await onCreate({
-                date: date.format("YYYY-MM-DD"),
-                start_time: from.format("HH:mm:ss"),
-                end_time: to.format("HH:mm:ss"),
-                assignee_id: assigneeId,
-                assignee_name: assigneeName,
-                location_id: locationId,
-                location_name: locationName,
-                address,
-                notes,
-                status, // or force "Pending"
-                published,
-              });
-              setBusy(false);
-            }}
-          >
-            Confirm
-          </button>
+        {/* FOOTER (non-sticky, never overlaps body) */}
+        <div className="px-5 py-3 border-t border-gray-200 bg-white">
+          <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-2">
+            <button
+              className="w-full sm:w-auto px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              disabled={busy}
+              className="w-full sm:w-auto px-4 py-2 rounded bg-[color:var(--primary-color)] text-white hover:bg-[color:var(--hover-color)]"
+              onClick={async () => {
+                setBusy(true);
+                await onCreate({
+                  date: date.format("YYYY-MM-DD"),
+                  start_time: from.format("HH:mm:ss"),
+                  end_time: to.format("HH:mm:ss"),
+                  assignee_id: assigneeId,
+                  assignee_name: assigneeName,
+                  location_id: locationId,
+                  location_name: locationName,
+                  address,
+                  notes,
+                  status,
+                  published,
+                });
+                setBusy(false);
+              }}
+            >
+              Confirm
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
+
 
 
 
@@ -991,7 +1009,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
     details ? ('status' in details ? details as ShiftExtendedProps : details as LeaveExtendedProps) : undefined
   );
 
-  // 🆕 duplicate UI state
+  // Duplicate UI state
   const [dupOpen, setDupOpen] = useState(false);
   const [dupInitial, setDupInitial] = useState<any | null>(null);
 
@@ -1099,7 +1117,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
   const [loading, setLoading] = useState(false);
 
-  // 🆕 open duplicate dialog with current event values
+  //open duplicate dialog with current event values
   const handleDuplicateOpen = () => {
     const ex: any = props.event?.extendedProps;
     if (!ex) return;
@@ -1248,7 +1266,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
         </div>
       )}
 
-      {/* 🆕 Duplicate Dialog */}
+      {/* Duplicate Dialog */}
       {dupOpen && dupInitial && (
         <DupDialog
           open={dupOpen}
@@ -1258,47 +1276,60 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
             try {
               setLoading(true);
               // create via existing create endpoint
-              const res = await createShift({
-                id: undefined,
-                assignee_id: payload.assignee_id,
-                status: payload.status as any,
-                date: payload.date,
-                start_time: payload.start_time,
-                end_time: payload.end_time,
-                notes: payload.notes,
-                location_id: payload.location_id,
-                location_name: payload.location_name,
-                address: payload.address,
-                assignee_name: payload.assignee_name,
-                type: "shift",
-                email_reason: "duplicate"
-              });
+const res = await createShift({
+  id: undefined,
+  assignee_id: payload.assignee_id,
+  status: payload.status as any,
+  date: payload.date,
+  start_time: payload.start_time,
+  end_time: payload.end_time,
+  notes: payload.notes,
+  location_id: payload.location_id,
+  location_name: payload.location_name,
+  address: payload.address,
+  assignee_name: payload.assignee_name,
+  type: "shift",
+  published: !!payload.published,   // ← SEND IT
+  email_reason: "duplicate"
+});
 
               // optimistic event for calendar
-              const timeLabel = `${payload.start_time.slice(0,5)}–${payload.end_time.slice(0,5)}`;
-              const newEvent: EventInput = {
-                id: res?.id || `${Date.now()}`,
-                start: payload.date,
-                extendedProps: {
-                  id: res?.id || `${Date.now()}`,
-                  status: 'Unpublished',
-                  original_status: payload.status,
-                  type: "shift",
-                  date: payload.date,
-                  start_time: payload.start_time.slice(0,5),
-                  end_time: payload.end_time.slice(0,5),
-                  time: timeLabel,
-                  location_id: payload.location_id,
-                  location_name: payload.location_name,
-                  address: payload.address,
-                  notes: payload.notes,
-                  assignee_id: payload.assignee_id,
-                  assignee_name: payload.assignee_name,
-                  published: payload.published,
-                },
-                color: getStatusColor(stringToStatus(payload.status as any)),
-                title: buildShiftEventTitle(payload.status, timeLabel, payload.location_name, payload.assignee_name, 'shift'),
-              };
+              // after the POST /api/shifts (createShift) succeeds…
+const visualStatus = payload.published ? payload.status : 'Unpublished';
+
+const timeLabel = `${payload.start_time.slice(0,5)}–${payload.end_time.slice(0,5)}`;
+const newEvent: EventInput = {
+  id: res?.id || `${Date.now()}`,
+  start: payload.date,
+  extendedProps: {
+    id: res?.id || `${Date.now()}`,
+    // what the user will see on the calendar card
+    status: visualStatus,
+    // remember the real underlying status (Pending/Accepted/etc.)
+    original_status: payload.status,
+    type: "shift",
+    date: payload.date,
+    start_time: payload.start_time.slice(0,5),
+    end_time: payload.end_time.slice(0,5),
+    time: timeLabel,
+    location_id: payload.location_id,
+    location_name: payload.location_name,
+    address: payload.address,
+    notes: payload.notes,
+    assignee_id: payload.assignee_id,
+    assignee_name: payload.assignee_name,
+    published: payload.published ?? false,
+  },
+  color: getStatusColor(stringToStatus(visualStatus as any)),
+  title: buildShiftEventTitle(
+    visualStatus,
+    timeLabel,
+    payload.location_name,
+    payload.assignee_name,
+    'shift'
+  ),
+};
+
 
               props.setEvents && props.setEvents(newEvent, "create");
               setDupOpen(false);
