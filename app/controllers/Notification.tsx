@@ -3,15 +3,13 @@ import { Status, stringToStatus } from "@/app/components/utils/getStatusColor";
 import formatDate, { formatDateToHour12 } from "@/app/components/utils/formatDate";
 import Tooltip from "../components/Tootltip";
 import dayjs from "dayjs";
-import { insertNotification } from "../lib/notification-db";
 import { ShiftStatus } from "./Shifts";
-import { sendEmail } from "../lib/email";
-import { fetchEmail } from "./User";
 
 
 export type NotificationType = 'Assigned' | 'Unassigned' | 'Open' | 'Accepted' | 'Declined' | 'Request' | 'Leave Request' | 'Leave Accepted' | 'Leave Declined' | 'None';
 
 export function shiftStatusToNotificationType(status: Status) : NotificationType{
+    console.log(status);
     switch (status){
         case Status.Accepted:
             return 'Accepted';
@@ -226,7 +224,16 @@ export function generateStaffNotificationMessage({type, date, shift_date, days_l
             if (days_left > 3)
                 message = <div>You've been offered a new shift! Tap to view the details and confirm if you're available to take the shift.</div>
             else
-                message = <div>You have <span className="text-[color:var(--secondary-color)]"> {days_left} day{days_left>1 ? "s":""}</span> left to accept/decline a shift!</div>
+                message = <div>
+                    
+
+                    {days_left>0 ?
+                    <>You have <span className="text-[color:var(--secondary-color)]"> {days_left} day{days_left>1 ? "s":""}</span> left to accept/decline a shift!</>:
+                
+                    <span className="text-danger">You have a pending shift due TODAY. Please accept the shift immediately or inform the admin if you are not available.</span>
+                    }
+
+                    </div>
             break;
         case 'Leave Accepted':
             message = <>Your leave request has been accepted on {notificationDate}</>;

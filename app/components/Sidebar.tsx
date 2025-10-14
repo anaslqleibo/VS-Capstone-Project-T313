@@ -164,7 +164,8 @@ export default function Sidebar({modalContainer} : PageProps){
         </div>}
         
 
-        {open && modalContainer.current && role==="user" && notifications && createModal(displayShift ? getModalTypesByStatus(stringToStatus(displayShift.status), displayShift.type as EventTypes) : ModalTypes.Notifications, true, modalContainer.current, displayShift ? displayShift : notifications, setOpen, undefined, undefined, displayToast, (e:boolean)=>{!e && setNotifications([])})}
+        {open && modalContainer.current && role==="user" && notifications && 
+        createModal(displayShift ? getModalTypesByStatus(stringToStatus(displayShift.status), displayShift.type as EventTypes) : ModalTypes.Notifications, true, modalContainer.current, displayShift ? displayShift : notifications, setOpen, undefined, undefined, displayToast, (e:boolean)=>{!e && setNotifications([])})}
         
         <nav className='relative hidden w-full md:flex flex-col mb-2 overflow-y-auto items-center h-full [&>button]:w-full [&>button]:flex [&>button]:items-center [&>button]:p-[10px] [&>button]:text-white [&>button]:font-bold [&>button]:mb-[15px] [&>button]:rounded-[10px] [&>button]:transition-colors [&>button]:duration-200 [&>button]:hover:bg-[#1e2266] [&>button]:gap-5'>
           

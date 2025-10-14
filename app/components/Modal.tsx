@@ -11,9 +11,9 @@ import { createNotifications, generateStaffNotificationMessage, NotificationProp
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import Dropdown, { DayPicker, DropdownUser, LocationDropdownWithAddress } from "./Dropdown";
 import { EventInput } from "@fullcalendar/core";
-import { buildShiftEventTitle, deleteShift, publishShift, Shift, updateShift, updateShiftStatus } from "../controllers/Shifts";
+import { buildShiftEventTitle, deleteShift, publishShift, Shift, ShiftStatus, updateShift, updateShiftStatus } from "../controllers/Shifts";
 import { useAuth } from "@/app/contexts/AuthContext";
-import { FaBell, FaEdit, FaRegBell, FaSave, FaTrash } from "react-icons/fa";
+import { FaBell, FaBellSlash, FaEdit, FaRegBell, FaSave, FaTrash } from "react-icons/fa";
 import Input from "./Input";
 import dayjs from "dayjs";
 import { formatToSqlDate, sqlDateFormatToRegularFormat } from "./utils/formatDate";
@@ -26,38 +26,17 @@ import { createLeave, deleteLeave, updateLeaveStatus } from "../controllers/Leav
 import Spinner from "./Spinner";
 import { fetchUsersPayRate } from "../controllers/User";
 import { duplicateShift, shiftToEventInput } from "../controllers/Shifts";
-import { FaCopy } from "react-icons/fa6"; // or from "react-icons/fa"
+import { FaBellConcierge, FaCopy } from "react-icons/fa6"; // or from "react-icons/fa"
 import { createShift } from "../controllers/Shifts";
 import { buildShiftEmail, buildShiftEmailPreview } from "../lib/shift-email";
+import Checkbox from "./Checkbox";
 
 
 type DupDialogProps = {
   open: boolean;
   onClose: () => void;
-  onCreate: (payload: {
-    date: string;
-    start_time: string;
-    end_time: string;
-    assignee_id: string;
-    assignee_name?: string;
-    location_id: string;
-    location_name: string;
-    address: string;
-    notes: string;
-    status: string; // keep current or “Pending”
-  }) => Promise<void>;
-  initial: {
-    date: string;
-    start_time: string;
-    end_time: string;
-    assignee_id: string;
-    assignee_name?: string;
-    location_id: string;
-    location_name: string;
-    address: string;
-    notes: string;
-    status: string;
-  };
+  onCreate: (payload: Shift) => Promise<void>;
+  initial: Shift;
 };
 
 function DupDialog({ open, onClose, onCreate, initial }: DupDialogProps) {
@@ -70,8 +49,9 @@ function DupDialog({ open, onClose, onCreate, initial }: DupDialogProps) {
   const [locationName, setLocationName] = React.useState(initial.location_name);
   const [address, setAddress] = React.useState(initial.address);
   const [notes, setNotes] = React.useState(initial.notes ?? "");
-  const [status, setStatus] = React.useState(initial.status); // or default to "Pending"
+  const [status, setStatus] = React.useState<ShiftStatus>(initial.status as ShiftStatus); // or default to "Pending"
   const [busy, setBusy] = React.useState(false);
+  const [published, setPublished] = useState(false);
 
   if (!open) return null;
 
@@ -140,6 +120,14 @@ function DupDialog({ open, onClose, onCreate, initial }: DupDialogProps) {
             </div>
           </div>
 
+          {/* Set as published */}
+          <div className="flex items-stretch gap-2">
+            <span className="w-24 text-sm font-medium text-gray-600 pt-2">Set as published:</span>
+            <div className="flex-1">
+              <Checkbox label='' checked={published} onChange={(e:boolean)=>setPublished(e)}/>
+            </div>
+          </div>
+
           {/* Notes */}
           <div>
             <span className="block text-sm font-medium text-gray-600">Notes:</span>
@@ -175,6 +163,7 @@ function DupDialog({ open, onClose, onCreate, initial }: DupDialogProps) {
                 address,
                 notes,
                 status, // or force "Pending"
+                published,
               });
               setBusy(false);
             }}
@@ -273,7 +262,7 @@ export type ShiftExtendedProps = {
     recurrence?: string;
 }
 
-export type setEventType = (event: EventInput, mode:"create"|"update"|"delete")=>void;
+export type setEventType = (event: EventInput, mode:"create"|"update"|"delete", isEventImpl?:boolean)=>void;
 interface ModalProps{
     type?: ModalTypes|null;
     startOpen ?: boolean;
@@ -361,33 +350,6 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
         }
     }
 
-
-    const handleDuplicate = async () => {
-  try {
-    const id = event?.extendedProps?.id as string;
-    if (!id) return;
-
-    setLoading && setLoading(true);
-    const { success, newShift, err } = await duplicateShift(id);
-    setLoading && setLoading(false);
-
-    if (!success || !newShift) {
-      displayToast && displayToast(err || "Failed to duplicate shift", "error");
-      return;
-    }
-
-    // Build the event object for calendar
-    const newEvent = shiftToEventInput(newShift);
-    setEvents && setEvents(newEvent, "create");
-    displayToast && displayToast("Shift duplicated", "success");
-  } catch (e) {
-    console.error("[UI] duplicate shift failed:", e);
-    setLoading && setLoading(false);
-    displayToast && displayToast("Failed to duplicate shift", "error");
-  }
-}
-
-    
     return (
         <>
     <div className="flex justify-between items-center">
@@ -406,12 +368,12 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
         <div className="flex gap-3 text-[color:var(--primary-color)] [&>*]:hover:text-[color:var(--hover-color)]">
             {isEditing ? <div id="btnSave" onClick={()=>{handleSave()}} className="hidden md:block"><FaSave /></div> :
             <>
-              {castedFormValues.assignee_name ? <FaRegBell onClick={() => (window as any).__openNotifyModal?.()} title='Notify assignee'/>: ''}
+              {castedFormValues.assignee_name ? (castedFormValues.status === 'Unpublished' ? <FaBell title="Publish the shift first to notify the assignee" onClick={()=>displayToast&&displayToast('You need to publish this shift first to be able to notify the assignee. Assignee will be automatically notified once you published this shift.', 'error')}/> : <FaBell onClick={() => (window as any).__openNotifyModal?.()} title='Notify assignee'/>): ''}
               <FaCopy onClick={() => (window as any).__openShiftDuplicate?.()} title="Duplicate shift" />
               <FaEdit
                   onClick={() => {
                     setEditing && setEditing(true);
-                    castedFormValues.assignee_id === null && handleChange!("assignee_name", " ");
+                    castedFormValues.assignee_id === null;
                   }}
                 title="Edit shift"/>
               <FaTrash onClick={handleDelete} title="Delete shift"/>
@@ -519,7 +481,6 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
 
     const castedDetails = 'location_id' in formValues ? formValues as ShiftExtendedProps : formValues as LeaveExtendedProps;
 
-    
 
     if ('day' in castedDetails && (castedDetails.type === "leave" || type === ModalTypes.UnavailabilityDetails))
     {
@@ -625,7 +586,6 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
         ); 
     }
     else if ('location_name' in castedDetails){
-
         return (
             <>
             {isAdmin && setEditing && createAdminComponent(castedDetails.original_status, castedDetails.assignee_name, setEvents, event, displayToast, closeModal, isEditing, setEditing, formValues, handleChange, initialDetails, setLoading)}
@@ -634,8 +594,8 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
             {createDetailEditor("Location: ", 'location_name' ,castedDetails.location_name, "", isEditing, formValues, handleChange, displayToast)}
             {createDetailEditor("Address: ", 'address' ,castedDetails.address, "", isEditing, formValues, handleChange, displayToast)}
             
-            {isAdmin && castedDetails.pay_rate!==undefined && createDetailEditor("Active pay rate: ", 'pay_rate' ,'$'+castedDetails.pay_rate.toFixed(2)+'/h', "", isEditing, formValues, handleChange, displayToast)}
-            {isAdmin && castedDetails.total_payment!==undefined && createDetailEditor("Total Pay: ", 'total_payment' ,'$'+castedDetails.total_payment.toFixed(2), "", isEditing, formValues, handleChange, displayToast)}
+            {isAdmin && (castedDetails.pay_rate!==undefined&&castedDetails.pay_rate!==null) && createDetailEditor("Active pay rate: ", 'pay_rate' ,'$'+castedDetails.pay_rate.toFixed(2)+'/h', "", isEditing, formValues, handleChange, displayToast)}
+            {isAdmin && (castedDetails.total_payment!==undefined&&castedDetails.total_payment!==null) && createDetailEditor("Total Pay: ", 'total_payment' ,'$'+castedDetails.total_payment.toFixed(2), "", isEditing, formValues, handleChange, displayToast)}
             {createDetailEditor("Notes: ", 'notes',castedDetails.notes, "textarea", isEditing, formValues, handleChange, displayToast)}
             </>
         );
@@ -937,31 +897,36 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
     else if (type === ModalTypes.UnpublishedShiftDetails)
     {
         const handlePublish = async () => {
-            const result = await publishShift(event?.extendedProps?.id as string);
-            
-            if (result){
-                if (event) {
-                    const updatedEvent = {
-                        ...event,
-                        extendedProps: {
-                            ...event.extendedProps,
-                            published: true,
-                            status: event.extendedProps?.original_status
-                        },
-                        title: buildShiftEventTitle(event.extendedProps?.original_status, event.extendedProps?.time, event.extendedProps?.location_name),
-                        backgroundColor: getStatusColor(event.extendedProps?.original_status)
-                    };
+            try{
+              (window as any).__setLoading?.(true);
+              const result = await publishShift(event?.extendedProps?.id as string);
+              
+              if (result){
+                  if (event) {
+                      const updatedEvent = {
+                          ...event,
+                          extendedProps: {
+                              ...event.extendedProps,
+                              published: true,
+                              status: event.extendedProps?.original_status
+                          },
+                          title: buildShiftEventTitle(event.extendedProps?.original_status, event.extendedProps?.time, event.extendedProps?.location_name),
+                          backgroundColor: getStatusColor(event.extendedProps?.original_status)
+                      };
 
-                    setEvents!(updatedEvent, "update");
+                      setEvents!(updatedEvent, "update");
 
-                    closeModal!();
-                    displayToast!(`Published shift at ${event.extendedProps?.location_name}, ${event.extendedProps?.time} successfully!`, 'success');
-                }
+                      closeModal!();
+                      displayToast!(`Published shift at ${event.extendedProps?.location_name}, ${event.extendedProps?.time} successfully!`, 'success');
+                  }
+              }
+              else{
+                  displayToast!('Failed to publish shift!', 'error');
+              }
             }
-            else{
-                displayToast!('Failed to publish shift!', 'error');
+            finally{
+              (window as any).__openShiftDuplicate?.(false);
             }
-            
         }
 
         if (isAdmin){
@@ -1034,6 +999,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
   const [notifyWeb, setNotifyWeb] = useState(true);
   const [notifyEmail, setNotifyEmail] = useState(false);
   const [email, setEmail] = useState<{subject:string, html: string}|null>(null);
+  
   useEffect(() => {
     if (notifyEmail && formValues && formValues.assignee_name && 'address' in formValues){
       const castedFormValues = formValues as ShiftExtendedProps
@@ -1042,11 +1008,27 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
   }, [notifyEmail])
 
   useEffect(() => {
-    setFormValues(details ? ('status' in details ? details as ShiftExtendedProps : details as LeaveExtendedProps) : undefined);
+    let tempPayRate = false;
+    if (details && 'status' in details){
+      const shiftProps = formValues as ShiftExtendedProps;
+      if (!shiftProps.pay_rate) tempPayRate = true;
+    }
+    
+    setFormValues(details ? ('status' in details ? ((tempPayRate&&isEditing) ? {...details, pay_rate:0 ,total_payment:0} as ShiftExtendedProps : details as ShiftExtendedProps) : details as LeaveExtendedProps) : undefined);
   }, [details]);
 
   const handleChange = (field: string, value: any) => {
     setFormValues((prev : any) => {
+      if (value && formValues && "start_time" in formValues && (field === "start_time" || field === "end_time" || field === 'pay_rate') && !(!formValues?.start_time || !formValues?.end_time)){   
+          if (formValues.start_time && formValues.end_time && 'pay_rate' in formValues){
+              const currentPayRate = field === 'pay_rate' ? value : formValues.pay_rate;
+              const currentStartTime = field === 'start_time' ? value : formValues.start_time;
+              const currentEndTime = field === 'end_time' ? value : formValues.end_time;
+
+              if (currentPayRate!==0) handleChange('total_payment', Math.round((currentPayRate * dayjs(currentEndTime.substring(0,5), 'HH:mm').diff(dayjs(currentStartTime.substring(0,5), "HH:mm"), 'minute')/60)*100)/100);
+          }
+      }
+
       if (value && formValues && "start_time" in formValues && (field === "start_time" || field === "end_time") && !(!formValues?.start_time || !formValues?.end_time)){
         return {
           ...prev,
@@ -1054,6 +1036,8 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
           time: (field === "start_time" ? value.slice(0,5) : formValues?.start_time.slice(0,5)) + "-" + (field === "end_time"?value.slice(0,5):formValues?.end_time.slice(0,5))
         };
       }
+      
+      
       if (prev && ((prev.status === Status.OpenShift || prev.status === Status.Unassigned) && (field==="status" && value!==prev.status)) && formValues?.assignee_name === undefined){
         return { ...prev, [field]: value, 'assignee_name':''
         };
@@ -1083,15 +1067,35 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
     formValues.assignee_id = user.id.toString();
   }
 
-  const buttons = type!==undefined && createButtons(
+  const buttons = type!==undefined ? createButtons(
     type, props.setEvents, props.event, props.displayToast, closeModal, admin, formValues, handleChange, isEditing, setEditing
-  );
+  ) : null;
 
   useEffect(()=>{
     if (user && user?.role === 'user'){
       setFormValues((prev: any) => ({ ...prev, assignee_id: user.id }));
     }
   }, [user])
+
+  useEffect(()=>{
+      if (isEditing && formValues?.assignee_name && formValues.date){
+        const date = dayjs(formValues.date);
+        (async () => {
+            try{
+                const payRate = await fetchUsersPayRate(formValues.assignee_id, dayjs(formValues.date));
+                handleChange('pay_rate', Math.round(payRate * 100) / 100);
+            }
+            catch (e){
+                console.log(e);
+                props.displayToast && props.displayToast(e+'', 'error');
+                handleChange('assignee_name','');
+            }
+            finally{
+                // add loading 
+            }
+        })();
+    }
+  }, [formValues?.assignee_name, formValues?.date, isEditing])
 
   const [loading, setLoading] = useState(false);
 
@@ -1117,10 +1121,12 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
   // expose a global so the toolbar icon can call it without refactor
   useEffect(() => {
+    (window as any).__setLoading = (state:boolean)=>setLoading(state);
+
     (window as any).__openShiftDuplicate = handleDuplicateOpen;
 
     (window as any).__openNotifyModal = ()=>setNotifyModal(true);
-    return () => { delete (window as any).__openShiftDuplicate; delete (window as any).__openNotifyModal; };
+    return () => { delete (window as any).__openShiftDuplicate; delete (window as any).__openNotifyModal; delete (window as any).__setLoading;};
   }, [props.event]);
 
   const ModalJSX = (
@@ -1149,7 +1155,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
               </div>
             
               <div className="flex text-[color:var(--primary-color)] [&>*]:hover:text-[color:var(--hover-color)]">
-                    <FaBell onClick={()=>setNotifyModal(false)} title={'Tap to go back'}/>
+                    <FaRegBell onClick={()=>setNotifyModal(false)} title={'Tap to go back'}/>
               </div>
             </div>
 
@@ -1236,7 +1242,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
         </div>
       </div>
 
-      {(buttons!=null || props.customButtons) && (
+      {!notifyModal && (buttons!=null || props.customButtons) && (
         <div className="p-4 flex flex-row-reverse px-6 gap-3 rounded-lg bg-gray-50">
           {type!==undefined ? buttons : props.customButtons}
         </div>
@@ -1266,7 +1272,6 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                 assignee_name: payload.assignee_name,
                 type: "shift",
                 email_reason: "duplicate"
-
               });
 
               // optimistic event for calendar
@@ -1276,7 +1281,8 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                 start: payload.date,
                 extendedProps: {
                   id: res?.id || `${Date.now()}`,
-                  status: payload.status,
+                  status: 'Unpublished',
+                  original_status: payload.status,
                   type: "shift",
                   date: payload.date,
                   start_time: payload.start_time.slice(0,5),
@@ -1288,6 +1294,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
                   notes: payload.notes,
                   assignee_id: payload.assignee_id,
                   assignee_name: payload.assignee_name,
+                  published: payload.published,
                 },
                 color: getStatusColor(stringToStatus(payload.status as any)),
                 title: buildShiftEventTitle(payload.status, timeLabel, payload.location_name, payload.assignee_name, 'shift'),

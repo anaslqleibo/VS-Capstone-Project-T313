@@ -10,13 +10,13 @@ export function useClickOutside(ref: React.RefObject<HTMLElement|HTMLDivElement|
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (ref.current && !ref.current.contains(event.target as Node)) {
-
         if (toggleButtonRef?.current?.contains(event.target as Node)) return;
 
         const target = event.target as HTMLElement;
         const timePicker = target.closest('.MuiPopper-root');
         const datePicker = target.closest('.MuiDialogContent-root');
-        if (timePicker || datePicker) return;
+        const toast = target.closest('.toast');
+        if (timePicker || datePicker || toast) return;
 
         handler();
       }

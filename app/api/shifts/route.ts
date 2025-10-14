@@ -2,11 +2,12 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
-import { sendEmail } from "@/app/lib/email"; // existing
+import { sendEmail, sendShiftEmail } from "@/app/lib/email"; // existing
 import { queueEmail } from "@/app/lib/email"; // NEW
 import { buildShiftEmail } from "@/app/lib/shift-email";
 import { insertNotification } from "@/app/lib/notification-db";
 import { isAdmin } from "../users/[id]/is_admin";
+import { Shift } from "@/app/controllers/Shifts";
 
 // Tiny helper to format a nice "when" string without timezone headaches
 function formatWhen(date: string, start: string, end: string) {
@@ -46,7 +47,9 @@ export async function POST(req: NextRequest) {
       start_time,
       end_time,
       notes,
-      email_reason
+      published,
+      pay_rate,
+      total_payment
     } = await req.json();
 
     console.log("[SHIFT CREATE] payload:", {
@@ -58,93 +61,26 @@ export async function POST(req: NextRequest) {
       start_time,
       end_time,
       notes,
+      pay_rate,
+      total_payment
     });
 
-    // 1) Insert the shift
     const admin = await isAdmin(assignee_id);
 
+    // 1) Insert the shift
     const res = await executeQuery(
-      `INSERT INTO shifts (assignee_id, status, location_id, date, start_time, end_time, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`, 
-      [(status !== "Open" && status !== "Unassigned") ? assignee_id : null, (status !== "Open" && status !== "Unassigned" && admin) ? "Accepted" : status, location_id, date, start_time, end_time, notes]
+      `INSERT INTO shifts (assignee_id, status, location_id, date, start_time, end_time, notes, published, pay_rate, total_payment)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+      [(status !== "Open" && status !== "Unassigned") ? assignee_id : null, (status !== "Open" && status !== "Unassigned" && admin) ? "Accepted" : status, location_id, date, start_time, end_time, notes, published??0, pay_rate??0, total_payment??0]
     ) as any;
 
     console.log("[SHIFT CREATE] inserted");
 
-    // 2) Get the newly created shift id if you need it (optional)
-    // const [{ insertId }] = await executeQuery("SELECT LAST_INSERT_ID() as insertId", []);
-
-    // 3) Look up the assignee’s contact details
-    const users = await executeQuery(
-      `SELECT CONCAT(first_name,' ',last_name) AS full_name, email
-         FROM users
-        WHERE id = ?
-        LIMIT 1`,
-      [assignee_id]
-    ) as Array<{ full_name: string | null; email: string | null }>;
-
-    const employee = users?.[0];
-    console.log("[SHIFT CREATE] got user:", employee);
-
-    // 4) Send the email (best-effort — don’t block the main response if it fails)
-    if (employee?.email) {
-      const when = formatWhen(String(date), String(start_time), String(end_time));
-      const subject = `New shift assigned — ${when}`;
-      const html = `
-        <p>Hi ${employee.full_name ?? "there"},</p>
-        <p>You’ve been assigned a new shift.</p>
-        <ul>
-          <li><b>When:</b> ${when}</li>
-          ${address ? `<li><b>Address:</b> ${address}</li>` : ""}
-          ${notes ? `<li><b>Notes:</b> ${notes}</li>` : ""}
-        </ul>
-        <p>Please check the portal for full details at https://www.rostering-system.2bentrods.com.au/</p>
-      `;
-
-      // --- Direct SMTP send (kept) ---
-      console.log("[SHIFT CREATE] before SMTP");
-      try {
-        await sendEmail({
-          to: employee.email,
-          subject,
-          html,
-          text: `New shift assigned — ${when}`,
-        });
-        console.log("[SHIFT CREATE] SMTP sent");
-      } catch (e) {
-        console.warn("[EMAIL SMTP] Failed to send new-shift email:", e);
-      }
-
-      // --- CRM queue insert (new) ---
-      console.log("[SHIFT CREATE] before CRM queue");
-      try {
-        const { subject: crmSubject, html: crmHtml } = buildShiftEmail({
-          event: "created",
-          userName: employee.full_name ?? "Staff",
-          date: String(date),
-          start: String(start_time),
-          end: String(end_time),
-          address,
-          notes,
-        });
-
-        await queueEmail({
-          to: employee.email,
-          subject: crmSubject,
-          html: crmHtml,
-        });
-
-        console.log("[SHIFT CREATE] queued in CRM");
-      } catch (e) {
-        console.warn("[CRM QUEUE] Failed to queue new-shift email:", e);
-      }
-    } else {
-      console.log("[SHIFT CREATE] no email found for assignee_id:", assignee_id);
+    if (published){
+      sendShiftEmail({assignee_id,address,date,start_time,end_time,notes} as Shift);
+      insertNotification(res.insertId, status);
     }
 
-    console.log("[SHIFT CREATE] done");
-
-    insertNotification(res.insertId, status);
     return NextResponse.json({ message: "Shift created successfully" }, { status: 200 });
   } catch (err) {
     console.error("Shift creation error:", err);
@@ -152,6 +88,8 @@ export async function POST(req: NextRequest) {
   }
 }
 
+
+// Publish bulk shifts
 export async function PATCH(req: Request) {
   try {
     const {month, year} = await req.json();
@@ -167,7 +105,9 @@ export async function PATCH(req: Request) {
       conditions.push('YEAR(date) = ?');
       vals.push(year);
     }
-    console.log(month,year);
+   
+    
+
     const result = await executeQuery(
       `UPDATE shifts SET published = 1 ${conditions.length>0?'WHERE':''} ${conditions.join(' AND ')}`, vals
     ) as any;
@@ -179,6 +119,26 @@ export async function PATCH(req: Request) {
       );
     }
 
+    const shifts = await executeQuery(
+      `SELECT s.id as id, s.assignee_id as assignee_id, s.status as status, DATE_FORMAT(s.date, '%Y-%m-%d') as date, s.start_time as start_time, s.end_time as end_time, l.address as address, s.notes as notes FROM shifts s INNER JOIN locations l ON s.location_id = l.id ${conditions.length>0?'WHERE':''} ${conditions.join(' AND ')}`, vals
+    ) as any[]; 
+
+    shifts.forEach((shift)=>{
+      const {
+        id,
+        assignee_id,
+        address,
+        status,
+        date,
+        start_time,
+        end_time,
+        notes,
+      } = shift;
+
+      if (assignee_id) sendShiftEmail({assignee_id,address,date,start_time,end_time,notes} as Shift);
+      if (id) insertNotification(id, status);
+    });
+    
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error publishing bulk shifts", error);

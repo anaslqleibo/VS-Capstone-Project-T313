@@ -3,7 +3,7 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import rrulePlugin from '@fullcalendar/rrule';
-import getStatusColor, { Status } from "./utils/getStatusColor";
+import getStatusColor, { Status, statusToString } from "./utils/getStatusColor";
 import { createModal, ShiftExtendedProps, getModalTypesByStatus, setEventType, LeaveExtendedProps, EventTypes} from "./Modal";
 import { createRoot } from "react-dom/client";
 import { RefObject, useEffect, useMemo, useRef, useState } from "react";
@@ -12,10 +12,11 @@ import listPlugin from '@fullcalendar/list';
 import { EventInput } from "@fullcalendar/core";
 import './Calendar.css'
 import Toast from "./Toast";
-import { buildShiftEventTitle } from "../controllers/Shifts";
-import { Role } from "../controllers/User";
+import { buildShiftEventTitle, Shift, updateShift } from "../controllers/Shifts";
+import { fetchUsersPayRate, Role } from "../controllers/User";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { v4 as uuidv4 } from 'uuid';
+import useIsOverMd from "./utils/useIsOverMd";
 
 
 export interface CalendarFilter{
@@ -129,8 +130,6 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
     
     const [newEvents, setEvents] = useState<EventInput[]>(initialEvents);
 
-    
-
     useEffect(() => {
         if (events) {
             const constructed = constructEventsArray(events, role);
@@ -139,36 +138,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
         }
     }, [events, role]);
 
-    const updateEvent: setEventType = (event, mode="update") => {
-        let updatedEvent = event;
-
-        if (mode==='create'){
-            setOriginalEvents(prev => [event, ...prev]);
-            setEvents(prev => [event, ...prev]);
-        }
-        else if (mode==='delete'){
-            setOriginalEvents(prev => prev.filter(e => e.id !== event.id ));
-            setEvents(prev => prev.filter(e => e.id !== event.id ));
-        }
-        else 
-            if (event.extendedProps){
-                const start = event.extendedProps.date+'T'+event.extendedProps.start_time;
-                const end = event.extendedProps.date+'T'+event.extendedProps.end_time;
-                
-                updatedEvent = {...event, start: start?start:event.start, end: end?end:event.end};
-
-                setOriginalEvents(prev =>
-                    prev.map(e => e.id === event.id ? {...event, start: start?start:event.start, end: end?end:event.end} : e)
-                );
-                setEvents(prev =>
-                    prev.map(e => e.id === event.id ? {...event, start: start?start:event.start, end: end?end:event.end} : e)
-                );
-            }
-            
-        
-        updateEventData?.(updatedEvent, mode);
-    }
-
+    
     const [activeModal, setActiveModal] = useState<{
         isOpen: boolean;
         status: Status;
@@ -201,6 +171,59 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
         setToastShown(true);
     }
 
+    const updateEvent: setEventType = (event, mode="update", isEventImpl=false) => {
+        let updatedEvent = event;
+
+        if (mode==='create'){
+            setOriginalEvents(prev => [event, ...prev]);
+            setEvents(prev => [event, ...prev]);
+        }
+        else if (mode==='delete'){
+            setOriginalEvents(prev => prev.filter(e => e.id !== event.id ));
+            setEvents(prev => prev.filter(e => e.id !== event.id ));
+        }
+        else if (event.extendedProps){
+            const start = event.extendedProps.date+'T'+event.extendedProps.start_time;
+            const end = event.extendedProps.date+'T'+event.extendedProps.end_time;
+            
+            if (isEventImpl)
+                updatedEvent = { extendedProps: event.extendedProps, start: start?start:event.start, end: end?end:event.end};
+            else
+                updatedEvent = {...event, start: start?start:event.start, end: end?end:event.end};
+            
+            setOriginalEvents(prev =>
+                prev.map(e => e.extendedProps?.id === event.extendedProps?.id ? (isEventImpl?{...e, ...updatedEvent} : updatedEvent) : e)
+            );
+            setEvents(prev =>
+                prev.map(e => e.extendedProps?.id === event.extendedProps?.id ? (isEventImpl?{...e, ...updatedEvent} : updatedEvent) : e)
+            );
+        }
+            
+        updateEventData?.(updatedEvent, mode);
+
+        // Sync the updates to the db, only from a ChangeEvent coming from the drag and drop
+        if (isEventImpl){
+            (async ()=>{
+                try{
+                    const updatedShift : Shift = { ...updatedEvent.extendedProps as ShiftExtendedProps, status: statusToString(updatedEvent.extendedProps?.status) };
+                    const result = await updateShift(updatedShift, false);
+
+                    if (result){
+                        displayToast!(`Updated shift successfully!`, 'success');
+                    }
+                    else{
+                        displayToast!(`Failed to update the shift!`, 'error');
+                    }
+                }
+                finally{
+                    
+                }
+                
+            })();
+        }
+    }
+
+
     const syncHeights = () => {
         setTimeout(()=>{
             requestAnimationFrame(() => {
@@ -215,6 +238,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
     const isAdmin = useAuth().user?.role==='admin';
 
     const [visibleRange, setVisibleRange] = useState<{start: string, end: string} | null>(null);
+
     useEffect(() => {
         if (!isAdmin || !visibleRange || !events?.length) return;
 
@@ -228,7 +252,9 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
             show_unpublished = (showSelectedFilter as AdminCalendarFilter).show_unpublished;
         }
 
-        const shifts = events.filter(e=>e.extendedProps?.type==='shift'&&(!show_unpublished?e.extendedProps?.published===1:true)).map((e) => {
+        const shiftStatusFilter = (status:string)=>showSelectedFilter?.status.includes('All shifts') || showSelectedFilter?.status.includes(status);
+
+        const shifts = events.filter(e=>e.extendedProps?.type==='shift'&&shiftStatusFilter(e.extendedProps?.original_status)&&(!show_unpublished?e.extendedProps?.published===1:true)).map((e) => {
             const { start_time, end_time, total_payment, assignee_name } = e.extendedProps as ShiftExtendedProps;
 
             let duration = 0;
@@ -272,7 +298,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
                     const assigneeIdx = weeklyPayDetails.assignees.findIndex(u=>u.name===shifts[j].assignee)
 
                     const totalRounded = Math.round((shifts[j].total_payment??0)*100)/100;
-                    if (assigneeIdx !== -1 && weeklyPayDetails.assignees[assigneeIdx].total_pay && weeklyPayDetails.assignees[assigneeIdx].duration)
+                    if (assigneeIdx !== -1 && weeklyPayDetails.assignees[assigneeIdx].total_pay!==undefined && weeklyPayDetails.assignees[assigneeIdx].duration!=undefined)
                     {
                         weeklyPayDetails.assignees[assigneeIdx].total_pay += totalRounded;
                         weeklyPayDetails.assignees[assigneeIdx].duration += shifts[j].duration??0;
@@ -301,7 +327,7 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
 
         setWeeklyPay&&setWeeklyPay(weeks);
 
-    },[isAdmin, events, visibleRange, showSelectedFilter]);
+    },[isAdmin, events, visibleRange, showSelectedFilter, showSelectedFilter?.status]);
 
     return (
     <>
@@ -319,6 +345,42 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
         left: '',     
         center: '',
         right: '' 
+        }}
+        editable={isAdmin}
+        eventDrop={(info)=>{
+            if (!confirm("Are you sure about this change? This will update the pay rate and total payment based on the new day type.")) {
+                info.revert();
+            }
+            else{
+                let newPayRate = 0;
+                let newTotalPayment = 0;
+
+                if (info.event.start && info.event.extendedProps.start_time && info.event.extendedProps.end_time){
+                    (async () => {
+                    try{
+                        if (info.event.extendedProps.assignee_id){
+                            const payRate = await fetchUsersPayRate(info.event.extendedProps.assignee_id, dayjs(info.event.start));
+                            newPayRate = Math.round(payRate * 100) / 100;
+
+                            newTotalPayment = Math.round((newPayRate * dayjs(info.event.extendedProps.end_time.substring(0,5), 'HH:mm').diff(dayjs(info.event.extendedProps.start_time.substring(0,5), "HH:mm"), 'minute')/60)*100)/100;
+                        }
+                        
+                        const extProps = (newPayRate && newTotalPayment) ? {...info.event.extendedProps, pay_rate: newPayRate, total_payment: newTotalPayment} : info.event.extendedProps;
+
+                        const newExtProps = {...extProps, date: dayjs(info.event.start).format('YYYY-MM-DD')} as ShiftExtendedProps;
+
+                        updateEvent({...info.event as EventInput, extendedProps: newExtProps}, 'update', true);
+                    }
+                    catch (e){
+                        console.log(e);
+                        displayToast('Fail to update shift!', 'error');
+                    }
+                    }
+                    )();
+                }
+                
+                
+            }
         }}
         allDayText="All day"
         eventContent={(arg) => {

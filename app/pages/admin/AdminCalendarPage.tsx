@@ -134,16 +134,21 @@ export default function AdminCalendarPage() {
   }
 
   const publishShift = async (month?:string, year?:string) => {
-    const res = await publishBulkShift(month, year);
-    if (res){
-      console.log('success');
-      setOpenModal(false);
-      if (month || year)
-        displayToast("Successfully published shifts for this month! Please refresh the page to view the latest changes.", 'success');
-      else
-        displayToast("Successfully published all upcoming shifts! Please refresh the page to view the latest changes.", 'success');
+    try{
+      setLoadingEvents(true);
+      const res = await publishBulkShift(month, year);
+      if (res){
+        setOpenModal(false);
+        if (month || year)
+          displayToast("Successfully published shifts for this month! Please refresh the page to view the latest changes.", 'success');
+        else
+          displayToast("Successfully published all upcoming shifts! Please refresh the page to view the latest changes.", 'success');
+      }
+      else displayToast("Fail to publish multiple shifts!", 'error');
     }
-    else displayToast("Fail to publish multiple shifts!", 'error');
+    finally{
+      setLoadingEvents(false);
+    }
   }
 
   const [trHeights, setTrHeights] = useState<number[]>([]);
@@ -197,7 +202,7 @@ export default function AdminCalendarPage() {
                     { 
                       trHeights.length>0 && trHeights.map((height, index)=>
                       <tr key={index} style={{height: height+"px"}}>
-                        <td className='max-w-24 border px-3 text-hover font-semibold border-light-grey cursor-pointer hover:border-primary hover:bg-hover text-center hover:text-white duration-400 transition-colors' onClick={()=>{setWeeklyPayIndex(index); setModalType('weekly-pay'); setOpenModal(true); }}>${Math.round(weeklyPay[index].total*100)/100}</td>
+                        <td className='max-w-24 border px-3 text-hover font-semibold border-light-grey cursor-pointer hover:border-primary hover:bg-hover text-center hover:text-white duration-400 transition-colors' onClick={()=>{setWeeklyPayIndex(index); setModalType('weekly-pay'); setOpenModal(true);}}>${weeklyPay[index].total ? Math.round(weeklyPay[index].total*100)/100 : 0}</td>
                         </tr>)
                     }
                   </tbody>
@@ -208,7 +213,7 @@ export default function AdminCalendarPage() {
               <div className='flex flex-col flex-1'>
                 <div id='top-section' className='flex justify-between items-end'>
                 <div>
-                  <div className='flex justify-between items-center mb-2 md:mb-1'>
+                  <div className='flex justify-between items-center mb-2 md:mb-0'>
                     <div className="flex items-start flex-row flex-wrap gap-3 ">
                       <Dropdown items={['All employees', ...employees]} placeholder="Select employee" actAsFilter setFilter={setEmployee} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All employees' simplifyOnMobile replacementIcon={<FaUser/>}/>
 
@@ -257,7 +262,8 @@ export default function AdminCalendarPage() {
                   <Checkbox checked={activeFilter.show_unpublished} onChange={(e)=>setShowUnpublished(e)} label='Show unpublished shifts' className='text-sm -mt-7'/>
                   {activeFilter.show_unpublished && <Button className='rounded-b-none rounded-t-md py-2 px-4' fontSize='0.8em' onClick={()=>{setModalType('publish'); setOpenModal(true);}}>Publish all shifts</Button> }  
 
-                </div> :<div className='h-full text-white text-sm py-2 font-semibold rounded-t-md rounded-b-none bg-light-grey px-4 flex items-center'>All shifts published for this month</div>
+                </div> :
+                <div className='h-fit text-white text-sm py-2 font-semibold rounded-t-md rounded-b-none bg-light-grey px-4 flex items-center'>All shifts published for this month</div>
                 }
                 </div>
                 <Calendar key={isOverMd ? 'month' : 'list'}  events={events??[]} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'} setColHeights={setTrHeights} setWeeklyPay={setWeeklyPay}></Calendar>
@@ -265,23 +271,22 @@ export default function AdminCalendarPage() {
             </div>
             
             { modalContainer.current &&       
-              <Modal details={{}} shown={openModal} setShown={setOpenModal} modalContainer={modalContainer.current} setParentOpen={setOpenModal} displayToast={displayToast} title={modalType==='publish'?"Publish all shifts confirmation":"Weekly pay details"}>
+              <Modal details={{}} shown={openModal} setShown={setOpenModal} modalContainer={modalContainer.current} setParentOpen={setOpenModal} displayToast={displayToast} title={modalType==='publish'?"Publish all shifts confirmation":"Weekly pay details"} customButtons={modalType==='publish' ? <div className='flex items-center justify-end gap-4'> 
+                    <Button type="cta" fontSize="0.8em" className="py-3 px-5" onClick={()=>publishShift((activeFilter.month.month()+1).toString(), activeFilter.month.year().toString())}>This Month Only</Button>
+                    <Button type="cta" htmlType='submit' fontSize="0.8em" className="py-3 px-5" onClick={()=>publishShift()}>All Shifts</Button>
+                  </div>:undefined}>
 
                 {modalType === 'publish' ? 
                 <>
                   <div className='mt-4'>You are about to publish multiple shifts. Would you like to publish only the shifts scheduled for this month ({activeFilter.month.format("MMMM YYYY")}) or all upcoming shifts?</div>
                   
 
-                  <div className='flex items-center justify-end gap-4 mt-6'> 
-                    <Button type="cta" fontSize="0.8em"  className="py-3 px-5" onClick={()=>publishShift((activeFilter.month.month()+1).toString(), activeFilter.month.year().toString())}>This Month Only</Button>
-                    <Button type="cta" htmlType='submit' fontSize="0.8em" className="py-3 px-5" onClick={()=>publishShift()}>All Shifts</Button>
-                    
-                  </div>
+                  
                 </> :''}
 
                 {modalType === 'weekly-pay' ? 
                 <>
-                  {(weeklyPayIndex!==null && weeklyPay.length>0 && weeklyPay[weeklyPayIndex]) ? 
+                  {(weeklyPayIndex!==null && weeklyPay.length>0 && weeklyPay[weeklyPayIndex]&& weeklyPay[weeklyPayIndex].total) ? 
 
                   <div>
                     <div className='font-medium text-secondary mb-4'>

@@ -5,10 +5,10 @@ import { isAdmin } from "@/app/api/users/[id]/is_admin";
 import dayjs from "dayjs";
 
 
-export async function GET(request : NextRequest, context: RouteContext<'/api/shifts/[user_id]/[month]'>) {
+export async function GET(request : NextRequest, context: RouteContext<'/api/shifts/[id]/[month]'>) {
     try{
-        const {user_id, month} = await context.params;
-        const admin = await isAdmin(user_id);
+        const {id, month} = await context.params;
+        const admin = await isAdmin(id);
         let shifts;
         
         const targetMonth = month;
@@ -31,7 +31,7 @@ export async function GET(request : NextRequest, context: RouteContext<'/api/shi
         else {
             shifts = await executeQuery(
             `SELECT s.id as id, s.assignee_id as assignee_id, s.status as status, DATE_FORMAT(s.date, '%Y-%m-%d') as date, s.start_time as start_time, s.end_time as end_time, s.notes as notes, s.published as published, l.id as location_id,  l.name as location_name, l.address as address, CONCAT(u.first_name," ", u.last_name) as assignee_name FROM shifts s INNER JOIN locations l ON s.location_id = l.id INNER JOIN users u ON s.assignee_id = u.id WHERE s.status != "Unassigned" AND s.status != "Declined" AND u.id = ? AND s.type = "shift" AND s.published = 1`,
-            [user_id]
+            [id]
             );
         }
 
@@ -47,7 +47,7 @@ export async function GET(request : NextRequest, context: RouteContext<'/api/shi
 
 export async function PUT(req: NextRequest, _context: any) {
   try {
-    const { id, assignee_id, status, date, start_time, end_time, notes, location_id, published} : Shift = await req.json();
+    const { id, assignee_id, status, date, start_time, end_time, notes, location_id, published, pay_rate, total_payment} : Shift = await req.json();
 
     const updates = [];
     const vals = [];
@@ -91,6 +91,14 @@ export async function PUT(req: NextRequest, _context: any) {
     if (published !== undefined) {
       updates.push('published = ?');
       vals.push(published);
+    }
+    if (pay_rate !== undefined) {
+      updates.push('pay_rate = ?');
+      vals.push(pay_rate);
+    }
+    if (total_payment !== undefined) {
+      updates.push('total_payment = ?');
+      vals.push(total_payment);
     }
     vals.push(id);
 

@@ -28,7 +28,7 @@ export async function storeNotification(shift_id:string, type:NotificationType, 
         const [notif] = await executeQuery(`SELECT id FROM notifications WHERE shift_id = ?`, 
             [shift_id]) as any[];
 
-        notif && notif.id && await executeQuery(`UPDATE user_notifications SET is_read = ? WHERE notification_id = ? AND user_id = ?`, 
+        notif && notif.id && assignee_id && await executeQuery(`UPDATE user_notifications SET is_read = ? WHERE notification_id = ? AND user_id = ?`, 
             [0, notif.id, assignee_id]);
     }
     else{

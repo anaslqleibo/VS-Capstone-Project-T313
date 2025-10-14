@@ -180,8 +180,8 @@ export async function duplicateShift(shift_id: string): Promise<{ success: boole
   }
 }
 
-export function getEventInputShifts(user_id: number) {
-  return fetchShifts(user_id).then((shifts) =>
+export function getEventInputShifts(user_id: number, month='-') {
+  return fetchShifts(user_id, month).then((shifts) =>
     shifts.map((shift) => {
       const shiftExtProps: ShiftExtendedProps = shiftToShiftExtProps(shift);
 

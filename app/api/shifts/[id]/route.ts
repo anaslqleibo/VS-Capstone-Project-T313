@@ -6,24 +6,16 @@ import { buildShiftEmail } from "@/app/lib/shift-email";
 import { sendEmail } from "@/app/lib/email";
 import { formatWhen } from "@/app/components/utils/formatDate";
 import { insertNotification } from "@/app/lib/notification-db";
+import { Shift } from "@/app/controllers/Shifts";
 
-type ShiftUpdateBody = {
-  id: string;               // shift id to update
-  assignee_id?: string;
-  status?: string;
-  date?: string;            // YYYY-MM-DD
-  start_time?: string;      // HH:mm:ss
-  end_time?: string;        // HH:mm:ss
-  notes?: string;
-  location_id?: string;
-};
 
-// ========== GET /api/shifts/user/[id] ==========
+// ========== GET /api/shifts/[id] ==========
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  context: RouteContext<'/api/shifts/[id]'>
 ) {
   try {
+    const params = await context.params;
     const userId = params.id;
     const admin = await isAdmin(userId);
 
@@ -91,8 +83,9 @@ export async function PUT(
     const params = await context.params; // "assignee_changed" flag in your old code used this
     const userId = params.id;
     
-    const body: ShiftUpdateBody = await req.json();
-    const { id, assignee_id, status, date, start_time, end_time, notes, location_id } = body;
+    const body : Shift = await req.json();
+
+    const { id, assignee_id, status, date, start_time, end_time, notes, location_id, published, pay_rate, total_payment} = body;
 
     if (!id) {
       return NextResponse.json(
@@ -144,6 +137,18 @@ export async function PUT(
       updates.push("location_id = ?");
       vals.push(location_id);
     }
+    if (published!==undefined) {
+      updates.push("published = ?");
+      vals.push(published);
+    }
+    if (pay_rate!==undefined) {
+      updates.push("pay_rate = ?");
+      vals.push(pay_rate);
+    }
+    if (total_payment!==undefined) {
+      updates.push("total_payment = ?");
+      vals.push(total_payment);
+    }
 
     vals.push(id);
 
@@ -181,7 +186,8 @@ export async function PUT(
     const assignee_changed = userId === "1"; // <= you used this convention previously
     let newAssignee: any = null;
 
-    if (assignee_id && assignee_changed) {
+    if (published){
+      if (assignee_id && assignee_changed) {
       const [res] = (await executeQuery(
         `SELECT 
             email,
@@ -277,6 +283,7 @@ export async function PUT(
 
     // Notifications table hook
     insertNotification(id ?? "", finalStatus);
+  }
 
     return NextResponse.json({
       success: true,
