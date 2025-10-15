@@ -162,24 +162,29 @@ function DupDialog({ open, onClose, onCreate, initial }: DupDialogProps) {
             >
               Cancel
             </button>
+
+            
             <button
               disabled={busy}
               className="w-full sm:w-auto px-4 py-2 rounded bg-[color:var(--primary-color)] text-white hover:bg-[color:var(--hover-color)]"
               onClick={async () => {
                 setBusy(true);
+                const effectiveStatus = published ? status : Status.Pending;
+
                 await onCreate({
-                  date: date.format("YYYY-MM-DD"),
-                  start_time: from.format("HH:mm:ss"),
-                  end_time: to.format("HH:mm:ss"),
-                  assignee_id: assigneeId,
-                  assignee_name: assigneeName,
-                  location_id: locationId,
-                  location_name: locationName,
-                  address,
-                  notes,
-                  status,
-                  published,
-                });
+                date: date.format("YYYY-MM-DD"),
+                start_time: from.format("HH:mm:ss"),
+                end_time: to.format("HH:mm:ss"),
+                assignee_id: assigneeId,
+                assignee_name: assigneeName,
+                location_id: locationId,
+                location_name: locationName,
+                address,
+                notes,
+                status: effectiveStatus,
+                published,
+              });
+
                 setBusy(false);
               }}
             >
@@ -604,21 +609,39 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
         ); 
     }
     else if ('location_name' in castedDetails){
-        return (
-            <>
-            {isAdmin && setEditing && createAdminComponent(castedDetails.original_status, castedDetails.assignee_name, setEvents, event, displayToast, closeModal, isEditing, setEditing, formValues, handleChange, initialDetails, setLoading)}
-            {createDetailEditor("Date: ", 'date', sqlDateFormatToRegularFormat(castedDetails.date), "", isEditing, formValues, handleChange, displayToast)}
-            {createDetailEditor("Time: ", 'time' , castedDetails.time, "", isEditing, formValues, handleChange, displayToast)}
-            {createDetailEditor("Location: ", 'location_name' ,castedDetails.location_name, "", isEditing, formValues, handleChange, displayToast)}
-            {createDetailEditor("Address: ", 'address' ,castedDetails.address, "", isEditing, formValues, handleChange, displayToast)}
-            
-            {isAdmin && (castedDetails.pay_rate!==undefined&&castedDetails.pay_rate!==null) && createDetailEditor("Active pay rate: ", 'pay_rate' ,'$'+castedDetails.pay_rate.toFixed(2)+'/h', "", isEditing, formValues, handleChange, displayToast)}
-            {isAdmin && (castedDetails.total_payment!==undefined&&castedDetails.total_payment!==null) && createDetailEditor("Total Pay: ", 'total_payment' ,'$'+castedDetails.total_payment.toFixed(2), "", isEditing, formValues, handleChange, displayToast)}
-            {createDetailEditor("Notes: ", 'notes',castedDetails.notes, "textarea", isEditing, formValues, handleChange, displayToast)}
-            </>
-        );
-    }
-}
+    // decide what to show in the header: Unpublished vs original_status
+    const displayStatus =
+      (castedDetails as any).published ? castedDetails.original_status : Status.Unpublished;
+
+    return (
+        <>
+        {isAdmin && setEditing && createAdminComponent(
+          displayStatus,
+          castedDetails.assignee_name,
+          setEvents,
+          event,
+          displayToast,
+          closeModal,
+          isEditing,
+          setEditing,
+          formValues,
+          handleChange,
+          initialDetails,
+          setLoading
+        )}
+
+        {createDetailEditor("Date: ", 'date', sqlDateFormatToRegularFormat(castedDetails.date), "", isEditing, formValues, handleChange, displayToast)}
+        {createDetailEditor("Time: ", 'time' , castedDetails.time, "", isEditing, formValues, handleChange, displayToast)}
+        {createDetailEditor("Location: ", 'location_name' ,castedDetails.location_name, "", isEditing, formValues, handleChange, displayToast)}
+        {createDetailEditor("Address: ", 'address' ,castedDetails.address, "", isEditing, formValues, handleChange, displayToast)}
+        
+        {isAdmin && (castedDetails.pay_rate!==undefined&&castedDetails.pay_rate!==null) && createDetailEditor("Active pay rate: ", 'pay_rate' ,'$'+castedDetails.pay_rate.toFixed(2)+'/h', "", isEditing, formValues, handleChange, displayToast)}
+        {isAdmin && (castedDetails.total_payment!==undefined&&castedDetails.total_payment!==null) && createDetailEditor("Total Pay: ", 'total_payment' ,'$'+castedDetails.total_payment.toFixed(2), "", isEditing, formValues, handleChange, displayToast)}
+        {createDetailEditor("Notes: ", 'notes',castedDetails.notes, "textarea", isEditing, formValues, handleChange, displayToast)}
+        </>
+    );
+}}
+
 
 function createButtons(type: string|null, setEvents?: setEventType, event?:EventInput, displayToast?:(message:string, toastType: 'success'|'error')=>void, closeModal?:Function, isAdmin?:boolean, formValues?: Record<string, any>, handleChange?: (field: string, value: any) => void, isEditing?: boolean, setEditing?:(e:boolean)=>void){
     // console.log(formValues);
@@ -1276,6 +1299,7 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
             try {
               setLoading(true);
               // create via existing create endpoint
+// create via existing create endpoint
 const res = await createShift({
   id: undefined,
   assignee_id: payload.assignee_id,
@@ -1293,9 +1317,24 @@ const res = await createShift({
   email_reason: "duplicate"
 });
 
+//Web/bell notification (mirror email rule):
+// Only notify the assignee when the duplicated shift is published.
+if (payload.published && payload.assignee_id) {
+  // notifyManually(web=true, email=false, shiftId, assigneeId, status)
+  await notifyManually(
+    true,
+    false,
+    res?.id ?? undefined,
+    payload.assignee_id,
+    payload.status as ShiftStatus
+  );
+}
+
+
               // optimistic event for calendar
               // after the POST /api/shifts (createShift) succeeds…
-const visualStatus = payload.published ? payload.status : 'Unpublished';
+const effectiveStatus = payload.published ? payload.status : Status.Pending;
+const visualStatus = payload.published ? effectiveStatus : 'Unpublished';
 
 const timeLabel = `${payload.start_time.slice(0,5)}–${payload.end_time.slice(0,5)}`;
 const newEvent: EventInput = {
@@ -1303,10 +1342,8 @@ const newEvent: EventInput = {
   start: payload.date,
   extendedProps: {
     id: res?.id || `${Date.now()}`,
-    // what the user will see on the calendar card
     status: visualStatus,
-    // remember the real underlying status (Pending/Accepted/etc.)
-    original_status: payload.status,
+    original_status: effectiveStatus,
     type: "shift",
     date: payload.date,
     start_time: payload.start_time.slice(0,5),
@@ -1329,6 +1366,7 @@ const newEvent: EventInput = {
     'shift'
   ),
 };
+
 
 
               props.setEvents && props.setEvents(newEvent, "create");

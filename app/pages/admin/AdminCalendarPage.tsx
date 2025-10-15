@@ -128,13 +128,19 @@ useEffect(() => {
     })();
   }, []);
 
-  const setYear = (year: number) =>
-    setMonth(dayjs().year(year).month(activeFilter.month.month()).date(activeFilter.month.date()));
-  const handleMonthChange = (e: PickerValidDate) => setMonth(e);
-  const monthSelectedDropdown =
-    activeFilter.month.year() === dayjs().year()
-      ? activeFilter.month.format('MMMM')
-      : `${activeFilter.month.format('MMMM')}, ${activeFilter.month.year()}`;
+const setYear = (year: number) => {
+  setMonth(dayjs().year(year).month(activeFilter.month.month()).date(activeFilter.month.date()));
+};
+
+const handleMonthChange = (e: PickerValidDate) => {
+  setMonth(e);
+};
+
+const monthSelectedDropdown =
+  activeFilter.month.year() === dayjs().year()
+    ? activeFilter.month.format('MMMM')
+    : `${activeFilter.month.format('MMMM')}, ${activeFilter.month.year()}`;
+
   const isOverMd = useIsOverMd();
 
   const [openModal, setOpenModal] = useState(false);
@@ -287,6 +293,41 @@ useEffect(() => {
                             simplifyOnMobile
                             replacementIcon={<FaClipboardList />}
                           />
+                          <Dropdown
+                            id="dropdown-month"
+                            placeholder="Select month"
+                            actAsFilter
+                            setMonth={activeFilter.month}
+                            className="hidden md:block"
+                            containerClassName="rounded-b-none"
+                            custom
+                            customSelected={monthSelectedDropdown}
+                            disableTyping
+                          >
+                            <Input
+                              arrow="leftRight"
+                              value={activeFilter.month.year()}
+                              containerClassName="float-end pr-7"
+                              readonly
+                              setValue={setYear}
+                            />
+                            <MonthCalendar
+                              defaultValue={dayjs()}
+                              value={activeFilter.month}
+                              onChange={(e) => handleMonthChange(e)}
+                              sx={{
+                                gap: '16px 24px',
+                                padding: '8px',
+                                '& .MuiMonthCalendar-button.Mui-selected': {
+                                  backgroundColor: 'var(--primary-color)',
+                                  color: '#fff',
+                                },
+                              }}
+                            />
+                          </Dropdown>
+
+
+
                         </div>
                       </div>
                     </div>

@@ -8,6 +8,18 @@ import { formatWhen } from "@/app/components/utils/formatDate";
 import { insertNotification } from "@/app/lib/notification-db";
 import { Shift } from "@/app/controllers/Shifts";
 
+const notifyWeb = async (req: Request, payload: any) => {
+  const url = new URL("/api/notifications/notify", req.url).toString();
+  await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      via_web: true,
+      via_email: false,
+      ...payload,
+    }),
+  }).catch(() => {});
+};
 
 // ========== GET /api/shifts/[id] ==========
 export async function GET(
@@ -164,7 +176,8 @@ export async function PUT(
           s.notes,
           u.email AS assignee_email,
           CONCAT(u.first_name, " ", u.last_name) AS assignee_name,
-          l.address
+          l.address,
+          l.name AS location_name
        FROM shifts s
        LEFT JOIN users u ON u.id = s.assignee_id
        LEFT JOIN locations l ON l.id = s.location_id
@@ -186,80 +199,59 @@ export async function PUT(
     const assignee_changed = userId === "1"; // <= you used this convention previously
     let newAssignee: any = null;
 
-    if (published){
+    if (published) {
       if (assignee_id && assignee_changed) {
-      const [res] = (await executeQuery(
-        `SELECT 
-            email,
-            CONCAT(first_name, " ", last_name) AS name
-         FROM users
-         WHERE id = ?
-         LIMIT 1`,
-        [assignee_id]
-      )) as any[];
-      newAssignee = res || null;
-    }
-
-    // If location changed, fetch its address for email display
-    if (location_id) {
-      const [loc] = (await executeQuery(
-        `SELECT address FROM locations WHERE id = ? LIMIT 1`,
-        [location_id]
-      )) as any[];
-      if (newAssignee) newAssignee.location = loc?.address;
-      else newAssignee = { location: loc?.address };
-    }
-
-    const becameOpenOrUnassigned = status === "Open" || status === "Unassigned";
-
-    // If no emails relevant, short-circuit
-    if (becameOpenOrUnassigned && !oldShift?.assignee_email) {
-      insertNotification(id ?? "", status ?? oldShift?.status);
-      return NextResponse.json({ success: true, message: "Shift updated successfully" });
-    }
-
-    // Prepare email content
-    // Fallbacks: if a field not provided in PUT, keep old values
-    const finalDate = date ?? oldShift?.date;
-    const finalStart = (start_time ?? oldShift?.start_time)?.substring(0, 5);
-    const finalEnd = (end_time ?? oldShift?.end_time)?.substring(0, 5);
-    const finalAddress = location_id ? newAssignee?.location : oldShift?.address;
-    const finalNotes = notes ?? oldShift?.notes;
-    const finalStatus = status ?? oldShift?.status;
-
-    // Who to notify?
-    // - If assignee changed: cancel old assignee (if different), assign new assignee (if not Open/Unassigned)
-    // - Else: notify current assignee about "updated"
-    try {
-      // Notify old assignee if reassigned to someone else
-      if (assignee_changed && oldShift?.assignee_email && newAssignee?.email && oldShift.assignee_email !== newAssignee.email) {
-        const cancelTpl = buildShiftEmail({
-          event: "cancelled",
-          userName: oldShift.assignee_name,
-          date: finalDate,
-          start: finalStart,
-          end: finalEnd,
-          address: finalAddress,
-          notes: finalNotes,
-          status: finalStatus,
-        });
-        await sendEmail({
-          to: oldShift.assignee_email,
-          subject: cancelTpl.subject,
-          html: cancelTpl.html,
-          text: `Shift cancelled — ${formatWhen(finalDate, finalStart, finalEnd)}`,
-        });
+        const [res] = (await executeQuery(
+          `SELECT 
+              email,
+              CONCAT(first_name, " ", last_name) AS name
+           FROM users
+           WHERE id = ?
+           LIMIT 1`,
+          [assignee_id]
+        )) as any[];
+        newAssignee = res || null;
       }
 
-      // Notify new/current assignee (if not Open/Unassigned)
-      if (!becameOpenOrUnassigned) {
-        const targetEmail = assignee_changed && newAssignee?.email ? newAssignee.email : oldShift?.assignee_email;
-        const targetName = assignee_changed && newAssignee?.name ? newAssignee.name : oldShift?.assignee_name;
+      // If location changed, fetch its address for email display
+      if (location_id) {
+        const [loc] = (await executeQuery(
+          `SELECT address FROM locations WHERE id = ? LIMIT 1`,
+          [location_id]
+        )) as any[];
+        if (newAssignee) newAssignee.location = loc?.address;
+        else newAssignee = { location: loc?.address };
+      }
 
-        if (targetEmail) {
-          const { subject, html } = buildShiftEmail({
-            event: assignee_changed ? "created" : "updated",
-            userName: targetName,
+      const becameOpenOrUnassigned = status === "Open" || status === "Unassigned";
+
+      // If no emails relevant, short-circuit but still write notification record
+      if (becameOpenOrUnassigned && !oldShift?.assignee_email) {
+        await insertNotification(id ?? "", status ?? oldShift?.status);
+        // Also nudge bell list for admins/users that track this shift id
+        await notifyWeb(req, { shift_id: id, status: status ?? oldShift?.status, assignee_id: oldShift?.assignee_id });
+        return NextResponse.json({ success: true, message: "Shift updated successfully" });
+      }
+
+      // Prepare email content (fallback to old values)
+      const finalDate = date ?? oldShift?.date;
+      const finalStart = (start_time ?? oldShift?.start_time)?.substring(0, 5);
+      const finalEnd = (end_time ?? oldShift?.end_time)?.substring(0, 5);
+      const finalAddress = location_id ? newAssignee?.location : oldShift?.address;
+      const finalNotes = notes ?? oldShift?.notes;
+      const finalStatus = status ?? oldShift?.status;
+
+      try {
+        // Notify old assignee if reassigned to someone else
+        if (
+          assignee_changed &&
+          oldShift?.assignee_email &&
+          newAssignee?.email &&
+          oldShift.assignee_email !== newAssignee.email
+        ) {
+          const cancelTpl = buildShiftEmail({
+            event: "cancelled",
+            userName: oldShift.assignee_name,
             date: finalDate,
             start: finalStart,
             end: finalEnd,
@@ -267,23 +259,62 @@ export async function PUT(
             notes: finalNotes,
             status: finalStatus,
           });
-
           await sendEmail({
-            to: targetEmail,
-            subject,
-            html,
-            text: `${assignee_changed ? "New shift assigned" : "Shift details updated"} — ${formatWhen(finalDate, finalStart, finalEnd)}`,
+            to: oldShift.assignee_email,
+            subject: cancelTpl.subject,
+            html: cancelTpl.html,
+            text: `Shift cancelled — ${formatWhen(finalDate, finalStart, finalEnd)}`,
+          });
+
+          // Bell/web notification for the old assignee
+          await notifyWeb(req, {
+            shift_id: id,
+            status: finalStatus,
+            assignee_id: String(oldShift.assignee_id),
           });
         }
-      }
-    } catch (e) {
-      console.warn("[EMAIL SMTP] Failed to send email:", e);
-      // (Optional) queue in CRM here if desired
-    }
 
-    // Notifications table hook
-    insertNotification(id ?? "", finalStatus);
-  }
+        // Notify new/current assignee (if not Open/Unassigned)
+        if (!becameOpenOrUnassigned) {
+          const targetEmail  = assignee_changed && newAssignee?.email ? newAssignee.email : oldShift?.assignee_email;
+          const targetName   = assignee_changed && newAssignee?.name  ? newAssignee.name  : oldShift?.assignee_name;
+          const targetUserId = assignee_changed ? String(assignee_id) : String(oldShift.assignee_id);
+
+          if (targetEmail) {
+            const eventKind = assignee_changed ? "created" : "updated";
+            const { subject, html } = buildShiftEmail({
+              event: eventKind,
+              userName: targetName,
+              date: finalDate,
+              start: finalStart,
+              end: finalEnd,
+              address: finalAddress,
+              notes: finalNotes,
+              status: finalStatus,
+            });
+
+            await sendEmail({
+              to: targetEmail,
+              subject,
+              html,
+              text: `${assignee_changed ? "New shift assigned" : "Shift details updated"} — ${formatWhen(finalDate, finalStart, finalEnd)}`,
+            });
+          }
+
+          // Bell/web notification for the (new/current) assignee
+          await notifyWeb(req, {
+            shift_id: id,
+            status: finalStatus,
+            assignee_id: targetUserId,
+          });
+        }
+      } catch (e) {
+        console.warn("[EMAIL/WEB NOTIFY] Failed to send:", e);
+      }
+
+      // Notifications table hook (keeps the latest type per shift)
+      await insertNotification(id ?? "", finalStatus);
+    }
 
     return NextResponse.json({
       success: true,

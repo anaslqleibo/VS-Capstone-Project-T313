@@ -92,21 +92,24 @@ export function createNotifications(fromAdminView=false, notifications : Notific
     return (
     <>
         {notifications.map(item =>{
-            if(fromAdminView) 
-                return createAdminNotification(item);
-            else 
-                return createStaffNotification(item);
+            
+            return createAdminNotification(item);
         })}
     </>
     );
 }
 
+
 export function createAdminNotification({type, date, shift_date, days_left = 1, assignee_name='Steve', location_name, start_time, end_time, onClick} : NotificationProps){
+    // Clamp negatives to 0 so we never render "in -7 days"
+    const safeDays = Math.max(0, Math.floor(days_left || 0));
+
     const circle = ()=>{
         const s = type.split(' ');
         const status = stringToStatus(s.length > 1 ? s[1] : s[0]);
         return <Icon id="circle" width="0.5em" className='mr-2' status={status}/>
     };
+
 
     function handleClick(e : React.MouseEvent<HTMLParagraphElement>){
         e.stopPropagation(); 
@@ -147,17 +150,17 @@ export function createAdminNotification({type, date, shift_date, days_left = 1, 
             );
             break;
         case "Unassigned":
-        case "Open":
-            content = (
-            <div>
-                <span className="text-danger">
-                There is an {type.toLowerCase()} {shift} scheduled  {days_left>0?'in ' + days_left + ' day' + (days_left > 1 ? "s" : ""):'today'}.<br />
+case "Open":
+    content = (
+    <div>
+        <span className="text-danger">
+        There is an {type.toLowerCase()} {shift} scheduled {safeDays > 0 ? 'in ' + safeDays + ' day' + (safeDays > 1 ? 's' : '') : 'today'}.<br />
+        {safeDays > 0 ? 'Please assign it before the shift date.' : 'Please resolve this as soon as possible!'}
+        </span>
+    </div>
+    );
+    break;
 
-                {days_left>0?'Please assign it before the shift date.':'Please resolve this as soon as possible!'}
-                </span>
-            </div>
-            );
-            break;
         case "Request":
             content = (
             <span>
@@ -173,16 +176,16 @@ export function createAdminNotification({type, date, shift_date, days_left = 1, 
             );
             break;
         case "Assigned":
-            content = (
-            <div>
-                <span className="text-danger">
-                {assignee_name} has a pending {shift} scheduled in {days_left} day
-                {days_left > 1 ? "s" : ""}.<br />
-                Please have the assignee accept/decline the shift.
-                </span>
-            </div>
-            );
-            break;
+    content = (
+    <div>
+        <span className="text-danger">
+        {assignee_name} has a pending {shift} scheduled {safeDays > 0 ? `in ${safeDays} day${safeDays > 1 ? 's' : ''}` : 'today'}.<br />
+        Please have the assignee accept/decline the shift.
+        </span>
+    </div>
+    );
+    break;
+
         case "Leave Request":
             content = (
             <span>

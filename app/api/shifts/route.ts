@@ -1,19 +1,22 @@
 // app/api/shifts/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
-import { sendEmail, sendShiftEmail } from "@/app/lib/email";
-import { buildShiftEmail } from "@/app/lib/shift-email";
+import { sendShiftEmail } from "@/app/lib/email";
 import { insertNotification } from "@/app/lib/notification-db";
-// import { isAdmin } from "../users/[id]/is_admin"; // not used here
 import { Shift } from "@/app/controllers/Shifts";
 
-/** Nicely format "when" text if needed */
-function formatWhen(date: string, start: string, end: string) {
-  const startDate = new Date(`${date}T${start}`);
-  const endDate = new Date(`${date}T${end}`);
-  const timeFmt = new Intl.DateTimeFormat("en-AU", { hour: "numeric", minute: "2-digit", hour12: true });
-  const dateFmt = new Intl.DateTimeFormat("en-AU", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
-  return `${dateFmt.format(startDate)} ${timeFmt.format(startDate)} – ${timeFmt.format(endDate)}`;
+/** Helper to trigger bell/web notifications via the notify API */
+async function notifyWeb(req: Request, payload: any) {
+  const url = new URL("/api/notifications/notify", req.url).toString();
+  await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      via_web: true,
+      via_email: false,
+      ...payload,
+    }),
+  }).catch(() => {});
 }
 
 /** Fetch a single shift row + joins in the shape our emails/UI expect */
@@ -38,17 +41,15 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       assignee_id,
-      status,
+      status = "Pending",
       date,
       start_time,
       end_time,
       notes,
       location_id,
       type = "shift",
-      published = false,
-      // email_reason can be "duplicate" etc.; we don't rely on it to decide emailing,
-      // we key purely off the persisted published flag.
-      email_reason,
+      published = false,          // if a duplicate was created as published
+      email_reason,               // optional, not used for logic
     } = body ?? {};
 
     if (!location_id || !date || !start_time || !end_time) {
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
       [
         assignee_id || null,
-        status || "Pending",
+        status,
         location_id,
         date,
         start_time,
@@ -80,14 +81,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to create shift (no id)" }, { status: 500 });
     }
 
-    // Load the inserted row (with joins) for response + email
+    // Load the inserted row (with joins) for response + email/notifications
     const row = await fetchShiftRow(insertId);
 
-    // If created as published, send the "new/published shift" email now.
-    if (row?.published && row?.assignee_email) {
+    // Email only if created as published and has an assignee email
+    if (row?.published && row?.assignee_id) {
       try {
-        // Prefer the existing helper to keep one source of truth for templates:
-        // This mirrors bulk-publish behaviour.
         await sendShiftEmail({
           id: row.id,
           assignee_id: row.assignee_id,
@@ -98,11 +97,21 @@ export async function POST(req: NextRequest) {
           end_time: row.end_time,
           notes: row.notes,
         } as Shift);
-        // Optional: add a notification, mirroring other publish paths
-        await insertNotification(row.id, row.status);
       } catch (e) {
         console.warn("[CREATE SHIFT] publish email failed (non-fatal):", e);
       }
+    }
+
+    // Bell/web notification + DB record (insertNotification ignores "Unpublished")
+    try {
+      await notifyWeb(req, {
+        shift_id: row.id,
+        status: row.status,
+        assignee_id: row.assignee_id || undefined,
+      });
+      await insertNotification(row.id, row.status, row.assignee_id || undefined);
+    } catch (e) {
+      console.warn("[CREATE SHIFT] web notification failed (non-fatal):", e);
     }
 
     return NextResponse.json(
@@ -175,9 +184,14 @@ export async function PATCH(req: NextRequest) {
         if (assignee_id) {
           await sendShiftEmail({ id, assignee_id, address, status, date, start_time, end_time, notes } as Shift);
         }
-        if (id) {
-          await insertNotification(id, status);
-        }
+
+        // Bell/web + DB record
+        await notifyWeb(req, {
+          shift_id: id,
+          status,
+          assignee_id: assignee_id || undefined,
+        });
+        await insertNotification(id, status, assignee_id || undefined);
       } catch (err) {
         console.warn("[BULK PUBLISH] email/notification failed for shift", id, err);
         // continue with others
