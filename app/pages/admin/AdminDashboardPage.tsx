@@ -68,8 +68,6 @@ export default function AdminDashboardPage() {
                 <div className="flex flex-1 justify-center gap-4 flex-col md:flex-row items-center">
                   { notifications && <ListView title="Notifications" containerRef={modalContainer} closeButton={false} idList={notifications.map(n=>n.id?n.id:'')??[]}>{createNotifications(true, notifications??[])}</ListView>}
 
-                  {/* <ListView title="Notifications" containerRef={modalContainer} closeButton={false}>{createNotifications(true)}</ListView> */}
-
                   {displayShift && modalContainer.current && createModalNoOverlay(getModalTypesByStatus(displayShift.status, displayShift?.type as EventTypes), modalContainer.current, displayShift, displayToast, (e:boolean)=>{!e && setDisplayShift(null)})}
                 </div> 
                 : <Spinner custom showWater backgroundGradient borderSpinner/>

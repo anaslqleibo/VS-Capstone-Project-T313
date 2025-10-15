@@ -101,11 +101,9 @@ export default function AdminCalendarPage() {
     }
 
     (async () => {
-      setLoadingEvents(true);
       try {
         await fetchEvents();
       } finally {
-        setLoadingEvents(false);
       }
     })();
   }, [activeFilter.month]);

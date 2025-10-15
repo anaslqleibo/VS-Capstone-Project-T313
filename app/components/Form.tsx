@@ -6,6 +6,7 @@ import React from "react";
 interface FormProps {
   children: React.ReactNode;
   onSubmit: ((e : React.FormEvent<HTMLFormElement>, f:any) => string) | ((e : React.FormEvent<HTMLFormElement>, f:any) => Promise<void>);
+  onSubmitError?: ()=>void;
   scrollToError?: boolean;
   showToast?:Dispatch<SetStateAction<boolean>>;
   setToastMessage?:Dispatch<SetStateAction<string>>;
@@ -77,6 +78,7 @@ function Form({ children, onSubmit, scrollToError = true, className, showAllErro
 
     } else if (scrollToError) {
       // Scroll to first error input
+      props.onSubmitError?.();
       const firstInvalid = document.querySelector("[data-error-index]");
       if (firstInvalid) {
         firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -98,7 +100,7 @@ function Form({ children, onSubmit, scrollToError = true, className, showAllErro
 
   // Custom components
   const compName = type.displayName || type.name;
-  return ["Input", "Textarea", "Select"].includes(compName);
+  return ["Input", "Textarea", "Select", "Dropdown"].includes(compName);
 }
 
   function enhanceChildren(

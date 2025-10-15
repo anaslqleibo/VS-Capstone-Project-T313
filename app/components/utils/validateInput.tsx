@@ -30,7 +30,7 @@ export function validateInput({ value="", required, minLength, maxLength, patter
     if (pattern && !new RegExp(pattern).test(value)) {
       return "Invalid format.";
     }
-    if (type === "email" && value && value!="") {
+    if (type && type === "email" && value && value!="") {
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
         return "Please enter a valid email address.";
       }

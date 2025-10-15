@@ -89,6 +89,13 @@ interface InputProps {
   setValue ?: (e:any) => void;
   containerClassName?:string;
   icon?:string;
+  suggestionItems?:string[];
+  onBlur?:()=>void;
+  onFocus?:()=>void;
+  min?: number;
+  max?: number;
+  step?: number;
+  onKeyDown?: (e:React.KeyboardEvent)=>void;
 }
 
 
@@ -96,7 +103,7 @@ const Input = forwardRef(function Input(
   {
     id, name, label, type = "text", required = false, value, onChange, placeholder,
     validate = true, minLength, maxLength, pattern, textarea, customValidate,
-    validateMode = "onSubmit", externalTrigger=0, className, ...props
+    validateMode = "onSubmit", externalTrigger=0, className, suggestionItems, onBlur, onFocus, min, max, step, onKeyDown, ...props
   }: InputProps,
   ref
 ) {
@@ -115,6 +122,7 @@ const Input = forwardRef(function Input(
     getName: () => name || id
   }));
 
+  const [showSuggestion, setShowSuggestion] = useState(false);
 
 
   const handleChange = (e : React.ChangeEvent<HTMLTextAreaElement> | React.ChangeEvent<HTMLInputElement> | string) => {
@@ -138,8 +146,9 @@ const Input = forwardRef(function Input(
     else{
       const event = {target: {name, value: e}}; 
       onChange?.(event);
+
       if (!controlled) {
-        setInternalValue(formatToSqlDate(e));
+        setInternalValue(e);
       }
     }
   };
@@ -198,7 +207,7 @@ const Input = forwardRef(function Input(
     {type === "date" ? 
     <DatePicker format="DD-MM-YYYY" className="w-full" name={name} value={controlled ? dayjs(value) : dayjs(internalValue)} 
     onChange={(e) => {
-      handleChange(e?.format("DD-MM-YYYY")??'');
+      handleChange(e?.format("YYYY-MM-DD")??'');
     }}
     onOpen={() => {
       if (validateMode === "onBlur") {
@@ -224,20 +233,27 @@ const Input = forwardRef(function Input(
           },
         },
       }
-    }}/>
-                      :
+    }}/> :
     <>
-    <input id={id || name} name={name} type={inputType} required={required} ref={internalRef}
+    <input id={id || name} name={name} type={inputType} min={min} max={max} step={step} required={required} ref={internalRef}
           value={controlled ? (value??'') : (internalValue??'')}
           onChange={(e) => {
             handleChange(e)
           }}
           onBlur={() => {
+            if (suggestionItems) {
+              setTimeout(()=>setShowSuggestion(false), 100);
+            }
+            
+            onBlur?.();
+
             if (validateMode === "onBlur") {
               setTouched(true);
               runValidation();
             }
           }}
+          onKeyDown={onKeyDown}
+          onFocus={()=>{if(suggestionItems) {onFocus?.(); setShowSuggestion(true);} }}
           placeholder={placeholder}
           className={`${props.arrow ? "w-20" : "w-full"} rounded-md ${className?.includes('border-') ? "" : "border-[1.5px]"} ${className?.includes('p-') || className?.includes('px-') || className?.includes('py-') ? "" : "px-3 py-2"}  ${props.arrow ? "text-lg" : "text-sm"} !outline-none border-[color:var(--dark-grey)] transition-colors
             ${error && touched ? "border-red-500 ring-red-200 " :
@@ -248,15 +264,27 @@ const Input = forwardRef(function Input(
             `}
           disabled={props.readonly}
           // {...props}
-        />
+      />
 
-        {props.allowViewPassword &&
-          (isPasswordShown ? <FaEyeSlash className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-[color:var(--primary-color)]" onClick={()=>{setPasswordShown(false)}}/> : <FaEye className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-[color:var(--primary-color)]" onClick={()=>{setPasswordShown(true)} }/>)
-        }
-        </>
+      {props.allowViewPassword &&
+        (isPasswordShown ? <FaEyeSlash className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-[color:var(--primary-color)]" onClick={()=>{setPasswordShown(false)}}/> : <FaEye className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-[color:var(--primary-color)]" onClick={()=>{setPasswordShown(true)} }/>)
+      }
+
+
+      </>
     }
     
-        
+        {showSuggestion && suggestionItems && suggestionItems.length > 0 && (
+        <ul className="absolute bg-white border rounded w-full max-h-60 overflow-y-auto shadow-lg z-50 text-sm" >
+          {suggestionItems.map((s, idx) => (
+            <li key={idx}
+              onClick={() => handleChange(s)}
+              className="p-2 hover:bg-gray-200 cursor-pointer">
+              {s}
+            </li>
+          ))}
+        </ul>
+      )}
   </div>
   
   );
@@ -272,7 +300,6 @@ const Input = forwardRef(function Input(
       icon={props.icon?props.icon:'?'}
     />
   );
-
 
   
   return (
@@ -293,6 +320,8 @@ const Input = forwardRef(function Input(
       {error && touched && (
         <p className="text-left text-xs text-[color:var(--danger-color)]">{error}</p>
       )}
+
+     
     </div>
   );
 });

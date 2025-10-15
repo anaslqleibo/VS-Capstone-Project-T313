@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect, Dispatch, SetStateAction, ReactNode } from 'react';
+import React, { useState, useRef, useEffect, Dispatch, SetStateAction, ReactNode, useImperativeHandle, forwardRef } from 'react';
 import Icon from '@/public/icons/Icons';
 import dayjs from 'dayjs';
 import { fetchLocations, Location } from '../controllers/Location';
@@ -7,6 +7,8 @@ import Input from './Input';
 import { fetchAllEmployees, User } from '../controllers/User';
 import getStatusColor, { Status, stringToStatus } from './utils/getStatusColor';
 import useIsOverMd from './utils/useIsOverMd';
+import { validateInput } from './utils/validateInput';
+import Tooltip from './Tootltip';
 
 interface DropdownProps{
   id?:string;
@@ -35,7 +37,10 @@ interface DropdownProps{
   disableTyping?:boolean;
   simplifyOnMobile?:boolean;
   replacementIcon?:ReactNode;
-  
+  required?: boolean;
+  customValidate ?: Function;
+  externalTrigger?:number;
+  enableCustomOtherOption?:boolean;
 }
 
 type DayPickerProps = {
@@ -49,7 +54,8 @@ export function DayPicker({onChange, value}: DayPickerProps){
   );
 }
 
-const Dropdown = ({
+
+const Dropdown = forwardRef(function Dropdown({
   id,
   items = [],
   multiple = false,
@@ -66,13 +72,25 @@ const Dropdown = ({
   replacementIcon,
   containerClassName,
   openWhenNoItemIsSelected = true,
+  required, 
+  customValidate,
+  externalTrigger,
+  enableCustomOtherOption, // Will take over the last item to become an editable input
   ...props
-} : DropdownProps) => {
+} : DropdownProps, ref) {
   const [isOpen, setIsOpen] = useState<boolean>(startOpen || false);
   const [search, setSearch] = useState<string>('');
   const [selected, setSelected] = useState<string[]>(props.initialSelectedItem?(typeof props.initialSelectedItem==='string'?[props.initialSelectedItem]:props.initialSelectedItem):[]);
+  const [customOtherOption, setCustomOtherOption] = useState<string>(items[items.length-1]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  
+  useImperativeHandle(ref, () => ({
+    getValue: () => selected.at(0),
+    getName: () => id
+  }));
 
   const [hideSelectedItem, setHideSelectedItem] = useState(false);
 
@@ -107,6 +125,8 @@ const Dropdown = ({
   const handleSelect = (item : string) => {
     if (props.onChange) props.onChange(item);
 
+    if (externalTrigger) setError('');
+
     if (multiple) {
       if (selected.includes(item)) {
         if (preventEmptySelection && selected.length === 1) return;
@@ -117,8 +137,17 @@ const Dropdown = ({
     } else {
       setAdvSelected([item]);
       setIsOpen(false);
+      
     }
   };
+
+
+  // onSubmit ran from Form
+  useEffect(() => {
+    if (externalTrigger && externalTrigger > 0) {
+      runValidation();
+    }
+  }, [externalTrigger]);
 
   const handleRemove = (item : string) => {
     if (preventEmptySelection && selected.length === 1) return;
@@ -137,6 +166,12 @@ const Dropdown = ({
     setSelected([]);
   }
 
+  const [error, setError] = useState('');
+  const runValidation = () => {
+    const err = validateInput({ value: selected.at(0), required, customValidate });
+    setError(err || "");
+  };
+  
   useEffect(() => {
     const handleClickOutside = (event : MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -162,11 +197,19 @@ const Dropdown = ({
 
 
   const isSimplified = simplifyOnMobile && !useIsOverMd();
+  const handleCustomOtherKeyDown = (e:React.KeyboardEvent)=>{
+    if (e.key === 'Enter'){
+      e.preventDefault();
+      e.stopPropagation();
+      setAdvSelected([customOtherOption]);
+      setIsOpen(false);
+    }
+  }
   
   const activeColor = (colorBasedOnValue&&selected[0]) ? getStatusColor(stringToStatus(selected[0])) : 'var(--color-primary)';
   return (
     <div id={id} className={`relative w-fit text-sm ${className} ${isSimplified ? 'min-w-fit' : '' }  ${props.disabled ? "pointer-events-none" : ""}`} ref={containerRef}>
-      <div className={` ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : 'border-1 border-[color:var(--color-primary)] text-[color:var(--color-primary)]'} rounded-md ${containerClassName} px-3 py-2 flex items-center justify-between cursor-pointer ${props.disabled ? "bg-gray-200 text-gray-400" : ""}`} onClick={toggleDropdown} style={colorBasedOnValue ? {borderColor: activeColor, color:activeColor} : {}}>
+      <div className={` ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : 'border-1 border-[color:var(--color-primary)] text-[color:var(--color-primary)]'} rounded-md ${containerClassName} px-3 py-2 flex items-center justify-between cursor-pointer ${props.disabled ? "bg-gray-200 text-gray-400" : ""} ${error && "border-red-500 ring-red-200" }`} onClick={toggleDropdown} style={colorBasedOnValue ? {borderColor: activeColor, color:activeColor} : {}}>
         <div className="flex flex-wrap items-center gap-1 flex-1 min-w-fit">
           {!props.disabled && (props.custom ? <span>{isSimplified ? props.customSelected?.substring(0,3) : props.customSelected}</span> : ((!multiple && selected.length>0) || 
           (multiple && selected.length == 1 && (!isOpen))) ? <span>{!hideSelectedItem && (isSimplified ? (replacementIcon ?? selected.at(0)?.substring(0,3)+'...') : selected.at(0))}</span> : selected.map((item, index) => (
@@ -205,8 +248,28 @@ const Dropdown = ({
 
           {!props.custom && (
             filteredItems.length > 0 ? 
-            (filteredItems.map((item, index) => (
-              <div key={index} className={`flex items-center justify-between px-3 py-2 cursor-pointer text-left ${!showCheckbox&&selected.includes(item) ? "bg-gray-200": "hover:bg-gray-100"} ${item===selected.at(0) ? "dropdown-item-selected" : ""}`} onClick={(e) => {
+            (filteredItems.map((item, index) => 
+              {
+                if (index===filteredItems.length-1){
+                  return (
+                    <div key={index} className={`flex items-center justify-between px-3 py-2 cursor-pointer text-left ${!showCheckbox&&selected.includes(item) ? "bg-gray-200": "hover:bg-gray-100"} ${item===selected.at(0) ? "dropdown-item-selected" : ""}`} onClick={(e) => {
+                      if (customOtherOption===item) setCustomOtherOption('');
+                    }}>
+                      {customOtherOption===item ? <span>{item}</span> :
+                      <Tooltip content="Press 'Enter' to select your typed gender" position='bottom'>
+                        <Input className='p-2 text-sm' placeholder='Type the gender' value={customOtherOption} onChange={(e)=>setCustomOtherOption(e.target.value)} onKeyDown={handleCustomOtherKeyDown}/>
+
+                      </Tooltip>
+                      }
+                    
+                    {multiple && showCheckbox && (
+                      <input type="checkbox" checked={selected.includes(item)} readOnly className='accent-primary'/>
+                    )}
+                  </div>
+                  )
+                }
+                else
+                  return (<div key={index} className={`flex items-center justify-between px-3 py-2 cursor-pointer text-left ${!showCheckbox&&selected.includes(item) ? "bg-gray-200": "hover:bg-gray-100"} ${item===selected.at(0) ? "dropdown-item-selected" : ""}`} onClick={(e) => {
                     setSearch("");
                     handleSelect(item);
                 }}>
@@ -214,16 +277,22 @@ const Dropdown = ({
                 {multiple && showCheckbox && (
                   <input type="checkbox" checked={selected.includes(item)} readOnly className='accent-primary'/>
                 )}
-              </div>
-            )))
+              </div>)
+              }
+            
+          ))
            : (
             <div className="px-3 py-2 text-gray-500">No results found</div>
           ))}
         </div>
       )}
+
+      {error && !isOpen && (
+        <p className="text-left text-xs text-[color:var(--danger-color)] mt-1">{error}</p>
+      )}
     </div>
   );
-};
+});
 
 export default Dropdown;
 
@@ -340,3 +409,5 @@ export function DropdownUser({id, detail, setUpdatedDetail}: CustomDropdownProps
 
   return (<Dropdown id={id||'dropdown-user'} items={employees.map((employee) => (employee.first_name + ' ' + employee.last_name))} placeholder="Select employee" maxVisibleItems={6} className=' font-normal text-black border-gray-400 min-w-32 max-w-64' initialSelectedItem={detail === '' ?  undefined : detail} onChange={handleChange} syncCurrentWithInitialSelected={true}/>);
 }
+
+Dropdown.displayName = 'Dropdown';

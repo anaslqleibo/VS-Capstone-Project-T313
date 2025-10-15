@@ -227,7 +227,7 @@ const LocationsPage = () => {
           {modalType==='delete'?
           <>
             <div className='mt-4'>Are you sure you want to delete "{selectedLocation?.name}" at {selectedLocation?.address}</div>
-            <div className='flex items-center justify-end gap-4 -mb-4 mt-4'> 
+            <div className='flex items-center justify-end gap-4 mt-4'> 
               <Button type="outline" fontSize="0.8em" className="bg-[color:var(--danger-color)" onClick={(e)=>setOpenModal(false)}>Cancel</Button>
               <Button type="cta" fontSize="0.8em" className="py-3 px-5 bg-[color:var(--danger-color)] hover:bg-[color:var(--danger-color-hover)]" onClick={()=>deleteLoc()}>Confirm</Button>
               
@@ -260,7 +260,7 @@ const LocationsPage = () => {
               <textarea className="text-gray-500 font-normal text-sm border-2 border-gray-500 bg-gray-100 rounded-md min-w-full p-2 min-h-[72px] resize-none focus:outline-0" placeholder="Add notes to the location here..." value={selectedLocation?.notes}  onChange={(e)=>setSelectedLocation({id: selectedLocation?.id??'', name: selectedLocation?.name??'', address: selectedLocation?.address??'', notes: e.target.value})}></textarea>
             </div>
 
-            <div className='flex items-center justify-end gap-4 -mb-4 mt-4'> 
+            <div className='flex items-center justify-end gap-4 mt-4'> 
               <Button type="outline" fontSize="0.8em" onClick={(e)=>setOpenModal(false)}>Cancel</Button>
               <Button type="cta" htmlType='submit' fontSize="0.8em" className="py-3 px-5">{modalType==="add"?"Add":"Update"}</Button>
               

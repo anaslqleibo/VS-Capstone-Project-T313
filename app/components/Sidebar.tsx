@@ -104,7 +104,7 @@ export default function Sidebar({modalContainer} : PageProps){
     }
     
     useEffect(()=>{
-       if (role === 'user'){  
+       if (true){  
         (async () => {
           try{
             await loadNotifications();
@@ -117,7 +117,7 @@ export default function Sidebar({modalContainer} : PageProps){
     }, [role])
 
     useEffect(()=>{
-      if (role === 'user' && loadNotification){  
+      if (loadNotification){  
         (async () => {
           try{
             await loadNotifications();
@@ -131,6 +131,7 @@ export default function Sidebar({modalContainer} : PageProps){
     }, [role, loadNotification])
 
     const openNotificationView = () => {
+      if (role === 'admin' && pathName === '/home') return; // THIS IS A MUST, IF REMOVED WILL LEAD TO ERRORS.
       setDisplayShift(null);
       setLoadNotification(true);
     }
@@ -159,12 +160,12 @@ export default function Sidebar({modalContainer} : PageProps){
           <Image src={logo} alt="2 Bent Rods logo" className="w-10 m-auto md:m-2 md:w-24" />
         </div>
 
-        {role === "user" && <div className="p-2 hover:bg-[#1e2266] rounded-full md:flex items-center justify-center ml-auto mb-2 hidden" ref={toggleButtonRef} onClick={openNotificationView}>
+        {<div className="p-2 hover:bg-[#1e2266] rounded-full md:flex items-center justify-center ml-auto -mt-10 mb-1 hidden" ref={toggleButtonRef} onClick={openNotificationView}>
           <Image id="notification-button-icon" src={(notifications && notifications?.length>0) ? notification : notification_none} alt="Notifications" className="w-6 object-contain" />
         </div>}
         
 
-        {open && modalContainer.current && role==="user" && notifications && 
+        {open && modalContainer.current && notifications && 
         createModal(displayShift ? getModalTypesByStatus(stringToStatus(displayShift.status), displayShift.type as EventTypes) : ModalTypes.Notifications, true, modalContainer.current, displayShift ? displayShift : notifications, setOpen, undefined, undefined, displayToast, (e:boolean)=>{!e && setNotifications([])})}
         
         <nav className='relative hidden w-full md:flex flex-col mb-2 overflow-y-auto items-center h-full [&>button]:w-full [&>button]:flex [&>button]:items-center [&>button]:p-[10px] [&>button]:text-white [&>button]:font-bold [&>button]:mb-[15px] [&>button]:rounded-[10px] [&>button]:transition-colors [&>button]:duration-200 [&>button]:hover:bg-[#1e2266] [&>button]:gap-5'>
@@ -181,7 +182,7 @@ export default function Sidebar({modalContainer} : PageProps){
         <Icon id="x" className="text-white float-end" width="2em" height="2em" onClick={()=>setIsMobileMenuOpen(false)}></Icon>
         <Image src={logo} alt="2 Bent Rods logo" className="w-36 m-auto my-7 clear-end"/>
 
-          {role === "user" && <div className="w-12 h-12 hover:bg-[#1e2266] rounded-full items-center justify-center ml-auto mb-2" ref={toggleButtonRef} onClick={()=>{setIsMobileMenuOpen(false); openNotificationView()}}>
+          {<div className="w-12 h-12 hover:bg-[#1e2266] rounded-full items-center justify-center ml-auto mb-2" ref={toggleButtonRef} onClick={()=>{setIsMobileMenuOpen(false); openNotificationView()}}>
             <Image id="notification-button-icon" src={(notifications && notifications?.length>0) ? notification : notification_none} alt="Notifications" className="w-6 object-contain" />
           </div>}
 

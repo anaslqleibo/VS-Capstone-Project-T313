@@ -205,7 +205,6 @@ const modalContainer = useRef<HTMLDivElement>(null);
   const specialtyList = (selectedPayRate && selectedPayRate.age_group && selectedPayRate.job_title && selectedPayRate.level) ? [...(new Set((payRates.filter(data=>data.job_title === selectedPayRate.job_title && data.age_group === selectedPayRate.age_group && data.level.toString() === selectedPayRate.level.toString())).map(payRate=>payRate.specialty?payRate.specialty:'-')))] : undefined;
 
   const handleUpdateUsersPayRate = () => {
-    
     if (!selectedPayRate?.job_title || !selectedPayRate.age_group || !selectedPayRate.level) return;
 
     if (activePage === 'users'){
@@ -262,8 +261,13 @@ const modalContainer = useRef<HTMLDivElement>(null);
         
       }
       else if (modalType === 'create'){
-        const newPayRate : PayRate = {...{...payRate, weekday: Number(payRate.weekday), saturday: Number(payRate.saturday), sunday: Number(payRate.sunday), public_holiday: Number(payRate.public_holiday)} as PayRate};
+        if (!(payRate.job_title && payRate.age_group && payRate.level && payRate.weekday && payRate.saturday && payRate.sunday)){ 
+          displayToast('Please fill all the required fields or fix any errors displayed below each fields.', 'error');
+          return;
+        }
         
+        const newPayRate : PayRate = {...{...payRate, weekday: Number(payRate.weekday), saturday: Number(payRate.saturday), sunday: Number(payRate.sunday), public_holiday: Number(payRate.public_holiday?payRate.public_holiday:payRate.sunday)} as PayRate};
+
         try{
           setModalLoading(true);
           const res = await insertPayRate(newPayRate);
@@ -372,6 +376,19 @@ const modalContainer = useRef<HTMLDivElement>(null);
   }
   const isOverMd=useIsOverMd();
   const stringIsFloat = (e:string) => /^[+-]?\d+(\.\d+)?$/.test(e);
+
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const updateSuggestions = (fieldType: 'job_title'|'age_group'|'level', value: string) => {
+    setTimeout(async () => {
+      if (value.trim().length >= (fieldType==='level'?0:2)) {
+        const data = fieldType==='job_title'?new Set(payRates.map(payRate=>payRate.job_title)):fieldType==='age_group'?new Set(payRates.map(payRate=>payRate.age_group)):new Set(payRates.map(payRate=>payRate.level.toString()));
+        setSuggestions([...data]);
+      } else {
+        setSuggestions([]);
+      }
+    }, 500);
+  }
+
   return (
     <Layout modalContainer={modalContainer}>
        <Toast message={message} type={toastType} shown={showToast} setShown={setToastShown}/>
@@ -620,19 +637,21 @@ const modalContainer = useRef<HTMLDivElement>(null);
 
           {(modalType === 'update' || modalType === 'create') && activePage==='pay-rates' && 
           (modalLoading ? <div className="m-10 flex relative">&nbsp;<Spinner/></div> : 
-          <Form onSubmit={async (_e, f)=> processPayRate(f)}>
+          <Form onSubmit={async (_e, f)=> processPayRate(f)} onSubmitError={()=>displayToast('Please fill all the required fields or fix any errors displayed below each fields.', 'error')}>
             <div className="text-md flex flex-col gap-2 mt-4">
                 <div className="flex items-center gap-2">
                   <span className="text-primary font-semibold w-24 text-right">Job title: </span>
-                  <Input name='job_title' className="min-w-40"  value={(selectedPayRate && modalType === 'update') ? selectedPayRate.job_title : undefined} onChange={(e)=>{selectedPayRate ? setSelectedPayRate({...selectedPayRate, job_title: e.target.value}):undefined}} placeholder="Enter the job title" required validateMode="onBlur"/>
+                  <Input name='job_title' className="min-w-40"  value={(selectedPayRate && modalType === 'update') ? selectedPayRate.job_title : undefined} onChange={(e)=>{selectedPayRate ? setSelectedPayRate({...selectedPayRate, job_title: e.target.value}):updateSuggestions('job_title',e.target.value)}} placeholder="Enter the job title" required validateMode="onBlur" suggestionItems={suggestions} onFocus={()=>setSuggestions([])}/>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-primary font-semibold w-24 text-right">Age Group: </span>
-                  <Input name='age_group' className="min-w-40" value={(selectedPayRate && modalType === 'update') ? selectedPayRate.age_group : undefined} onChange={(e)=>selectedPayRate&&setSelectedPayRate({...selectedPayRate, age_group: e.target.value})} placeholder="Enter the age group" required validateMode="onBlur"/>
+                  <Input name='age_group' className="min-w-40" value={(selectedPayRate && modalType === 'update') ? selectedPayRate.age_group : undefined} onChange={(e)=>selectedPayRate?setSelectedPayRate({...selectedPayRate, age_group: e.target.value}): updateSuggestions('age_group',e.target.value)} placeholder="Enter the age group" required validateMode="onBlur" suggestionItems={suggestions} onFocus={()=>setSuggestions([])}/>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-primary font-semibold w-24 text-right">Level: </span>
-                  <Input name='level' className="min-w-40"  value={(selectedPayRate && modalType === 'update' &&  selectedPayRate.level) ? selectedPayRate.level.toString() : undefined} onChange={(e)=>selectedPayRate&&setSelectedPayRate({...selectedPayRate, level: e.target.value, specialty: ''})} placeholder="Enter the level" required validateMode="onBlur"/>
+                  <Input name='level' className="min-w-40"  value={(selectedPayRate && modalType === 'update' &&  selectedPayRate.level) ? selectedPayRate.level.toString() : undefined} onChange={(e)=>selectedPayRate?setSelectedPayRate({...selectedPayRate, level: e.target.value, specialty: ''}):updateSuggestions('level',e.target.value)} placeholder="Enter the level" required validateMode="onBlur" suggestionItems={suggestions} onFocus={()=>setSuggestions([])}customValidate={(val : string) => {
+                    if (!/[0-9]/.test(val)) return "Level must be a digit.";}}
+                  />
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -684,10 +703,8 @@ const modalContainer = useRef<HTMLDivElement>(null);
 
                 <div className="flex flex-row-reverse items-end justify-between">
                   <Button className="w-fit mt-5 py-2 px-4" fontSize="0.9em" onClick={()=>activePage==='pay-rates'? setOpenModal(false): setEditingPayRate(false)}>Cancel</Button>
-                  {
-                    selectedPayRate && selectedPayRate.level && selectedPayRate.age_group && selectedPayRate.job_title ?
-                    <Button className="w-fit mt-5 py-2 px-4" fontSize="0.9em" onClick={activePage==='pay-rates'?undefined:handleUpdateUsersPayRate} htmlType="submit">{modalType==='create'?'Add':'Save'}</Button> : ''
-                  }
+                  <Button className="w-fit mt-5 py-2 px-4" fontSize="0.9em" onClick={activePage==='pay-rates'?undefined:handleUpdateUsersPayRate} htmlType="submit">{modalType==='create'?'Add':'Save'}</Button>
+                  
                 </div>
             </div>
           </Form>)
@@ -698,7 +715,7 @@ const modalContainer = useRef<HTMLDivElement>(null);
 
           {activePage==='users' && (modalType === 'create'|| modalType==='update') && 
                
-              <Form onSubmit={async (_e,f)=>processUser(f)} >
+              <Form onSubmit={async (_e,f)=>processUser(f)} onSubmitError={()=>displayToast('Please fill all the required fields.', 'error')}>
                 {modalLoading ? <div className="absolute rounded-lg top-0 left-0 w-full h-full z-10 bg-[#ffffffa2]"> <Spinner/> </div> : ''}
                 <div className="flex flex-col gap-3 max-h-90 overflow-y-auto pr-2">
                   <h2 className="text-primary font-semibold">General account details</h2>
@@ -729,8 +746,14 @@ const modalContainer = useRef<HTMLDivElement>(null);
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Input label="Preferred Name"  name="preferred_name" type="text" placeholder="Preferred name"
                             value={(selectedUser&&modalType==='update'&&selectedUser.preferred_name) ? selectedUser.preferred_name : ''} />
-                      <Input label="Gender" name="gender" type="gender" placeholder="Type your gender here..."
-                            value={(selectedUser&&modalType==='update'&&selectedUser.gender) ? selectedUser.gender : ''}  validateMode="onSubmit"/>
+                      
+                      <div className="flex flex-col gap-1 group">
+                        <label className="text-sm font-medium text-left group-has-focus:text-[color:var(--primary-color)] false">Gender</label>
+                        <Dropdown id='gender' className="w-full" placeholder="Select the gender" containerClassName="border-dark-grey text-black border-[1.5px]" items={['Male', 'Female', 'Non-Binary', 'Other']} initialSelectedItem={[(selectedUser&&modalType==='update'&&selectedUser.gender) ? selectedUser.gender : '']} enableCustomOtherOption/>
+                      </div>
+
+                      {/* <Input label="Gender" name="gender" placeholder="Type your gender here..."
+                            value={(selectedUser&&modalType==='update'&&selectedUser.gender) ? selectedUser.gender : ''}  validateMode="onSubmit"/> */}
                         
                       <Input label="Date of birth" name="date_of_birth" type="date" placeholder="DD-MM-YYYY"
                             value={((selectedUser&&modalType==='update'&&selectedUser.date_of_birth) && selectedUser.date_of_birth ) ? formatToSqlDate(selectedUser.date_of_birth?.replaceAll('/','-')) : ''}/>
