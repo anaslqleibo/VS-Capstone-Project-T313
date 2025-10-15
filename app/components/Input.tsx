@@ -147,9 +147,10 @@ const Input = forwardRef(function Input(
       const event = {target: {name, value: e}}; 
       onChange?.(event);
 
-      if (!controlled) {
-        setInternalValue(e);
+      if (!controlled && type === 'date') {
+        setInternalValue(formatToSqlDate(e));
       }
+      else setInternalValue(e);
     }
   };
 
@@ -207,7 +208,7 @@ const Input = forwardRef(function Input(
     {type === "date" ? 
     <DatePicker format="DD-MM-YYYY" className="w-full" name={name} value={controlled ? dayjs(value) : dayjs(internalValue)} 
     onChange={(e) => {
-      handleChange(e?.format("YYYY-MM-DD")??'');
+      handleChange(e?.format("DD-MM-YYYY")??'');
     }}
     onOpen={() => {
       if (validateMode === "onBlur") {
@@ -253,7 +254,7 @@ const Input = forwardRef(function Input(
             }
           }}
           onKeyDown={onKeyDown}
-          onFocus={()=>{if(suggestionItems) {onFocus?.(); setShowSuggestion(true);} }}
+          onFocus={()=>{onFocus?.(); if(suggestionItems) {setShowSuggestion(true);} }}
           placeholder={placeholder}
           className={`${props.arrow ? "w-20" : "w-full"} rounded-md ${className?.includes('border-') ? "" : "border-[1.5px]"} ${className?.includes('p-') || className?.includes('px-') || className?.includes('py-') ? "" : "px-3 py-2"}  ${props.arrow ? "text-lg" : "text-sm"} !outline-none border-[color:var(--dark-grey)] transition-colors
             ${error && touched ? "border-red-500 ring-red-200 " :

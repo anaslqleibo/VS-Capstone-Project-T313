@@ -748,7 +748,7 @@ const modalContainer = useRef<HTMLDivElement>(null);
                             value={(selectedUser&&modalType==='update'&&selectedUser.preferred_name) ? selectedUser.preferred_name : ''} />
                       
                       <div className="flex flex-col gap-1 group">
-                        <label className="text-sm font-medium text-left group-has-focus:text-[color:var(--primary-color)] false">Gender</label>
+                        <label className="text-sm font-medium text-left group-has-focus:text-[color:var(--primary-color)]">Gender</label>
                         <Dropdown id='gender' className="w-full" placeholder="Select the gender" containerClassName="border-dark-grey text-black border-[1.5px]" items={['Male', 'Female', 'Non-Binary', 'Other']} initialSelectedItem={[(selectedUser&&modalType==='update'&&selectedUser.gender) ? selectedUser.gender : '']} enableCustomOtherOption/>
                       </div>
 

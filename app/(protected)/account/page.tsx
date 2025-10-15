@@ -14,6 +14,7 @@ import { DatePicker } from "@mui/x-date-pickers";
 import { formatToSqlDate } from "@/app/components/utils/formatDate";
 import Modal from "@/app/components/Modal";
 import { FaCheck } from "react-icons/fa";
+import Dropdown from "@/app/components/Dropdown";
 
 const AccountPage = () => {
   const modalContainer = useRef<HTMLDivElement>(null);
@@ -63,7 +64,13 @@ const AccountPage = () => {
   const [loading, setLoading] = useState(false);
   const [payRateLoading, setPayRateLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement > | string) => {
+
+    if (typeof e === 'string'){
+      setProfile((p)=> ({...p, gender: e}));
+      return;
+    }
+
     const { name, value } = e.target;
     
     setProfile((p) => ({ ...p, [name]: value }));
@@ -329,8 +336,11 @@ const AccountPage = () => {
                           value={profile ? profile.last_name : ''}  onChange={handleChange} required/>
                     <Input label="Preferred Name"  name="preferred_name" type="text" placeholder="Preferred name"
                           value={profile ? profile.preferred_name : ''}  onChange={handleChange} />
-                    <Input label="Gender" name="gender" type="gender" placeholder="Type your gender here..."
-                          value={profile ? profile.gender : ''} onChange={handleChange} validateMode="onSubmit" required/>
+          
+                    <div className="flex flex-col gap-1 group">
+                      <label className="text-sm font-medium text-left group-has-focus:text-[color:var(--primary-color)] after:ml-0.5 after:text-red-500 after:content-['*']">Gender</label>
+                      <Dropdown id='gender' className="w-full" placeholder="Select the gender" containerClassName="border-dark-grey text-black border-[1.5px]" items={['Male', 'Female', 'Non-Binary', 'Other']} initialSelectedItem={[(profile&&profile.gender) ? profile.gender : '']} enableCustomOtherOption onChange={handleChange}/>
+                    </div>
                       
                     <Input label="Date of birth" name="date_of_birth" type="date" placeholder="DD-MM-YYYY"
                           value={(profile && profile.date_of_birth ) ? formatToSqlDate(profile.date_of_birth?.replaceAll('/','-')) : ''} onChange={handleChange} required/>

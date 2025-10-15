@@ -199,6 +199,7 @@ const Dropdown = forwardRef(function Dropdown({
   const isSimplified = simplifyOnMobile && !useIsOverMd();
   const handleCustomOtherKeyDown = (e:React.KeyboardEvent)=>{
     if (e.key === 'Enter'){
+      setInputFocused(false);
       e.preventDefault();
       e.stopPropagation();
       setAdvSelected([customOtherOption]);
@@ -207,6 +208,8 @@ const Dropdown = forwardRef(function Dropdown({
   }
   
   const activeColor = (colorBasedOnValue&&selected[0]) ? getStatusColor(stringToStatus(selected[0])) : 'var(--color-primary)';
+
+  const [inputFocused, setInputFocused] = useState(false);
   return (
     <div id={id} className={`relative w-fit text-sm ${className} ${isSimplified ? 'min-w-fit' : '' }  ${props.disabled ? "pointer-events-none" : ""}`} ref={containerRef}>
       <div className={` ${props.actAsFilter ? "bg-[color:var(--secondary-color)] text-white" : 'border-1 border-[color:var(--color-primary)] text-[color:var(--color-primary)]'} rounded-md ${containerClassName} px-3 py-2 flex items-center justify-between cursor-pointer ${props.disabled ? "bg-gray-200 text-gray-400" : ""} ${error && "border-red-500 ring-red-200" }`} onClick={toggleDropdown} style={colorBasedOnValue ? {borderColor: activeColor, color:activeColor} : {}}>
@@ -254,12 +257,23 @@ const Dropdown = forwardRef(function Dropdown({
                   return (
                     <div key={index} className={`flex items-center justify-between px-3 py-2 cursor-pointer text-left ${!showCheckbox&&selected.includes(item) ? "bg-gray-200": "hover:bg-gray-100"} ${item===selected.at(0) ? "dropdown-item-selected" : ""}`} onClick={(e) => {
                       if (customOtherOption===item) setCustomOtherOption('');
+
+                      if (customOtherOption && inputFocused) 
+                      {
+                        setInputFocused(false);
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setAdvSelected([customOtherOption]);
+                        setIsOpen(false);
+                      }
+                      else setInputFocused(true);
+
                     }}>
-                      {customOtherOption===item ? <span>{item}</span> :
-                      <Tooltip content="Press 'Enter' to select your typed gender" position='bottom'>
+                      {enableCustomOtherOption ? (customOtherOption===item ? <span>{item}</span> :
+                      <Tooltip content="Press 'Enter' to select the custom value" position='bottom'>
                         <Input className='p-2 text-sm' placeholder='Type the gender' value={customOtherOption} onChange={(e)=>setCustomOtherOption(e.target.value)} onKeyDown={handleCustomOtherKeyDown}/>
 
-                      </Tooltip>
+                      </Tooltip>) : <span>{item}</span>
                       }
                     
                     {multiple && showCheckbox && (
