@@ -29,7 +29,7 @@ export async function PATCH(request: NextRequest, context: RouteContext<'/api/us
   try {
     const { id } = await context.params;
     const body = await request.json();
-    const { first_name, last_name, email, phone, preferred_name, gender, date_of_birth, address, emergency_person, emergency_contact, pay_rate_id, role } = body;
+    const { first_name, last_name, email, phone, preferred_name, gender, date_of_birth, address, emergency_person, emergency_contact, pay_rate_id, role, password } = body;
 
     const updates = [];
     const vals = [];
@@ -60,6 +60,10 @@ export async function PATCH(request: NextRequest, context: RouteContext<'/api/us
     if (phone) {
       updates.push('phone = ?');
       vals.push(phone);
+    }
+    if (password) {
+      updates.push('password = ?');
+      vals.push(password);
     }
     if (role && (role === 'user' || role === 'admin')) {
       updates.push('role = ?');

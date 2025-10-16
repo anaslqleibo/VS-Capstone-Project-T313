@@ -331,6 +331,21 @@ const monthSelectedDropdown =
 
                         </div>
                       </div>
+
+                      {/* Dropdown Month For Mobile View */}
+                      <Dropdown placeholder="Select month" actAsFilter setMonth={activeFilter.month} maxVisibleItems={6} className='md:hidden mb-2' custom disableTyping customSelected={monthSelectedDropdown}>
+                        <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
+
+                        <MonthCalendar defaultValue={dayjs()} value={activeFilter.month} onChange={(e)=>handleMonthChange(e)} sx={{
+                                gap: "16px 4px",
+                                padding: "8px",
+                                width: "240px",
+                                "& .MuiMonthCalendar-button.Mui-selected": {
+                                  backgroundColor: "var(--primary-color)",
+                                  color: "#fff",
+                                },
+                              }}/>
+                      </Dropdown>
                     </div>
 
                     {allEvents && allEvents.find((e) => e.extendedProps?.published === 0) ? (

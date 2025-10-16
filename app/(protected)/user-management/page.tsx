@@ -307,6 +307,7 @@ const modalContainer = useRef<HTMLDivElement>(null);
   const processUser = (user?:any) => {
     (async ()=>{
       if (modalType==='update' && selectedUser){
+
         const updatedUser : User = {...user as User, id: selectedUser?.id, role: selectedUser.role};
         
         try{
