@@ -11,7 +11,7 @@ export default function PortalPage() {
 
   // Front-end config for the CRM link
   // needs to be set in .env or on cPanel I think?
-  const crmUrl = process.env.NEXT_PUBLIC_CRM_URL;
+  const crmUrl = "https://crm.2bentrods.com.au";
 
   return (
   <Layout modalContainer={modalContainer}>
@@ -36,10 +36,6 @@ export default function PortalPage() {
           </Button>
 
           {/* CRM */}
-          <span
-            title={crmUrl ? "Open CRM" : "Set NEXT_PUBLIC_CRM_URL to enable"}
-            className="w-full"
-            >
             <Button
                 type="outline"
                 className="w-full justify-center py-8 px-10 text-xl rounded-2xl"
@@ -52,7 +48,6 @@ export default function PortalPage() {
                 <FaThLarge className="text-2xl opacity-90" />
                 CRM
             </Button>
-          </span>
         </div>
       </div>
     </main>
