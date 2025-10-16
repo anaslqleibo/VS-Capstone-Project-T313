@@ -253,7 +253,7 @@ const Dropdown = forwardRef(function Dropdown({
             filteredItems.length > 0 ? 
             (filteredItems.map((item, index) => 
               {
-                if (index===filteredItems.length-1){
+                if (enableCustomOtherOption&&index===filteredItems.length-1){
                   return (
                     <div key={index} className={`flex items-center justify-between px-3 py-2 cursor-pointer text-left ${!showCheckbox&&selected.includes(item) ? "bg-gray-200": "hover:bg-gray-100"} ${item===selected.at(0) ? "dropdown-item-selected" : ""}`} onClick={(e) => {
                       if (customOtherOption===item) setCustomOtherOption('');

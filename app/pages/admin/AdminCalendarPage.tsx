@@ -8,7 +8,7 @@ import { fetchLocations } from '@/app/controllers/Location';
 import { getEventInputShifts, publishBulkShift } from '@/app/controllers/Shifts';
 import { fetchAllEmployees } from '@/app/controllers/User';
 import Checkbox from '@/app/components/Checkbox';
-import { fetchLeaves } from '@/app/controllers/Leave';
+import { fetchLeaves, getEventInputLeaves } from '@/app/controllers/Leave';
 import Layout from '@/app/components/Layout';
 import Button from '@/app/components/Button';
 import Input from '@/app/components/Input';
@@ -91,12 +91,15 @@ export default function AdminCalendarPage() {
   useEffect(() => {
     async function fetchEvents() {
       const shifts = await getEventInputShifts(account!.id, (activeFilter.month.month() + 1).toString());
-      const leaves = await fetchLeaves(account!.id);
+      const leaves = await getEventInputLeaves(account!.id, (activeFilter.month.month() + 1).toString());
+
       const combined = [...shifts, ...leaves];
       setAllEvents(combined);
 
-      if (activeFilter.show_unpublished) setEvents(combined);
-      else setEvents(combined.filter((e) => hasExtendedProps(e) && !!e.extendedProps?.published));
+      if (activeFilter.show_unpublished) 
+        setEvents(combined);
+      else 
+        setEvents(combined.filter((e) => hasExtendedProps(e) && (!!e.extendedProps?.published || e.extendedProps.type==='leave')));
 
     }
 
@@ -112,7 +115,7 @@ useEffect(() => {
   setEvents(
     activeFilter.show_unpublished
       ? allEvents
-      : allEvents?.filter((e) => hasExtendedProps(e) && !!e.extendedProps?.published)
+      : allEvents?.filter((e) => hasExtendedProps(e) && (!!e.extendedProps?.published || e.extendedProps.type==='leave'))
   );
 }, [activeFilter.show_unpublished, allEvents]);
 

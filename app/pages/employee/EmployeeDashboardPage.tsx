@@ -48,38 +48,33 @@ export default function EmployeeDashboardPage() {
 
   const [locations, setLocations] = useState<string[]>([]);
   const [events, setEvents] = useState<EventInput[]>([]);
-  const [showUnavailability, setShowUnavailability] = useState(false);
 
   useEffect(() => {
-    async function fetchEvents() {
+     async function fetchEvents() {
       if (user){
-
-        const shifts = await getEventInputShifts(user!.id);
-        const leaves = await getEventInputLeaves(user!.id);
-        
-        let allEvents: EventInput[] = [];
-
-        if (showUnavailability){
-          const unavailabilities = await getEventInputUnavailabilities(user?.id ? user?.id : 0);
-          allEvents = [...shifts, ...leaves, ...unavailabilities];
-        }
-        else{
-          allEvents = [...shifts, ...leaves];
-        }
-        
-        setEvents(allEvents);
+        const shifts = await getEventInputShifts(user!.id,(activeFilter.month.month() + 1).toString());
+        const leaves = await getEventInputLeaves(user!.id,(activeFilter.month.month() + 1).toString());     
+        setEvents([...shifts, ...leaves]);
       }
       
     }
+  
+      (async () => {
+        try {
+          await fetchEvents();
+      } finally {
+      }
+    })();
+  }, [activeFilter.month, user]);
 
+  useEffect(() => {
     async function getLocations() {
       const locations = await fetchLocations();
       setLocations(locations.map((location) => location.name));
     }
 
-    fetchEvents();
     getLocations();
-  }, [showUnavailability, user]);
+  }, []);
 
 
   const [openModal, setOpenModal] = useState(false);

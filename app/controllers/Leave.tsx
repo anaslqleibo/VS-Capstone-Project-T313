@@ -26,13 +26,14 @@ export async function fetchUnavailabilities(user_id: number) {
   return data as Unavailability[];
 }
 
-export async function fetchLeaves(user_id: number) {
-  const res = await fetch(`/api/unavailabilities/leaves/${user_id}`);
+export async function fetchLeaves(user_id: number, month='') {
+  const res = await fetch(month?`/api/unavailabilities/leaves/${user_id}/${month}`:`/api/unavailabilities/leaves/${user_id}`);
 
   if (!res.ok) {
     throw new Error('Failed to fetch leaves');
   }
   const data = await res.json();
+
   return data as Unavailability[];
 }
 
@@ -50,8 +51,8 @@ export async function checkAvailability(user_id: number, date: string, start_tim
   return data;
 }
 
-export function getEventInputLeaves(user_id: number){
-  const shifts = fetchLeaves(user_id).then((leaves) => {
+export function getEventInputLeaves(user_id: number, month=''){
+  const shifts = fetchLeaves(user_id, month).then((leaves) => {
     return leaves.map((leave) => {
       const recurrence = leave.recurrence?.toLowerCase() || "never";
       let rrule: any = null;
