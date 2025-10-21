@@ -135,7 +135,12 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
         if (events) {
             const constructed = constructEventsArray(events, role);
             setOriginalEvents(constructed);
-            setEvents(constructed);
+
+            if (showSelectedFilter){
+                // Apply other filter when user navigated to a different month
+                setEvents(filterEventsArray(originalEvents, showSelectedFilter));
+            }
+            else setEvents(constructed);
         }
     }, [events, role]);
 
