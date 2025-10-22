@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
 import { RowDataPacket } from "mysql2";
-import { Route } from "next";
-
-
+import { verifyAPIToken } from "@/app/lib/auth";
 
 export async function POST(request : NextRequest, context: RouteContext<'/api/unavailabilities/[id]/check'>) {
     try{
+        const tokenRes = await verifyAPIToken(request);
+        if (!tokenRes.ok) return tokenRes;
+        
         const p = await context.params;
         const {date, start_time, end_time} = await request.json();
         const user_id = p.id;

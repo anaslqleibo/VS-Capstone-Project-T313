@@ -1,6 +1,7 @@
 import getStatusColor, { Status, stringToStatus } from "../components/utils/getStatusColor";
 import { EventInput } from "@fullcalendar/core/index.js";
 import dayjs from "dayjs";
+import { getAuthorizationHeader } from "../lib/auth";
 
 export type Unavailability = {
     id?: string;
@@ -16,18 +17,13 @@ export type Unavailability = {
     recurrence: string;
 }
 
-export async function fetchUnavailabilities(user_id: number) {
-  const res = await fetch(`/api/unavailabilities/${user_id}`);
-
-  if (!res.ok) {
-    throw new Error('Failed to fetch unavailabilities');
-  }
-  const data = await res.json();
-  return data as Unavailability[];
-}
-
 export async function fetchLeaves(user_id: number, month='') {
-  const res = await fetch(month?`/api/unavailabilities/leaves/${user_id}/${month}`:`/api/unavailabilities/leaves/${user_id}`);
+  const authHeader = getAuthorizationHeader();
+  if (!authHeader) throw new Error('No auth token found');
+
+  const res = await fetch(month?`/api/unavailabilities/leaves/${user_id}/${month}`:`/api/unavailabilities/leaves/${user_id}`,{
+    headers: authHeader
+  });
 
   if (!res.ok) {
     throw new Error('Failed to fetch leaves');
@@ -38,9 +34,12 @@ export async function fetchLeaves(user_id: number, month='') {
 }
 
 export async function checkAvailability(user_id: number, date: string, start_time?: string, end_time?:string) {
+  const authHeader = getAuthorizationHeader();
+  if (!authHeader) throw new Error('No auth token found');
+
   const res = await fetch(`/api/unavailabilities/${user_id}/check`,{
     method: "POST",
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...authHeader, 'Content-Type': 'application/json' },
     body: JSON.stringify({ date, start_time, end_time })
   });
 
@@ -95,6 +94,7 @@ export function getEventInputLeaves(user_id: number, month=''){
       rrule,
       allDay: true,
       extendedProps: {
+        id: leave.id,
         assignee_id: leave.assignee_id,
         status: leave.status === "Accepted" ? Status.Leave : stringToStatus(leave.status),
         type: leave.type,
@@ -111,50 +111,16 @@ export function getEventInputLeaves(user_id: number, month=''){
   return shifts;
 }
 
-export async function getEventInputUnavailabilities(user_id: number) {
-  const unavailabilities = await fetchUnavailabilities(user_id);
-
-  const endRecur = dayjs().add(1, "month").endOf("month").format("YYYY-MM-DD");
-
-  const dayMap: Record<string, number> = {
-    Sunday: 0,
-    Monday: 1,
-    Tuesday: 2,
-    Wednesday: 3,
-    Thursday: 4,
-    Friday: 5,
-    Saturday: 6,
-  };
-
-  return unavailabilities.map((unavailability) => {
-    const dayNumber = dayMap[unavailability.day_of_week ? unavailability.day_of_week : "Sunday"];
-
-    return {
-      id: unavailability.id,
-      daysOfWeek: [dayNumber],       
-      start: unavailability.start_time.slice(0, 5),
-      end: unavailability.end_time.slice(0, 5),
-      startRecur: unavailability.date,                     
-      endRecur,       
-      textColor: "#000000",            
-      extendedProps: {
-        status: Status.Unavailable,
-        assignee_name: unavailability.employee,
-        repeat: unavailability.day_of_week,
-        time: `${unavailability.start_time.slice(0, 5)}–${unavailability.end_time.slice(0, 5)}`,
-        type: unavailability.type,
-      },
-      color: getStatusColor(Status.Unavailable),
-    } as EventInput;
-  });
-}
 
 
 export async function createLeave(unavail: Unavailability, is_unavailability: boolean=false) {
+  const authHeader = getAuthorizationHeader();
+  if (!authHeader) throw new Error('No auth token found');
+
   const endpoint = is_unavailability ? '/api/unavailabilities' : '/api/unavailabilities/leaves';
   const res = await fetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { ...authHeader, 'Content-Type': 'application/json' },
     body: JSON.stringify(unavail),
   });
 
@@ -165,12 +131,15 @@ export async function createLeave(unavail: Unavailability, is_unavailability: bo
 }
 
 
-export async function updateLeaveStatus(leave_id: string, user_id: string, is_accepted: boolean) {
+export async function updateLeaveStatus(leave_id: string, user_id: string, is_accepted: boolean, decided_by: string) {
   try {
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/unavailabilities/leaves/${leave_id}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_id, is_accepted}),
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ user_id, is_accepted, decided_by}),
     });
 
     return res.ok;
@@ -182,8 +151,12 @@ export async function updateLeaveStatus(leave_id: string, user_id: string, is_ac
 
 export async function deleteLeave(shift_id: string) {
   try {
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/shifts/shift/${shift_id}`, {
       method: 'DELETE',
+      headers: authHeader
     });
 
     return res.ok;

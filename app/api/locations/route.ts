@@ -1,8 +1,13 @@
+import { verifyAPIToken } from "@/app/lib/auth";
 import { executeQuery } from "@/app/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try{
+      // Checks if request has verified token
+        const tokenRes = await verifyAPIToken(request);
+        if (!tokenRes.ok) return tokenRes;
+
         const locations = await executeQuery(
             `SELECT id, name, address, notes FROM locations ORDER BY name` 
         );
@@ -16,8 +21,11 @@ export async function GET() {
     }
 };
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
     const { id } = await request.json();
     if (!id) {
       return NextResponse.json({ error: "Location id is required" }, { status: 400 });
@@ -32,6 +40,9 @@ export async function DELETE(request: Request) {
 
 export async function PATCH(request: NextRequest, _context: any) {
   try {
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
     const body = await request.json();
     const { id, name, address, notes } = body;
 
@@ -79,9 +90,12 @@ export async function PATCH(request: NextRequest, _context: any) {
 }
 
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { name, address, notes } = await req.json();
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
+    const { name, address, notes } = await request.json();
 
     if (!name) {
       return new Response("Missing required field name", { status: 400 });

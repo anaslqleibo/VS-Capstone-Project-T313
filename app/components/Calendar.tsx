@@ -353,7 +353,17 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
         right: '' 
         }}
         editable={isAdmin}
+        eventResize={(info)=>{
+            alert("Sorry, you can't modify the duration of this event");
+            info.revert();
+        }}
         eventDrop={(info)=>{
+            if (info.event.extendedProps.type === 'leave'){
+                alert("Sorry, you can't change the date of a staff's leave");
+                info.revert();
+                return;
+            }
+
             if (!confirm("Are you sure about this change? This will update the pay rate and total payment based on the new day type.")) {
                 info.revert();
             }

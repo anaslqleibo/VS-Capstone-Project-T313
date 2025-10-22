@@ -4,20 +4,7 @@ import { executeQuery } from "@/app/lib/db";
 import { sendShiftEmail } from "@/app/lib/email";
 import { insertNotification } from "@/app/lib/notification-db";
 import { Shift } from "@/app/controllers/Shifts";
-
-/** Helper to trigger bell/web notifications via the notify API */
-async function notifyWeb(req: Request, payload: any) {
-  const url = new URL("/api/notifications/notify", req.url).toString();
-  await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      via_web: true,
-      via_email: false,
-      ...payload,
-    }),
-  }).catch(() => {});
-}
+import { verifyAPIToken } from "@/app/lib/auth";
 
 /** Fetch a single shift row + joins in the shape our emails/UI expect */
 async function fetchShiftRow(id: number) {
@@ -36,9 +23,12 @@ async function fetchShiftRow(id: number) {
 }
 
 // POST /api/shifts  (Create a shift; supports published/unpublished and duplicate flows)
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
+    const body = await request.json();
     const {
       assignee_id,
       status = "Pending",
@@ -104,11 +94,6 @@ export async function POST(req: NextRequest) {
 
     // Bell/web notification + DB record (insertNotification ignores "Unpublished")
     try {
-      await notifyWeb(req, {
-        shift_id: row.id,
-        status: row.status,
-        assignee_id: row.assignee_id || undefined,
-      });
       await insertNotification(row.id, row.status, row.assignee_id || undefined);
     } catch (e) {
       console.warn("[CREATE SHIFT] web notification failed (non-fatal):", e);
@@ -129,9 +114,12 @@ export async function POST(req: NextRequest) {
 
 // PATCH /api/shifts  (Bulk publish; optional month/year filters)
 // Only flips unpublished→published and only emails those that changed.
-export async function PATCH(req: NextRequest) {
+export async function PATCH(request: NextRequest) {
   try {
-    const { month, year } = await req.json();
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
+    const { month, year } = await request.json();
 
     const conditions: string[] = [];
     const vals: any[] = [];
@@ -185,12 +173,6 @@ export async function PATCH(req: NextRequest) {
           await sendShiftEmail({ id, assignee_id, address, status, date, start_time, end_time, notes } as Shift);
         }
 
-        // Bell/web + DB record
-        await notifyWeb(req, {
-          shift_id: id,
-          status,
-          assignee_id: assignee_id || undefined,
-        });
         await insertNotification(id, status, assignee_id || undefined);
       } catch (err) {
         console.warn("[BULK PUBLISH] email/notification failed for shift", id, err);

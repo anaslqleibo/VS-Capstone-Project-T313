@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
+import { verifyAPIToken } from "@/app/lib/auth";
 
-export async function PATCH(req: NextRequest, context: RouteContext<'/api/users/[id]/update_pay_rate'>) {
+export async function PATCH(request: NextRequest, context: RouteContext<'/api/users/[id]/update_pay_rate'>) {
   try {
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
     const { id } = await context.params;
-    const { job_title, age_group, level, specialty } = await req.json();
+    const { job_title, age_group, level, specialty } = await request.json();
     
     if (!job_title || !age_group || !level){
       return NextResponse.json(

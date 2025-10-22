@@ -11,15 +11,12 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import { createShift, Shift, ShiftStatus } from "@/app/controllers/Shifts";
 import Checkbox from "@/app/components/Checkbox";
 import Toast from "@/app/components/Toast";
-import { error } from "console";
 import Accordion from "@/app/components/Accordion";
 import getStatusColor, { Status, stringToStatus } from "@/app/components/utils/getStatusColor";
 import Icon from "@/public/icons/Icons";
 import { checkAvailability } from "@/app/controllers/Leave";
 import Modal from "@/app/components/Modal";
 import Spinner from "@/app/components/Spinner";
-import { InputIcon } from "@/app/components/Input";
-import { redirect } from "next/dist/server/api-utils";
 import { useRouter } from "next/navigation";
 
 export default function ShiftCreationPage() {

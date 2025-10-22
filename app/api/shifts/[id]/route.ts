@@ -7,26 +7,17 @@ import { sendEmail } from "@/app/lib/email";
 import { formatWhen } from "@/app/components/utils/formatDate";
 import { insertNotification } from "@/app/lib/notification-db";
 import { Shift } from "@/app/controllers/Shifts";
-
-const notifyWeb = async (req: Request, payload: any) => {
-  const url = new URL("/api/notifications/notify", req.url).toString();
-  await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      via_web: true,
-      via_email: false,
-      ...payload,
-    }),
-  }).catch(() => {});
-};
+import { verifyAPIToken } from "@/app/lib/auth";
 
 // ========== GET /api/shifts/[id] ==========
 export async function GET(
-  _req: NextRequest,
+  request: NextRequest,
   context: RouteContext<'/api/shifts/[id]'>
 ) {
   try {
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
     const params = await context.params;
     const userId = params.id;
     const admin = await isAdmin(userId);
@@ -88,14 +79,17 @@ export async function GET(
 
 // ========== PUT /api/shifts/user/[id] ==========
 export async function PUT(
-  req: NextRequest,
+  request: NextRequest,
   context: RouteContext<'/api/shifts/[id]'>
 ) {
   try {
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
     const params = await context.params; // "assignee_changed" flag in your old code used this
     const userId = params.id;
     
-    const body : Shift = await req.json();
+    const body : Shift = await request.json();
 
     const { id, assignee_id, status, date, start_time, end_time, notes, location_id, published, pay_rate, total_payment} = body;
 
@@ -196,7 +190,7 @@ export async function PUT(
     }
 
     // If assignee_id was provided and "assignee_changed" (your old code used user_id flag)
-    const assignee_changed = userId === "1"; // <= you used this convention previously
+    const assignee_changed = userId === "1";
     let newAssignee: any = null;
 
     if (published) {
@@ -227,9 +221,7 @@ export async function PUT(
 
       // If no emails relevant, short-circuit but still write notification record
       if (becameOpenOrUnassigned && !oldShift?.assignee_email) {
-        await insertNotification(id ?? "", status ?? oldShift?.status);
-        // Also nudge bell list for admins/users that track this shift id
-        await notifyWeb(req, { shift_id: id, status: status ?? oldShift?.status, assignee_id: oldShift?.assignee_id });
+        await insertNotification(id ?? "", status ?? oldShift?.status, oldShift?.assignee_id);
         return NextResponse.json({ success: true, message: "Shift updated successfully" });
       }
 
@@ -266,12 +258,7 @@ export async function PUT(
             text: `Shift cancelled — ${formatWhen(finalDate, finalStart, finalEnd)}`,
           });
 
-          // Bell/web notification for the old assignee
-          await notifyWeb(req, {
-            shift_id: id,
-            status: finalStatus,
-            assignee_id: String(oldShift.assignee_id),
-          });
+          insertNotification(id, finalStatus, String(oldShift.assignee_id));
         }
 
         // Notify new/current assignee (if not Open/Unassigned)
@@ -302,11 +289,8 @@ export async function PUT(
           }
 
           // Bell/web notification for the (new/current) assignee
-          await notifyWeb(req, {
-            shift_id: id,
-            status: finalStatus,
-            assignee_id: targetUserId,
-          });
+          insertNotification(id, finalStatus, targetUserId);
+
         }
       } catch (e) {
         console.warn("[EMAIL/WEB NOTIFY] Failed to send:", e);

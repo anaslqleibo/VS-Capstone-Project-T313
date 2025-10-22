@@ -288,7 +288,7 @@ const AccountPage = () => {
                 
 
                 {/* Settings summary */}
-                <div>
+                {/* <div>
                   <h3 className="text-lg font-semibold mt-2 mb-3">Settings</h3>
                   <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-3 gap-y-4">
                     <li className="flex items-center justify-between border-2 rounded-lg px-3 py-2">
@@ -316,7 +316,7 @@ const AccountPage = () => {
                       </span>
                     </li>
                   </ul>
-                </div>
+                </div> */}
 
                 <div className="flex justify-end">
                   <Button onClick={() => setIsEditing(true)} className="px-6 py-4">Edit profile & settings</Button>
@@ -369,7 +369,7 @@ const AccountPage = () => {
                 </div>
                 
 
-                <div>
+                {/* <div>
                   <h3 className="text-lg font-semibold mt-2 mb-3">Settings</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {[
@@ -380,19 +380,12 @@ const AccountPage = () => {
                     ].map(({ key, label }) => (
                       <label key={key} className="flex items-center justify-between border rounded-lg px-3 py-2 cursor-pointer">
                         <span>{label}</span>
-                        {/* <input
-                          type="checkbox"
-                          className="h-4 w-4"
-                          checked={settings[key as keyof typeof settings]}
-                          onChange={() => toggleSetting(key as keyof typeof settings)}
-                        /> */}
-
                         <Toggle checked={settings[key as keyof typeof settings]}
                           onChange={() => toggleSetting(key as keyof typeof settings)} />
                       </label>
                     ))}
                   </div>
-                </div>
+                </div> */}
 
                 <div className="flex items-stretch gap-3 justify-end">
                   <Button type="outline" onClick={() => {setIsEditing(false); handleCancel();}}>

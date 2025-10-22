@@ -1,10 +1,14 @@
+import { verifyAPIToken } from '@/app/lib/auth';
 import { executeQuery } from '@/app/lib/db';
 import { sendEmail } from '@/app/lib/email';
 import { insertNotification } from '@/app/lib/notification-db';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(req: Request, _context: any) {
-  const { via_web, via_email, shift_id, assignee_id, status, subject, html } = await req.json();
+export async function POST(request: NextRequest, _context: any) {
+  const tokenRes = await verifyAPIToken(request);
+  if (!tokenRes.ok) return tokenRes;
+        
+  const { via_web, via_email, shift_id, assignee_id, status, subject, html } = await request.json();
 
   if (via_web && shift_id && status) await insertNotification(shift_id, status, assignee_id);
 

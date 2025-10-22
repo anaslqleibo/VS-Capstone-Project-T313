@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
 import bcrypt from "bcryptjs";
+import { verifyAPIToken } from "@/app/lib/auth";
 
-export async function PATCH(req: NextRequest, context: RouteContext<'/api/users/[id]/password'>) {
+export async function PATCH(request: NextRequest, context: RouteContext<'/api/users/[id]/password'>) {
   try {
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
     const { id } = await context.params;
-    const { password } = await req.json();
+    const { password } = await request.json();
 
     console.log("BRO", password);
     if (!password) {

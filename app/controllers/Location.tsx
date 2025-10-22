@@ -1,3 +1,5 @@
+import { getAuthorizationHeader } from "../lib/auth";
+
 export type Location = {
   id: string;
   name: string;
@@ -7,7 +9,12 @@ export type Location = {
 
 // Fetches the full list of locations from the API
 export async function fetchLocations(): Promise<Location[]> {
-  const res = await fetch('/api/locations');
+  const authHeader = getAuthorizationHeader();
+  if (!authHeader) throw new Error('No auth token found');
+
+  const res = await fetch('/api/locations',{
+    headers: authHeader
+  });
 
   if (!res.ok) {
     throw new Error('Failed to fetch locations');
@@ -31,9 +38,12 @@ export function getLocationsStatic(): string[] {
 
 export async function insertLocation(location: Location) {
   try{
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/locations`,  {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json'},
+      headers: { ...authHeader, 'Content-Type': 'application/json'},
       body: JSON.stringify(location),
     });
 
@@ -51,9 +61,12 @@ export async function insertLocation(location: Location) {
 
 export async function deleteLocation(location_id: string) {
   try{
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/locations`,  {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({id: location_id}),
     });
 
@@ -66,9 +79,12 @@ export async function deleteLocation(location_id: string) {
 
 export async function updateLocation(location: Location) {
   try{
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/locations`,  {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify(location),
     });
 

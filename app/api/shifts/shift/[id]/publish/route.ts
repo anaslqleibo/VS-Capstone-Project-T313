@@ -1,11 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
 import { sendShiftEmail } from "@/app/lib/email";
 import { insertNotification } from "@/app/lib/notification-db";
 import { Shift } from "@/app/controllers/Shifts";
+import { verifyAPIToken } from "@/app/lib/auth";
 
-export async function PATCH(req: Request, context: RouteContext<'/api/shifts/shift/[id]/publish'>) {
+export async function PATCH(request: NextRequest, context: RouteContext<'/api/shifts/shift/[id]/publish'>) {
   try {
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
     const { id } = await context.params;
     if ( !id) {
       return NextResponse.json(

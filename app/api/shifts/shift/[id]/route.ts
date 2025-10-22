@@ -1,25 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
 import { RowDataPacket } from "mysql2";
-import { queueEmail, sendEmail } from "@/app/lib/email";
+import { sendEmail } from "@/app/lib/email";
 import { buildShiftEmail } from "@/app/lib/shift-email";
 import { formatWhen } from "@/app/components/utils/formatDate";
-
-const notifyWeb = async (req: Request, payload: any) => {
-  const url = new URL("/api/notifications/notify", req.url).toString();
-  await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      channels: { web: true, email: false },
-      ...payload,
-    }),
-  }).catch(() => {});
-};
-
+import { verifyAPIToken } from "@/app/lib/auth";
 
 export async function GET(request : NextRequest, context: RouteContext<'/api/shifts/shift/[id]'>) {
     try{
+        const tokenRes = await verifyAPIToken(request);
+        if (!tokenRes.ok) return tokenRes;
+        
         const p = await context.params;
         const id = p.id;
         const shift = await executeQuery(
@@ -40,8 +31,11 @@ export async function GET(request : NextRequest, context: RouteContext<'/api/shi
     }
 };
 
-export async function DELETE(req: NextRequest, context: RouteContext<'/api/shifts/shift/[id]'>) {
+export async function DELETE(request: NextRequest, context: RouteContext<'/api/shifts/shift/[id]'>) {
   try {
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
     const p = await context.params;
     const id = p.id;
 
@@ -101,22 +95,8 @@ export async function DELETE(req: NextRequest, context: RouteContext<'/api/shift
     console.log("[SHIFT DELETE] SMTP sent");
   } catch (e) {
     console.warn("[EMAIL SMTP] Failed to send email:", e);
-    // await queueEmail({ to: userShift.email, subject, html });
   }
 
-  // NEW: Bell notification for the assignee
-  await notifyWeb(req, {
-    template: "shift-cancelled",
-    recipients: [String(userShift.user_id)],
-    shift: {
-      assignee_name: userShift.name,
-      location_name: userShift.location_name,
-      address: userShift.address,
-      date: userShift.date,
-      start: startHHmm,
-      end: endHHmm,
-    },
-  });
 }
 
 

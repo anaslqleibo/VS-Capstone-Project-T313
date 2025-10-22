@@ -1,6 +1,5 @@
 import csv
 
-# Open your CSV file
 with open("locations.csv", newline='', encoding='utf-8') as csvfile:
     reader = csv.DictReader(csvfile, delimiter=';') 
     

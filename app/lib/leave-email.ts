@@ -35,7 +35,10 @@ export function buildLeaveEmail({
     event === "declined"  ? "Leave request declined"  :
                              "Leave request canceled";
 
-  const dateRange = `${fmtDate(startDate)} – ${fmtDate(endDate)}`;
+  const start = fmtDate(startDate);
+  const end = fmtDate(endDate);
+  const dates = start === end ? 'Date' : 'Dates';
+  const dateRange = start === end ? start : `${start} – ${end}`;
 
   const subject =
     event === "submitted"
@@ -44,10 +47,10 @@ export function buildLeaveEmail({
 
   const details = `
     <ul>
-      <li><b>Dates:</b> ${dateRange}</li>
+      <li><b>${dates}:</b> ${dateRange}</li>
       ${reason ? `<li><b>Reason:</b> ${reason}</li>` : ""}
       ${notes ? `<li><b>Notes:</b> ${notes}</li>` : ""}
-      ${decidedBy ? `<li><b>By:</b> ${decidedBy}</li>` : ""}
+      ${(event!=="submitted" && event!=="cancelled" && decidedBy) ? `<li><b>${event.substring(0,1).toUpperCase()+event.substring(1)} By:</b> ${decidedBy}</li>` : ""}
     </ul>
   `;
 

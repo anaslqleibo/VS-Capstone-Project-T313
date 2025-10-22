@@ -1,6 +1,7 @@
 import { executeQuery } from "@/app/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { sendEmail, queueEmail } from "@/app/lib/email";
+import { verifyAPIToken } from "@/app/lib/auth";
 
 // 12-hour time + readable date, same style as shifts/leaves
 function formatWhen(date: string, start: string, end: string) {
@@ -26,9 +27,12 @@ function formatWhen(date: string, start: string, end: string) {
   return { dateStr, startStr, endStr };
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
+    const body = await request.json();
     const { assignee_id, date, day, start_time, end_time } = body;
 
     const result = await executeQuery(

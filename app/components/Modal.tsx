@@ -635,8 +635,8 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
         {createDetailEditor("Location: ", 'location_name' ,castedDetails.location_name, "", isEditing, formValues, handleChange, displayToast)}
         {createDetailEditor("Address: ", 'address' ,castedDetails.address, "", isEditing, formValues, handleChange, displayToast)}
         
-        {isAdmin && (castedDetails.pay_rate!==undefined&&castedDetails.pay_rate!==null) && createDetailEditor("Active pay rate: ", 'pay_rate' ,'$'+castedDetails.pay_rate.toFixed(2)+'/h', "", isEditing, formValues, handleChange, displayToast)}
-        {isAdmin && (castedDetails.total_payment!==undefined&&castedDetails.total_payment!==null) && createDetailEditor("Total Pay: ", 'total_payment' ,'$'+castedDetails.total_payment.toFixed(2), "", isEditing, formValues, handleChange, displayToast)}
+        {(castedDetails.pay_rate!==undefined&&castedDetails.pay_rate!==null) && createDetailEditor("Active pay rate: ", 'pay_rate' ,'$'+castedDetails.pay_rate.toFixed(2)+'/h', "", isEditing, formValues, handleChange, displayToast)}
+        {(castedDetails.total_payment!==undefined&&castedDetails.total_payment!==null) && createDetailEditor("Total Pay: ", 'total_payment' ,'$'+castedDetails.total_payment.toFixed(2), "", isEditing, formValues, handleChange, displayToast)}
         {createDetailEditor("Notes: ", 'notes',castedDetails.notes, "textarea", isEditing, formValues, handleChange, displayToast)}
         </>
     );
@@ -647,21 +647,24 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
     // console.log(formValues);
     let buttons = null;
     if (type === ModalTypes.LeaveDetails){
-        const handleDelete = () => {
-            // delete from db and check if succesful, if yes then proceed
-            // deleteLeave();
-            const result = true;
-            
+        const handleDelete = async () => {
+            if (!formValues) return;
+            try{
+              (window as any).__setLoading?.(true);
 
-            if (result){
+              const result = await deleteLeave(formValues.id);
+              if (result){
                 if (event) setEvents!(event, "delete"); 
                 closeModal!();
                 displayToast!('Leave deleted successfully!', 'success');
+              }
+              else{
+                  displayToast!('Failed to delete leave!', 'error');
+              }
             }
-            else{
-                displayToast!('Failed to delete leave!', 'error');
+            finally{
+              (window as any).__setLoading?.(false);
             }
-            
         }
 
         if (!isAdmin)
@@ -790,7 +793,9 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
     {
         if (isAdmin){
             const handleAccept = async () => {
-                const result = await updateLeaveStatus(event?.extendedProps?.id as string, (formValues as LeaveExtendedProps).assignee_id, true);
+              try{
+                (window as any).__setLoading?.(true);
+                const result = await updateLeaveStatus(event?.extendedProps?.id as string, (formValues as LeaveExtendedProps).assignee_id, true, (window as any).__getActiveUsersName());
 
                 if (result){
                     if (event) {
@@ -817,22 +822,32 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
                 else{
                     displayToast!('Failed to accept leave!', 'error');
                 }
+              }
+              finally{
+                (window as any).__setLoading?.(false);
+              }
+                
                 
             }
             const handleDecline = async () => {
                 const confirmation = window.confirm("This action cannot be undone. Are you sure you want to decline this leave request?");
                 if (!confirmation) return;
 
-                const result = await updateLeaveStatus(event?.extendedProps?.id as string, (formValues as LeaveExtendedProps).assignee_id, false);;
-                if (result){
-                    if (event) setEvents!(event, "delete"); 
-                    closeModal!();
-                    displayToast!('Leave declined!', 'success');
+                try{
+                  (window as any).__setLoading?.(true);
+                  const result = await updateLeaveStatus(event?.extendedProps?.id as string, (formValues as LeaveExtendedProps).assignee_id, false, (window as any).__getActiveUsersName());
+                  if (result){
+                      if (event) setEvents!(event, "delete"); 
+                      closeModal!();
+                      displayToast!('Leave declined!', 'success');
+                  }
+                  else{
+                      displayToast!('Failed to decline leave!', 'error');
+                  }
                 }
-                else{
-                    displayToast!('Failed to decline leave!', 'error');
+                finally{
+                  (window as any).__setLoading?.(false);
                 }
-                
             }
             buttons = (<>
         <Button type="cta" fontSize="0.8em" className="bg-[color:var(--success-color)] hover:bg-[color:var(--success-color-hover)]" onClick={handleAccept}>Accept</Button>
@@ -1162,12 +1177,14 @@ export default function Modal({type, details, startOpen, title, modalContainer, 
 
   // expose a global so the toolbar icon can call it without refactor
   useEffect(() => {
+    (window as any).__getActiveUsersName = ()=>{return user?.first_name+' '+user?.last_name};
+
     (window as any).__setLoading = (state:boolean)=>setLoading(state);
 
     (window as any).__openShiftDuplicate = handleDuplicateOpen;
 
     (window as any).__openNotifyModal = ()=>setNotifyModal(true);
-    return () => { delete (window as any).__openShiftDuplicate; delete (window as any).__openNotifyModal; delete (window as any).__setLoading;};
+    return () => { delete (window as any).__openShiftDuplicate; delete (window as any).__openNotifyModal; delete (window as any).__setLoading; delete (window as any).__getActiveUsersName;};
   }, [props.event]);
 
   const ModalJSX = (
@@ -1395,7 +1412,7 @@ const newEvent: EventInput = {
             <div className="flex min-h-full justify-center p-4 text-center items-center sm:p-0">
               {type === ModalTypes.Notifications && (
                 <ListView title="Notifications" containerRef={containerRef} setShown={setShown} idList={details ? details.map((d:any)=>d.id) : undefined} hasItems={props.hasItems}>
-                  {createNotifications(false, details as NotificationProps[])}
+                  {createNotifications(admin, details as NotificationProps[])}
                 </ListView>
               )}
               {type !== ModalTypes.Notifications && ModalJSX}

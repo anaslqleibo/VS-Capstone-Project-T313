@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
 import { isAdmin } from "@/app/api/users/[id]/is_admin";
+import { verifyAPIToken } from "@/app/lib/auth";
 
 
 export async function GET(request : NextRequest, context: RouteContext<'/api/notifications/[id]'>) {
     try{
+        const tokenRes = await verifyAPIToken(request);
+        if (!tokenRes.ok) return tokenRes;
+              
         const p = await context.params;
         const admin = await isAdmin(p.id);
         let notifications;  
@@ -32,6 +36,9 @@ export async function GET(request : NextRequest, context: RouteContext<'/api/not
 
 export async function POST(request : NextRequest, context: RouteContext<'/api/notifications/[id]'>) {
     try{
+        const tokenRes = await verifyAPIToken(request);
+        if (!tokenRes.ok) return tokenRes;
+        
         const p = await context.params;
         const [res] = await executeQuery(
                 `SELECT EXISTS(
@@ -49,10 +56,13 @@ export async function POST(request : NextRequest, context: RouteContext<'/api/no
 };
 
 
-export async function PATCH(req: NextRequest, context: RouteContext<'/api/notifications/[id]'>) {
+export async function PATCH(request: NextRequest, context: RouteContext<'/api/notifications/[id]'>) {
   try {
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
     const { id } = await context.params;
-    const body = await req.json();
+    const body = await request.json();
     const { user_id } = body; 
     if (!user_id) {
       return NextResponse.json({ error: "Missing user id" }, { status: 400 });

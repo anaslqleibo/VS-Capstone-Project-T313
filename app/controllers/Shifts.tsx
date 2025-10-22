@@ -1,6 +1,8 @@
 import { EventInput } from '@fullcalendar/core';
 import getStatusColor, { Status, stringToStatus } from '../components/utils/getStatusColor';
 import { ShiftExtendedProps } from '../components/Modal';
+import { headers } from 'next/headers';
+import { getAuthorizationHeader } from '../lib/auth';
 
 export type ShiftStatus =
   | 'Pending'
@@ -37,7 +39,13 @@ export type ShiftAssignee = {
 };
 
 export async function fetchShift(id: string) {
-  const res = await fetch(`/api/shifts/shift/${id}`);
+  const authHeader = getAuthorizationHeader();
+  if (!authHeader) throw new Error('No auth token found');
+
+  const res = await fetch(`/api/shifts/shift/${id}`, {
+    method: "GET",
+    headers: authHeader
+  });
 
   if (!res.ok) {
     throw new Error('Failed to fetch the shift');
@@ -50,7 +58,14 @@ export async function fetchShiftExtProps(id: string) {
 }
 
 export async function fetchShifts(user_id: number, month='') {
-  const res = await fetch(month?`/api/shifts/${user_id}/${month}`:`/api/shifts/${user_id}`);
+  const authHeader = getAuthorizationHeader();
+  if (!authHeader) throw new Error('No auth token found');
+
+  const res = await fetch(month?`/api/shifts/${user_id}/${month}`:`/api/shifts/${user_id}`, {
+      method: "GET",
+      headers: authHeader
+    }
+  );
 
   if (!res.ok) {
     throw new Error('Failed to fetch shifts');
@@ -60,9 +75,12 @@ export async function fetchShifts(user_id: number, month='') {
 }
 
 export async function createShift(shift: Shift) {
+  const authHeader = getAuthorizationHeader();
+  if (!authHeader) throw new Error('No auth token found');
+
   const res = await fetch('/api/shifts', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {...authHeader, 'Content-Type': 'application/json' },
     body: JSON.stringify(shift),
   });
 
@@ -75,9 +93,12 @@ export async function createShift(shift: Shift) {
 
 export async function updateShift(shift: Shift | ShiftAssignee, assignee_changed = false) {
   try {
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/shifts/${assignee_changed ? '1' : '0'}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify(shift),
     });
 
@@ -90,9 +111,12 @@ export async function updateShift(shift: Shift | ShiftAssignee, assignee_changed
 
 export async function updateShiftStatus(shift_id: string, status: ShiftStatus, assignee_id?: string) {
   try {
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/shifts/shift/${shift_id}/status`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({ status, assignee_id }),
     });
 
@@ -113,9 +137,12 @@ export async function updateShiftStatus(shift_id: string, status: ShiftStatus, a
 
 export async function publishShift(shift_id: string) {
   try {
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/shifts/shift/${shift_id}/publish`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
     });
 
     return res.ok;
@@ -127,9 +154,12 @@ export async function publishShift(shift_id: string) {
 
 export async function publishBulkShift(month?: string, year?: string) {
   try {
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/shifts/`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({ month, year }),
     });
 
@@ -142,8 +172,12 @@ export async function publishBulkShift(month?: string, year?: string) {
 
 export async function deleteShift(shift_id: string) {
   try {
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/shifts/shift/${shift_id}`, {
       method: 'DELETE',
+      headers: authHeader
     });
 
     return res.ok;
@@ -160,9 +194,12 @@ export async function deleteShift(shift_id: string) {
  */
 export async function duplicateShift(shift_id: string): Promise<{ success: boolean; newShift?: Shift; err?: string }> {
   try {
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/shifts/shift/${shift_id}/duplicate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
       credentials: 'include',
     });
 

@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { headers } from "next/headers";
+import { getAuthorizationHeader } from "../lib/auth";
 
 // Temporary utility class to detect account access, can be replaced later
 export type Role = "admin" | "user";
@@ -20,6 +20,9 @@ export type User = {
     emergency_contact?:string;
     pay_rate_id?:string;
     job_title?:string;
+
+    // Will always be empty, except when it is updated to a new value
+    password?:string
 };
 
 export type PayRate = {
@@ -47,8 +50,12 @@ export async function fetchLoggedInAccount(){
 }
 
 export async function fetchAccount(userId: string) {
-  
-  const res = await fetch(`/api/users/${userId}`);
+  const authHeader = getAuthorizationHeader();
+  if (!authHeader) throw new Error('No auth token found');
+
+  const res = await fetch(`/api/users/${userId}`,{
+    headers: authHeader
+  });
 
   if (!res.ok) {
     throw new Error('Failed to fetch user data');
@@ -58,8 +65,12 @@ export async function fetchAccount(userId: string) {
 }
 
 export async function fetchEmail(userId: string) {
-  
-  const res = await fetch(`/api/users/${userId}/email`);
+  const authHeader = getAuthorizationHeader();
+  if (!authHeader) throw new Error('No auth token found');
+
+  const res = await fetch(`/api/users/${userId}/email`, {
+    headers: authHeader
+  });
 
   if (!res.ok) {
     throw new Error('Failed to fetch user email');
@@ -69,7 +80,12 @@ export async function fetchEmail(userId: string) {
 }
 
 export async function fetchAllEmployees() {
-  const res = await fetch('/api/users');
+  const authHeader = getAuthorizationHeader();
+  if (!authHeader) throw new Error('No auth token found');
+
+  const res = await fetch('/api/users', {
+    headers: authHeader
+  });
 
   if (!res.ok) {
     throw new Error('Failed to fetch users data');
@@ -79,7 +95,12 @@ export async function fetchAllEmployees() {
 }
 
 export async function fetchAllUsers() {
-  const res = await fetch('/api/users');
+  const authHeader = getAuthorizationHeader();
+  if (!authHeader) throw new Error('No auth token found');
+
+  const res = await fetch('/api/users', {
+    headers: authHeader
+  });
 
   if (!res.ok) {
     throw new Error('Failed to fetch users data');
@@ -89,12 +110,17 @@ export async function fetchAllUsers() {
 }
 
 export async function fetchUsersPayRate(user_id: string, date:dayjs.Dayjs) {
+  const authHeader = getAuthorizationHeader();
+  if (!authHeader) throw new Error('No auth token found');
+
   const isWeekday = date.day()>0 && date.day()<6;
   const isSaturday = date.day()===6;
   const isSunday = date.day()===0;
 
   
-  const res =  await fetch('/api/payrates/user/'+user_id);
+  const res =  await fetch('/api/payrates/user/'+user_id, {
+    headers: authHeader
+  });
 
   if (!res.ok) {
     throw new Error('This user has not been assigned to a job position!');
@@ -107,8 +133,14 @@ export async function fetchUsersPayRate(user_id: string, date:dayjs.Dayjs) {
 }
 
 export async function fetchPayRates(pay_rate_id?: string) {
+  const authHeader = getAuthorizationHeader();
+  if (!authHeader) throw new Error('No auth token found');
 
-  const res = pay_rate_id ? await fetch('/api/payrates/'+pay_rate_id) : await fetch('/api/payrates');
+  const res = pay_rate_id ? await fetch('/api/payrates/'+pay_rate_id, {
+    headers: authHeader
+  }) : await fetch('/api/payrates', {
+    headers: authHeader
+  });
 
   if (!res.ok) {
     throw new Error('Failed to fetch pay rates data');
@@ -119,9 +151,12 @@ export async function fetchPayRates(pay_rate_id?: string) {
 
 export async function addNewUser(user:User, with_other_fields = false, assign_position = false) {
   try{
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/users`,  {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({...user, with_other_fields, assign_position}),
     });
 
@@ -144,9 +179,12 @@ export async function addNewUser(user:User, with_other_fields = false, assign_po
 
 export async function updateUser(user: User) {
   try{
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/users/${user.id}`,  {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify(user),
     });
 
@@ -159,9 +197,12 @@ export async function updateUser(user: User) {
 
 export async function deleteUser(email:string) {
   try{
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/users/`,  {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({email}),
     });
 
@@ -176,9 +217,12 @@ export async function deleteUser(email:string) {
 
 export async function updatePassword(user_id: string, password: string) {
   try{
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/users/${user_id}/password`,  {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({password}),
     });
 
@@ -191,9 +235,12 @@ export async function updatePassword(user_id: string, password: string) {
 
 export async function updateUsersPayRate(user_id: string, job_title: string, age_group: string, level: string, specialty?:string) {
   try{
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/users/${user_id}/update_pay_rate`,  {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({job_title, age_group, level, specialty}),
     });
 
@@ -209,9 +256,12 @@ export async function updateUsersPayRate(user_id: string, job_title: string, age
 
 export async function updatePayRate(pay_rate:PayRate) {
   try{
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/payrates/${pay_rate.id}`,  {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify(pay_rate),
     });
 
@@ -225,9 +275,12 @@ export async function updatePayRate(pay_rate:PayRate) {
 
 export async function insertPayRate(pay_rate:PayRate) {
   try{
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/payrates`,  {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify(pay_rate),
     });
 
@@ -244,8 +297,12 @@ export async function insertPayRate(pay_rate:PayRate) {
 
 export async function deletePayRate(pay_rate_id:string) {
   try{
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/payrates/`+pay_rate_id,  {
       method: 'DELETE',
+      headers: authHeader
     });
 
     const { success } = await res.json();

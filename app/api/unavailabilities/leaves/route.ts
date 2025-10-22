@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers, cookies } from "next/headers";
 import { queueEmail } from "@/app/lib/email";
 import { sendEmail } from "@/app/lib/email";
-import { verifyToken } from "@/app/lib/auth";
+import { verifyAPIToken, verifyToken } from "@/app/lib/auth";
 import { buildLeaveEmail } from "@/app/lib/leave-email";
 
 function getBearerTokenFromHeaders(h: Headers) {
@@ -13,9 +13,12 @@ function getBearerTokenFromHeaders(h: Headers) {
   return scheme?.toLowerCase() === "bearer" ? token : null;
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
+    const body = await request.json();
     const { date, end_date, start_time, end_time, recurrence } = body ?? {};
 
     //Resolve user id from JWT or fallback to body.assignee_id
@@ -84,7 +87,7 @@ export async function POST(req: NextRequest) {
           console.warn("[LEAVE SUBMIT] requester email failed:", e);
         }
 
-        // 2) Approvers = all admins (as you asked)
+        // 2) Approvers = all admins
         try {
           const admins = await executeQuery(
             `SELECT email FROM users WHERE role='admin' AND (is_active IS NULL OR is_active <> 0)`

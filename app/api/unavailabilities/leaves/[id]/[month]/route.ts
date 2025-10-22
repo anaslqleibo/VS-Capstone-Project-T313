@@ -1,10 +1,14 @@
 import { isAdmin } from "@/app/api/users/[id]/is_admin";
+import { verifyAPIToken } from "@/app/lib/auth";
 import { executeQuery } from "@/app/lib/db";
 import dayjs from "dayjs";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request : NextRequest, context: RouteContext<'/api/unavailabilities/leaves/[id]/[month]'>) {
     try{
+        const tokenRes = await verifyAPIToken(request);
+        if (!tokenRes.ok) return tokenRes;
+        
         const {id, month} = await context.params;
         const admin = await isAdmin(id);
         

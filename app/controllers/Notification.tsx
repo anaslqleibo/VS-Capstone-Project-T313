@@ -4,6 +4,7 @@ import formatDate, { formatDateToHour12 } from "@/app/components/utils/formatDat
 import Tooltip from "../components/Tootltip";
 import dayjs from "dayjs";
 import { ShiftStatus } from "./Shifts";
+import { getAuthorizationHeader } from "../lib/auth";
 
 
 export type NotificationType = 'Assigned' | 'Unassigned' | 'Open' | 'Accepted' | 'Declined' | 'Request' | 'Leave Request' | 'Leave Accepted' | 'Leave Declined' | 'None';
@@ -45,8 +46,12 @@ export type NotificationProps = {
 }
 
 export async function checkNewNotification(user_id?: string) {
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
     const res = await fetch(`/api/notifications/${user_id}`,{
-        method: "POST"
+        method: "POST",
+        headers: authHeader
     });
     
     if (!res.ok) {
@@ -57,7 +62,12 @@ export async function checkNewNotification(user_id?: string) {
 }
 
 export async function fetchNotifications(user_id?: string) {
-    const res = await fetch(`/api/notifications/${user_id}`);
+    const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
+    const res = await fetch(`/api/notifications/${user_id}`,{
+        headers: authHeader
+    });
     
     if (!res.ok) {
     throw new Error('Failed to fetch notifications');
@@ -68,9 +78,12 @@ export async function fetchNotifications(user_id?: string) {
 
 export async function notificationMarkAsRead(id: string, user_id:string) {
     try {
+        const authHeader = getAuthorizationHeader();
+    if (!authHeader) throw new Error('No auth token found');
+
         const res = await fetch(`/api/notifications/${id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { ...authHeader, 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id }),
         });
 
@@ -92,8 +105,7 @@ export function createNotifications(fromAdminView=false, notifications : Notific
     return (
     <>
         {notifications.map(item =>{
-            
-            return createAdminNotification(item);
+            return fromAdminView ? createAdminNotification(item) : createStaffNotification(item);
         })}
     </>
     );
@@ -290,9 +302,12 @@ export function createStaffNotification({type, date, shift_date, days_left=1, on
 
 export async function notifyManually(via_web:boolean, via_email:boolean, shift_id?: string, assignee_id?: string, status?: ShiftStatus, subject?: string, html?:string){
     try{
+        const authHeader = getAuthorizationHeader();
+        if (!authHeader) throw new Error('No auth token found');
+
         const res = await fetch('/api/notifications/notify', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { ...authHeader, 'Content-Type': 'application/json' },
             body: JSON.stringify({ via_web, via_email, shift_id, assignee_id, status, subject, html}),
         });
 

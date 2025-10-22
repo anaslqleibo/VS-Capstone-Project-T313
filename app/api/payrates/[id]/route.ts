@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
+import { verifyAPIToken } from "@/app/lib/auth";
 
 export async function GET(request: NextRequest, context: RouteContext<'/api/payrates/[id]'>) {
   try {
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
     const { id } = await context.params;
 
     const payrates = await executeQuery(`SELECT id, job_title, age_group, level, specialty, weekday, saturday, sunday, public_holiday FROM pay_rates WHERE id = ?`, [id]);
@@ -28,6 +32,9 @@ export async function GET(request: NextRequest, context: RouteContext<'/api/payr
 
 export async function PATCH(request: NextRequest, context: RouteContext<'/api/payrates/[id]'>) {
   try {
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
     const { id } = await context.params;
     const { job_title, age_group, level, specialty, weekday, saturday, sunday, public_holiday } = await request.json();
 
@@ -42,6 +49,9 @@ export async function PATCH(request: NextRequest, context: RouteContext<'/api/pa
 
 export async function DELETE(request: NextRequest, context: RouteContext<'/api/payrates/[id]'>) {
   try {
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
     const { id } = await context.params;
     const result = await executeQuery(`DELETE FROM pay_rates WHERE id = ?`, [id]) as any;
 

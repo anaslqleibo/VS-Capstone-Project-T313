@@ -3,10 +3,15 @@ import { executeQuery } from "@/app/lib/db";
 import { Shift } from "@/app/controllers/Shifts";
 import { isAdmin } from "@/app/api/users/[id]/is_admin";
 import dayjs from "dayjs";
+import { verifyAPIToken } from "@/app/lib/auth";
 
 
 export async function GET(request : NextRequest, context: RouteContext<'/api/shifts/[id]/[month]'>) {
     try{
+        // Checks if request has verified token
+        const tokenRes = await verifyAPIToken(request);
+        if (!tokenRes.ok) return tokenRes;
+
         const {id, month} = await context.params;
         const admin = await isAdmin(id);
         let shifts;
@@ -30,7 +35,7 @@ export async function GET(request : NextRequest, context: RouteContext<'/api/shi
         }
         else {
             shifts = await executeQuery(
-            `SELECT s.id as id, s.assignee_id as assignee_id, s.status as status, DATE_FORMAT(s.date, '%Y-%m-%d') as date, s.start_time as start_time, s.end_time as end_time, s.notes as notes, s.published as published, l.id as location_id,  l.name as location_name, l.address as address, CONCAT(u.first_name," ", u.last_name) as assignee_name FROM shifts s INNER JOIN locations l ON s.location_id = l.id INNER JOIN users u ON s.assignee_id = u.id WHERE s.status != "Unassigned" AND s.status != "Declined" AND u.id = ? AND s.type = "shift" AND s.published = 1 AND s.date BETWEEN ? AND ?`,
+            `SELECT s.id as id, s.assignee_id as assignee_id, s.status as status, DATE_FORMAT(s.date, '%Y-%m-%d') as date, s.start_time as start_time, s.end_time as end_time, s.notes as notes, s.published as published, l.id as location_id,  l.name as location_name, l.address as address, CONCAT(u.first_name," ", u.last_name) as assignee_name, s.pay_rate as pay_rate, s.total_payment as total_payment FROM shifts s INNER JOIN locations l ON s.location_id = l.id INNER JOIN users u ON s.assignee_id = u.id WHERE s.status != "Unassigned" AND s.status != "Declined" AND u.id = ? AND s.type = "shift" AND s.published = 1 AND s.date BETWEEN ? AND ?`,
             [id, format(start), format(end)]
             );
         }
@@ -45,9 +50,13 @@ export async function GET(request : NextRequest, context: RouteContext<'/api/shi
 };
 
 
-export async function PUT(req: NextRequest, _context: any) {
+export async function PUT(request: NextRequest, _context: any) {
   try {
-    const { id, assignee_id, status, date, start_time, end_time, notes, location_id, published, pay_rate, total_payment} : Shift = await req.json();
+    // Checks if request has verified token
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+
+    const { id, assignee_id, status, date, start_time, end_time, notes, location_id, published, pay_rate, total_payment} : Shift = await request.json();
 
     const updates = [];
     const vals = [];

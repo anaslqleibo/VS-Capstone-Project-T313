@@ -1,17 +1,21 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { executeQuery } from "@/app/lib/db";
 
 import { queueEmail, sendEmail } from "@/app/lib/email";
 import { buildLeaveEmail } from "@/app/lib/leave-email";
+import { verifyAPIToken } from "@/app/lib/auth";
 
 export async function PATCH(
-  req: Request,
+  request: NextRequest,
   context: RouteContext<"/api/unavailabilities/leaves/[id]/status">
 ) {
   try {
+    const tokenRes = await verifyAPIToken(request);
+    if (!tokenRes.ok) return tokenRes;
+        
     const { id } = await context.params;
-    const body = await req.json();
-    const { user_id, is_accepted } = body;
+    const body = await request.json();
+    const { user_id, is_accepted, decided_by } = body;
 
     if (is_accepted === undefined) {
       return NextResponse.json({ error: "Status is required" }, { status: 400 });
@@ -73,6 +77,7 @@ export async function PATCH(
           userName: row.full_name ?? "Staff",
           startDate: row.start_date,
           endDate: row.end_date,
+          decidedBy: decided_by
           // reason: row.reason, // uncomment if present in your table
           // notes: row.notes,
         });
