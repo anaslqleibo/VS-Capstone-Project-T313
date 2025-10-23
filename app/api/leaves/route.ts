@@ -5,6 +5,7 @@ import { queueEmail } from "@/app/lib/email";
 import { sendEmail } from "@/app/lib/email";
 import { verifyAPIToken, verifyToken } from "@/app/lib/auth";
 import { buildLeaveEmail } from "@/app/lib/leave-email";
+import { insertNotification } from "@/app/lib/notification-db";
 
 function getBearerTokenFromHeaders(h: Headers) {
   const auth = h.get("authorization") || h.get("Authorization");
@@ -47,11 +48,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Original insert (unchanged)
-    await executeQuery(
-      `INSERT INTO shifts (assignee_id, date, end_date, start_time, end_time, recurrence, type)
-       VALUES (?, ?, ?, ?, ?, ?, 'leave')`,
+    const res = await executeQuery(
+      `INSERT INTO shifts (assignee_id, date, end_date, start_time, end_time, recurrence, type, published)
+       VALUES (?, ?, ?, ?, ?, ?, 'leave', 1)`,
       [effectiveUserId, date, end_date, start_time, end_time, recurrence]
-    );
+    ) as any;
 
     //Emails (best-effort)
     try {
@@ -110,6 +111,7 @@ export async function POST(request: NextRequest) {
       console.warn("[LEAVE SUBMIT] email step failed (non-fatal):", e);
     }
 
+    insertNotification(res.insertId, 'Pending', effectiveUserId.toString(), true);
     return NextResponse.json({ message: "Leave created successfully" });
   } catch (error) {
     console.error("Error creating shift (leave):", error);

@@ -282,7 +282,7 @@ const monthSelectedDropdown =
                           <Dropdown
                             items={[
                               'All shifts',
-                              ...Object.values(Status).slice(0, Object.values(Status).length - 3),
+                              ...Object.values(Status).slice(0, Object.values(Status).length - 2),
                             ]}
                             placeholder="Select shift"
                             actAsFilter

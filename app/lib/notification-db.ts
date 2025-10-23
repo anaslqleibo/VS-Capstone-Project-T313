@@ -6,11 +6,25 @@ import { executeQuery } from "./db";
  * Store notification to notifications table
  */
 
-export async function insertNotification(shift_id:string, status:ShiftStatus, assignee_id?:string){
-  if (status !== 'Unpublished'){
-    const res = storeNotification(shift_id, (status==="Pending" ? "Assigned" : status), assignee_id);
-    if (!res) console.warn('Failed to store notification to database.');
+export async function insertNotification(shift_id:string, status:ShiftStatus, assignee_id?:string, is_leave=false){
+  if (is_leave){
+    if (status === 'Pending' || status === 'Accepted' || status === 'Declined'){
+      const modifiedStatus = status === 'Pending' ? 'Request' : status;
+      
+      const res = storeNotification(shift_id, ("Leave " + modifiedStatus) as NotificationType, assignee_id);
+      if (!res) console.warn('Failed to store notification to database.'); 
+    }
+    else {
+      console.warn('Invalid status type');
+    }
   }
+  else{
+    if (status !== 'Unpublished'){
+      const res = storeNotification(shift_id, (status==="Pending" ? "Assigned" : status), assignee_id);
+      if (!res) console.warn('Failed to store notification to database.');
+    }
+  }
+  
 }
 
 export async function storeNotification(shift_id:string, type:NotificationType, assignee_id?:string) {

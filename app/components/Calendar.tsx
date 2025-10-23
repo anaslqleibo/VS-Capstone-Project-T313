@@ -53,7 +53,7 @@ function constructEventsArray(events: EventInput[], role: Role) {
   const newEvents: EventInput[] = [];
   
   events.forEach(e => {
-    const {id, status, original_status, type, assignee_id, assignee_name, date, start_time, end_time, time, location_id, location_name, address, notes, repeat, published, pay_rate, total_payment} = e.extendedProps || {};
+    const {id, status, original_status, type, assignee_id, assignee_name, date, start_time, end_time, time, location_id, location_name, address, notes, recurrence, published, pay_rate, total_payment} = e.extendedProps || {};
 
     const shiftExtProps : ShiftExtendedProps = {
         id: id,
@@ -73,8 +73,8 @@ function constructEventsArray(events: EventInput[], role: Role) {
         published,
         pay_rate,
         total_payment,
-        day:repeat,
-        recurrence:repeat
+        day:recurrence,
+        recurrence:recurrence
     }
     
     const event: EventInput = {

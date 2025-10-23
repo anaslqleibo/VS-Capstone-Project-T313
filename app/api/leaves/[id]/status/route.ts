@@ -4,10 +4,11 @@ import { executeQuery } from "@/app/lib/db";
 import { queueEmail, sendEmail } from "@/app/lib/email";
 import { buildLeaveEmail } from "@/app/lib/leave-email";
 import { verifyAPIToken } from "@/app/lib/auth";
+import { insertNotification } from "@/app/lib/notification-db";
 
 export async function PATCH(
   request: NextRequest,
-  context: RouteContext<"/api/unavailabilities/leaves/[id]/status">
+  context: RouteContext<"/api/leaves/[id]/status">
 ) {
   try {
     const tokenRes = await verifyAPIToken(request);
@@ -130,6 +131,8 @@ export async function PATCH(
     }
     // ===== EMAIL — end =====
 
+    insertNotification(id, is_accepted?'Accepted':'Declined', user_id, true);
+    
     return NextResponse.json({ success: true, status: 200 });
   } catch (error) {
     console.error("Error updating leave status:", error);

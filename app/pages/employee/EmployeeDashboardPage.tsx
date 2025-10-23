@@ -44,7 +44,7 @@ export default function EmployeeDashboardPage() {
 
 
   const [locations, setLocations] = useState<string[]>([]);
-  const [events, setEvents] = useState<EventInput[]>([]);
+  const [events, setEvents] = useState<EventInput[]|null>(null);
 
   useEffect(() => {
      async function fetchEvents() {
@@ -104,14 +104,14 @@ export default function EmployeeDashboardPage() {
             
             {user && <h2 className="text-2xl mb-[30px]">Welcome, <span className="text-[color:var(--primary-color)] font-semibold">{user.first_name+ ' ' + user.last_name}</span></h2>}
            
-            {events.length === 0 ? <Spinner custom showWater backgroundGradient borderSpinner/> :
+            {!events ? <Spinner custom showWater backgroundGradient borderSpinner/> :
             <>
               <div className='flex justify-between items-end mb-2 md:mb-0 gap-5'>
                 <div className="flex items-start flex-wrap gap-3 ">
                 
                   <Dropdown items={['All locations', ...locations]} placeholder="Select location" actAsFilter setFilter={setLocation} maxVisibleItems={7}  containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All locations' simplifyOnMobile replacementIcon={<FaMapPin/>} />
 
-                  <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-3)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All shifts' simplifyOnMobile replacementIcon={<FaClipboardList/>} disableTyping/>
+                  <Dropdown items={['All shifts', ...Object.values(Status).slice(0, Object.values(Status).length-2)]} placeholder="Select shift" actAsFilter setFilter={setStatus} maxVisibleItems={6} containerClassName='md:rounded-b-none md:min-w-32' initialSelectedItem='All shifts' simplifyOnMobile replacementIcon={<FaClipboardList/>} disableTyping/>
 
                   <Dropdown id="dropdown-month" placeholder="Select month" actAsFilter setMonth={activeFilter.month} className=' hidden md:block' containerClassName='rounded-b-none' custom customSelected={monthSelectedDropdown} disableTyping>
                     <Input arrow='leftRight' value={activeFilter.month.year()} containerClassName='float-end pr-7' readonly setValue={setYear}/>
@@ -151,9 +151,9 @@ export default function EmployeeDashboardPage() {
                   <Button onClick={() => setOpenModal(true)} className='rounded-b-none rounded-t-md p-3' fontSize='0.8em'>Add Leave</Button>
                 </div>
 
-              <Calendar key={isOverMd ? 'month' : 'list'}  events={events} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'}></Calendar>
+              <Calendar key={isOverMd ? 'month' : 'list'}  events={events?events:[]} showSelectedFilter={activeFilter} modalContainer={modalContainer} hideHeader={true} initialView={isOverMd ? 'dayGridMonth' : 'listMonth'}></Calendar>
 
-              {openModal && modalContainer.current && createModal(ModalTypes.AddLeave, true, modalContainer.current, {recurrence: ''}, setOpenModal,undefined, undefined, displayToast)}
+              {openModal && modalContainer.current && createModal(ModalTypes.AddLeave, true, modalContainer.current, {recurrence: '', assignee_id: user?user.id:undefined}, setOpenModal,undefined, undefined, displayToast)}
               {/* The key 'recurrence' here plays an important role as it is used to check what type of details it sent, so either keep it or implement a safety measure to replace it*/}
             
             </>}

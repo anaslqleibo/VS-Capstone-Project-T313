@@ -21,6 +21,7 @@ import { fetchShiftExtProps, ShiftStatus } from "../controllers/Shifts";
 import { stringToStatus } from "./utils/getStatusColor";
 import Toast from "./Toast";
 import Spinner from "./Spinner";
+import { fetchLeaveExtProps, fetchLeaves } from "../controllers/Leave";
 
 
 export default function Sidebar({modalContainer} : PageProps){
@@ -81,17 +82,21 @@ export default function Sidebar({modalContainer} : PageProps){
     const [notifications, setNotifications] = useState<NotificationProps[]|null>(null);
     const [displayShift, setDisplayShift] = useState<ShiftExtendedProps|LeaveExtendedProps|null>(null);
         
-    async function loadShift(id?: string){
+    async function loadEvent(id?: string, is_leave=false){
       if (id === undefined) return;
       if (displayShift && displayShift.id?.toString() === id.toString()) return;
       
       try{
         setLoading(true);
-        const shift = await fetchShiftExtProps(id);
-        setDisplayShift(shift);
+        const event = is_leave ? await fetchLeaveExtProps(id) : await fetchShiftExtProps(id);
+        setDisplayShift(event);
+
+        alert(JSON.stringify(event));
+
       }
       finally{
         setLoading(false);
+        
       }
       
     }
@@ -99,7 +104,7 @@ export default function Sidebar({modalContainer} : PageProps){
     async function loadNotifications(){
       if (user){
         const result = await fetchNotifications(user.id.toString());
-        setNotifications(result.map(notif=>({...notif, onClick: ()=>loadShift(notif?.shift_id)})));
+        setNotifications(result.map(notif=>({...notif, onClick: ()=>loadEvent(notif?.shift_id, notif.type.startsWith('Leave'))})));
       }
     }
     

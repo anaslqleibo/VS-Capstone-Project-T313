@@ -208,7 +208,6 @@ export enum ModalTypes{
     PendingDetails = "Pending shift details",
     RequestDetails = "Request shift details",
     LeaveDetails = "Leave details",
-    UnavailabilityDetails = "Unavailability details",
     DeclinedDetails = "Declined shift details",
     UnassignedShiftDetails = "Unassigned shift details",
     AddShift = "Add shift",
@@ -238,8 +237,6 @@ export function getModalTypesByStatus(status:Status, type:EventTypes="shift"){
             return ModalTypes.OpenShiftDetails;
         case Status.DeclinedShift:
             return ModalTypes.DeclinedDetails;
-        case Status.Unavailable:
-            return ModalTypes.UnavailabilityDetails;
         case Status.Unpublished:
             return ModalTypes.UnpublishedShiftDetails;
         default:
@@ -260,7 +257,6 @@ export type LeaveExtendedProps = {
     end_time: string;
     day?: string;
     recurrence?: string;
-    unavailability?: boolean;
 }
 
 export type ShiftExtendedProps = {
@@ -379,7 +375,7 @@ function createAdminComponent(status: Status, employee?:string, setEvents?: setE
         <div className={`text-sm font-semibold text-gray-600 mt-1 flex items-center ${isEditing ? 'gap-2' : 'gap-1'}`}>Status: 
             {isEditing ? 
              <>
-                <Dropdown items={[ ...Object.values(Status).filter(((status)=>status!=='Leave'&&status!=='Unavailable'&&status!=='Assigned'&&status!=='Unpublished'))]} placeholder="Select shift" maxVisibleItems={6} className='min-w-32' initialSelectedItem={formValues?.original_status ?? 'Select a status'} onChange={(e)=>handleChange!('status', e)} colorBasedOnValue syncCurrentWithInitialSelected={true}/>
+                <Dropdown items={[ ...Object.values(Status).filter(((status)=>status!=='Leave'&&status!=='Assigned'&&status!=='Unpublished'))]} placeholder="Select shift" maxVisibleItems={6} className='min-w-32' initialSelectedItem={formValues?.original_status ?? 'Select a status'} onChange={(e)=>handleChange!('status', e)} colorBasedOnValue syncCurrentWithInitialSelected={true}/>
                 {initialDetails?.published ? <Checkbox label="Published" checked={castedFormValues.published?castedFormValues.published:false} onChange={(e)=>{handleChange!('published', e ? 1 : 0)}} className="text-xs md:text-sm"/> : ''}
                 
              </>
@@ -505,24 +501,13 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
     const castedDetails = 'location_id' in formValues ? formValues as ShiftExtendedProps : formValues as LeaveExtendedProps;
 
 
-    if ('day' in castedDetails && (castedDetails.type === "leave" || type === ModalTypes.UnavailabilityDetails))
+    if (castedDetails.type === "leave" )
     {
         return (
             <>
             {isAdmin && createDetail("Employee: ", castedDetails.assignee_name ? castedDetails.assignee_name : "")}
-            {createDetail("Every: ", castedDetails.day ? castedDetails.day : "")}
+            {createDetail("Repeat: ", castedDetails.recurrence??'Never')}
             {createDetail("Time: ", castedDetails.time)}
-            </>
-        );
-    }
-    else if (castedDetails.type === "leave")
-    {
-        return (
-            <>
-            {isAdmin && createDetail("Employee: ", castedDetails.assignee_name ? castedDetails.assignee_name : "")}
-            {createDetail("Date: ", castedDetails.date)}
-            {createDetail("Time: ", castedDetails.time)}
-            {castedDetails.recurrence && createDetail("Recurrence: ", castedDetails.recurrence)}
             </>
         );
     }
@@ -532,69 +517,47 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
         if (castedFormValues === -1) return;
 
         if (castedFormValues.recurrence === "") castedFormValues.recurrence = "Never";
-        // console.log(castedFormValues);
-
-        const onToggleLeave = {
-            true: function(){handleChange!("unavailability", false)},
-            false: function(){handleChange!("unavailability", true)},
-        };
-
-        const onToggleUnavail = {
-            true: function(){handleChange!("unavailability", true)},
-            false: function(){handleChange!("unavailability", false)},
-        };
       
         return (
            <div className="flex flex-col gap-4 mt-4">
-            {/* <div className="flex flex-wrap items-center gap-2">
-                <Button type='selectable' fontSize="0.8em" startActive={castedFormValues.unavailability?!castedFormValues.unavailability:true} onToggleClick={onToggleLeave}>Leave</Button>
-                <Button type='selectable' fontSize="0.8em" startActive={castedFormValues.unavailability??false} onToggleClick={onToggleUnavail}>Unavailability</Button>
-            </div> */}
-            
-
-            {castedFormValues.unavailability && <div className="flex items-center gap-2">
-                <p className="text-md font-semibold text-gray-600 mt-1 mb-1 w-12">Day:</p>
-                
-                <DayPicker onChange={(e:string)=>handleChange!("day", e)} value={castedFormValues.day} />
-            </div>}
-
             <div className="flex flex-wrap items-center gap-2">
                 <p className="text-md font-semibold text-gray-600 mt-1 mb-1">Date:</p>
                 <div className="flex gap-2 items-center w-full md:w-auto">
-                    <DatePicker label="From" format="DD-MM-YYYY" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} value={castedFormValues.date ? dayjs(castedFormValues.date) : null} onChange={(e)=>{
-                        if (!e) return;
-                        const end = castedFormValues?.end_date ? dayjs(castedFormValues.end_date, "YYYY-MM-DD") : null;
-
-                        if (end && e.isAfter(end)) {
-                            displayToast!("Start date cannot be after end date", "error");
-                            return;
-                        }
-                        handleChange!("date", e?.format('YYYY-MM-DD'))}}/>
+                    <DatePicker label="From" format="DD-MM-YYYY" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} value={castedFormValues.date ? dayjs(castedFormValues.date) : null} onChange={(e)=>handleChange!("date", e?.format('YYYY-MM-DD'))}/>
                     
-                    {!castedFormValues.unavailability && <>
+                    <>
                     <span className="text-[color:var(--primary-color)] font-bold">–</span>
-                    <DatePicker label="To" format="DD-MM-YYYY" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} value={castedFormValues.end_date ? dayjs(castedFormValues.end_date) : null} onChange={(e)=>{
-                        if (!e) return;
-                        const start = castedFormValues?.date ? dayjs(castedFormValues.date, "YYYY-MM-DD") : null;
-
-                        if (start && e.isBefore(start)) {
-                            displayToast!("End date cannot be before start date", "error");
-                            return;
-                        }
-                        handleChange!("end_date", e?.format('YYYY-MM-DD'))}}/>
-                    </>}
+                    <DatePicker label="To" format="DD-MM-YYYY" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} value={castedFormValues.end_date ? dayjs(castedFormValues.end_date) : null} onChange={(e)=>handleChange!("end_date", e?.format('YYYY-MM-DD'))}/>
+                    </>
                     
                 </div>
             </div>
+
             <div className="flex flex-wrap items-center gap-2">
                 <p className="text-md font-semibold text-gray-600 mt-1 mb-1">Time:</p>
-                <div className="flex gap-2 items-center w-full md:w-auto">
-                    <TimePicker label="From" format="hh:mm A" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} value={castedFormValues.start_time ? dayjs(castedFormValues.start_time, "HH:mm") : null} onChange={(e)=>{handleChange!("start_time", e?.format('HH:mm:ss'))}}/>
+                <div className="flex gap-2 items-center flex-1">
+                    <TimePicker label="From" format="hh:mm A" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} value={castedFormValues.start_time ? dayjs(castedFormValues.start_time, "HH:mm") : null} onChange={(e)=>{handleChange!("start_time", e?.format('HH:mm'))}} disabled={(castedFormValues.start_time && castedFormValues.end_time) ? castedFormValues.start_time === '00:00' && castedFormValues.end_time === '23:59': false}/>
                     <span className="text-[color:var(--primary-color)] font-bold">–</span>
-                    <TimePicker label="To" format="hh:mm A" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }}  value={castedFormValues.end_time ? dayjs(castedFormValues.end_time, "HH:mm") : null} onChange={(e)=>{handleChange!("end_time", e?.format('HH:mm:ss'))}}/>
+                    <TimePicker label="To" format="hh:mm A" slotProps={{ textField: { sx: { minWidth: 120, maxWidth: 140 } } }} value={castedFormValues.end_time ? dayjs(castedFormValues.end_time, "HH:mm") : null} onChange={(e)=>{handleChange!("end_time", e?.format('HH:mm'))}} disabled={(castedFormValues.start_time && castedFormValues.end_time) ? castedFormValues.start_time === '00:00' && castedFormValues.end_time === '23:59': false}/>
                 </div>
             </div>
-            {!castedFormValues.unavailability && <>
+
+            <div className="flex flex-wrap items-center gap-2 -mt-2">
+              <p className="text-md font-semibold text-gray-600 mt-1 mb-1">All day:</p>
+              <Checkbox label="" checked={(castedFormValues.start_time && castedFormValues.end_time) ? castedFormValues.start_time === '00:00' && castedFormValues.end_time === '23:59': false} onChange={(e)=>{
+                if (e){
+                  handleChange!("start_time", '00:00');
+                  handleChange!("end_time", '23:59');
+                }
+                else{
+                  handleChange!("start_time", '');
+                  handleChange!("end_time", '');
+                }
+              }
+              }/>
+            </div>
+            
+            <>
             <FormControl component="fieldset">
                 <FormLabel component="legend" className="!text-md !font-semibold !text-gray-600">Recurrence</FormLabel>
                 <RadioGroup row value={castedFormValues.recurrence} onChange={(e) => handleChange!("recurrence", e.target.value)}>
@@ -603,7 +566,7 @@ function createDetails(type: string|null, details?: Record<string, any>, isAdmin
                     ))}
                 </RadioGroup>
             </FormControl>
-            </>}
+            </>
             
         </div>
         ); 
@@ -670,26 +633,6 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         if (!isAdmin)
             buttons = <Button type="cta" fontSize="0.8em" onClick={handleDelete}>Delete leave</Button>;
     }
-    else if (type === ModalTypes.UnavailabilityDetails){
-        const handleDelete = () => {
-            // delete from db and check if succesful, if yes then proceed
-            // deleteAvailability();
-            const result = true;
-
-            if (result){
-                if (event) setEvents!(event, "delete"); 
-                closeModal!();
-                displayToast!('Availability deleted successfully!', 'success');
-            }
-            else{
-                displayToast!('Failed to delete availability details!', 'error');
-            }
-            
-        }
-
-        if (!isAdmin)
-            buttons = <Button type="cta" fontSize="0.8em" onClick={handleDelete}>Delete unavailability</Button>;
-    }
     else if (type === ModalTypes.AddLeave){
         const castedFormValues =  formValues ? ("recurrence" in formValues ? formValues as LeaveExtendedProps : -1) : -1;
         if (castedFormValues === -1) return;
@@ -701,9 +644,17 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
                 return;
             }
 
-            if (!castedFormValues.unavailability && !("end_date" in castedFormValues)){
-                if (displayToast) displayToast(`Please select the leave ending date.`, 'error');  
-                return;
+            if ("end_date" in castedFormValues){
+              const startDate = dayjs(castedFormValues.date, "YYYY-MM-DD");
+              const endDate = dayjs(castedFormValues.end_date, "YYYY-MM-DD");
+
+              if (startDate.isAfter(endDate)){
+                  displayToast!("Start date cannot be after end date", "error");
+                  return;
+              }
+            }    
+            else{
+              
             }
 
             if (!("start_time" in castedFormValues)){
@@ -716,24 +667,38 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
                 return;
             }
 
+            const startTime = dayjs(castedFormValues.date, "HH:mm");
+            const endTime = dayjs(castedFormValues.end_date, "HH:mm");
+
+            if (startTime.isAfter(endTime, 'hour')){
+                displayToast!("Start time cannot be after end time", "error");
+                return;
+            }
+
             if (!castedFormValues.assignee_id){
                 if (displayToast) displayToast(`Cannot retrieve active user id.`, 'error');  
                 return;
             }
 
-            const result = await createLeave({...castedFormValues, day_of_week:null, recurrence: castedFormValues.recurrence? castedFormValues.recurrence : "Never", type: 'leave'}, castedFormValues.unavailability??false);
+            try{
+              (window as any).__setLoading(true);
+              const result = await createLeave({...castedFormValues, end_date: castedFormValues.end_date?castedFormValues.end_date:castedFormValues.date, recurrence: castedFormValues.recurrence? castedFormValues.recurrence : "Never", type: 'leave'});
             
-            if (result){
-                closeModal!();
-                if (displayToast) displayToast(`Submitted leave request successfully! Please refresh the page to view your leave request.`, 'success');
-        
+              if (result){
+                  closeModal!();
+                  if (displayToast) displayToast(`Submitted leave request successfully! Please refresh the page to view your leave request.`, 'success');
+              }
+              else{
+                  if (displayToast) displayToast!('Failed to submit leave request!', 'error');
+              }
             }
-            else{
-                if (displayToast) displayToast!('Failed to submit leave request!', 'error');
+            finally{
+              (window as any).__setLoading(false);
             }
+            
             
         }
-        buttons = <Button type="cta" fontSize="0.8em" onClick={()=>handleSubmit()}>Submit {castedFormValues.unavailability ? "unavailability" : "leave"}</Button>
+        buttons = <Button type="cta" fontSize="0.8em" onClick={()=>handleSubmit()}>Submit leave</Button>
     }
     else if (type === ModalTypes.OpenShiftDetails || type === ModalTypes.UnassignedShiftDetails)
     {
@@ -856,16 +821,23 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
         }   
         else{
             const handleCancel = async () => {
-            const result = await deleteLeave(event?.extendedProps?.id as string);
+              try{
+                (window as any).__setLoading(true);
+                const result = await deleteLeave(event?.extendedProps?.id as string);
 
-            if (result){
-                if (event) setEvents!(event, "delete"); 
-                closeModal!();
-                displayToast!('Leave request cancelled!', 'success');
-            }
-            else{
-                displayToast!('Failed to cancel leave request!', 'error');
-            }
+                if (result){
+                    if (event) setEvents!(event, "delete"); 
+                    closeModal!();
+                    displayToast!('Leave request cancelled!', 'success');
+                }
+                else{
+                    displayToast!('Failed to cancel leave request!', 'error');
+                }
+              }
+              finally{
+                (window as any).__setLoading(false);
+              }
+            
             
             }
              buttons = (<>
@@ -932,11 +904,17 @@ function createButtons(type: string|null, setEvents?: setEventType, event?:Event
     }
     else if (type === ModalTypes.DeclinedDetails){
         const handleView = async () => {
-            const result = await deleteShift(event?.extendedProps?.id);
+            try{
+              (window as any).__setLoading(true);
+              const result = await deleteShift(event?.extendedProps?.id);
             
-            if (result){
-                if (event) setEvents!(event, "delete"); 
-                closeModal!();
+              if (result){
+                  if (event) setEvents!(event, "delete"); 
+                  closeModal!();
+              }
+            }
+            finally{
+              (window as any).__setLoading(false);
             }
         }
 

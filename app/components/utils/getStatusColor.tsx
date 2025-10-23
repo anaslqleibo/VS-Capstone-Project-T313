@@ -11,7 +11,6 @@ export enum Status {
     OpenShift = 'Open',
     Request = 'Request',
     Leave = 'Leave',
-    Unavailable = 'Unavailable',
     Unpublished = 'Unpublished',
     Assigned = "Assigned",
 
@@ -43,7 +42,7 @@ export function stringToStatus(status: string): Status {
         case 'Unpublished':
             return Status.Unpublished;
         default:
-            return Status.Unavailable;
+            return Status.Unassigned;
     }
 }
 

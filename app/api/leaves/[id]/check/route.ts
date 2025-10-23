@@ -3,7 +3,7 @@ import { executeQuery } from "@/app/lib/db";
 import { RowDataPacket } from "mysql2";
 import { verifyAPIToken } from "@/app/lib/auth";
 
-export async function POST(request : NextRequest, context: RouteContext<'/api/unavailabilities/[id]/check'>) {
+export async function POST(request : NextRequest, context: RouteContext<'/api/leaves/[id]/check'>) {
     try{
         const tokenRes = await verifyAPIToken(request);
         if (!tokenRes.ok) return tokenRes;
@@ -11,10 +11,9 @@ export async function POST(request : NextRequest, context: RouteContext<'/api/un
         const p = await context.params;
         const {date, start_time, end_time} = await request.json();
         const user_id = p.id;
-        const rows: { shift: RowDataPacket[]; leave: RowDataPacket[]; unavailability: RowDataPacket[] } = {
+        const rows: { shift: RowDataPacket[]; leave: RowDataPacket[]; } = {
             shift: [],
-            leave: [],
-            unavailability: [],
+            leave: []
         };
 
         // Check for shifts
@@ -39,18 +38,8 @@ export async function POST(request : NextRequest, context: RouteContext<'/api/un
         const rowsLeaves  = await executeQuery(query, paramsQuery);
         rows.leave = rowsLeaves as RowDataPacket[];
 
-
-        // Check for unavailabilities
-        if (start_time && end_time){
-            query = 'SELECT DATE_FORMAT(date, "%d-%m-%Y") as date, status, day_of_week, DATE_FORMAT(start_time, "%H:%i") as start_time, DATE_FORMAT(end_time, "%H:%i") as end_time FROM shifts WHERE assignee_id = ? AND day_of_week IS NOT NULL AND DAYNAME(?) = day_of_week AND type = "unavailability" AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?) OR (start_time > ? AND end_time < ?))';
-            paramsQuery = [user_id, date, start_time, start_time, end_time, end_time, start_time, end_time]
-            const rowsUnavail  = await executeQuery(query, paramsQuery);
-            rows.unavailability = rowsUnavail as RowDataPacket[];;
-        }
-        
-    
-        if (rows.shift.length > 0 || rows.leave.length > 0 || rows.unavailability.length > 0) {
-            return NextResponse.json({ shift:rows.shift[0], leave: rows.leave[0],  unavailability: rows.unavailability[0]} );
+        if (rows.shift.length > 0 || rows.leave.length > 0) {
+            return NextResponse.json({ shift:rows.shift[0], leave: rows.leave[0]} );
         } else {
             return NextResponse.json({ status: "available" });
         }
