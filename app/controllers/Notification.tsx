@@ -237,7 +237,10 @@ export function generateStaffNotificationMessage({type, date, shift_date, days_l
             break;
         case 'Assigned':
             if (days_left > 3)
-                message = <div>You've been offered a new shift! Tap to view the details and confirm if you're available to take the shift.</div>
+                message = <div>You’ve been assigned a new shift that requires your confirmation.
+                Please log in to the rostering website and accept or decline the shift as soon as possible. 
+                If you’re unable to accept, please decline it promptly so we can allocate the shift to another team member.
+                </div>
             else
                 message = <div>
                     
