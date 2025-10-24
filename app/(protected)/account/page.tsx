@@ -287,36 +287,7 @@ const AccountPage = () => {
                 </div>}
                 
 
-                {/* Settings summary */}
-                {/* <div>
-                  <h3 className="text-lg font-semibold mt-2 mb-3">Settings</h3>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-3 gap-y-4">
-                    <li className="flex items-center justify-between border-2 rounded-lg px-3 py-2">
-                      <span>Email notifications</span>
-                      <span className={`text-sm font-bold ${settings.emailNotifications ? "text-green-600" : "text-gray-500"}`}>
-                        {settings.emailNotifications ? "ON" : "OFF"}
-                      </span>
-                    </li>
-                    <li className="flex items-center justify-between border-2 rounded-lg px-3 py-2">
-                      <span>SMS alerts</span>
-                      <span className={`text-sm font-bold ${settings.smsAlerts ? "text-green-600" : "text-gray-500"}`}>
-                        {settings.smsAlerts ? "ON" : "OFF"}
-                      </span>
-                    </li>
-                    <li className="flex items-center justify-between border-2 rounded-lg px-3 py-2">
-                      <span>Shift reminders</span>
-                      <span className={`text-sm font-bold ${settings.shiftReminders ? "text-green-600" : "text-gray-500"}`}>
-                        {settings.shiftReminders ? "ON" : "OFF"}
-                      </span>
-                    </li>
-                    <li className="flex items-center justify-between border-2 rounded-lg px-3 py-2">
-                      <span>Show phone to supervisors</span>
-                      <span className={`text-sm font-bold ${settings.showPhoneToSupervisors ? "text-green-600" : "text-gray-500"}`}>
-                        {settings.showPhoneToSupervisors ? "ON" : "OFF"}
-                      </span>
-                    </li>
-                  </ul>
-                </div> */}
+              
 
                 <div className="flex justify-end">
                   <Button onClick={() => setIsEditing(true)} className="px-6 py-4">Edit profile & settings</Button>
