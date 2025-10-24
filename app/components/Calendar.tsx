@@ -99,7 +99,7 @@ function constructEventsArray(events: EventInput[], role: Role) {
   return newEvents;
 }
 
-function filterEventsArray(events: EventInput[], showSelectedFilter: CalendarFilter | AdminCalendarFilter) {
+function filterEventsArray(events: EventInput[], showSelectedFilter: CalendarFilter | AdminCalendarFilter, ignoreMonthChanged=false) {
     return events.filter(e => {
         const { type, location_name, assignee_name, published, original_status} = e.extendedProps || {};
         
@@ -135,12 +135,16 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
         if (events) {
             const constructed = constructEventsArray(events, role);
             setOriginalEvents(constructed);
-
+            
             if (showSelectedFilter){
                 // Apply other filter when user navigated to a different month
-                setEvents(filterEventsArray(originalEvents, showSelectedFilter));
+                const filteredEvents = filterEventsArray(constructed, showSelectedFilter)
+                setEvents(filteredEvents);
             }
-            else setEvents(constructed);
+            else {
+                setEvents(constructed);
+            }
+
         }
     }, [events, role]);
 
@@ -156,15 +160,21 @@ export function Calendar({initialView = "dayGridMonth", selectable = true, event
     const calendarRef = useRef<FullCalendar>(null);
  
     useEffect(()=>{
-        if (showSelectedFilter) {
+        if (showSelectedFilter && showSelectedFilter.month) {
             calendarRef.current?.getApi().gotoDate(showSelectedFilter?.month.format('YYYY-MM-DD'));   
-
-            setEvents(filterEventsArray(originalEvents, showSelectedFilter));
         }     
+        
+        props.setColHeights&&syncHeights();
+    }, [showSelectedFilter?.month]);
+
+    useEffect(()=>{
+        if (showSelectedFilter){
+            setEvents(filterEventsArray(originalEvents, showSelectedFilter));
+        }
         else setEvents(originalEvents);
 
         props.setColHeights&&syncHeights();
-    }, [showSelectedFilter]);
+    }, [showSelectedFilter?.location, showSelectedFilter?.status, (showSelectedFilter as AdminCalendarFilter).employee,(showSelectedFilter as AdminCalendarFilter).show_unpublished]);
 
 
     const [showToast, setToastShown] = useState(false);

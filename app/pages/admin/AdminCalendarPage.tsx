@@ -348,7 +348,7 @@ const monthSelectedDropdown =
                       </Dropdown>
                     </div>
 
-                    {allEvents && allEvents.find((e) => e.extendedProps?.published === 0) ? (
+                    {allEvents && allEvents.filter((e) => ((dayjs(e.extendedProps?.date,'YYYY-MM-DD').month()+1) === (activeFilter.month.month()+1)) && e.extendedProps?.published === 0).length>0 ? (
                       <div className="flex flex-col items-end gap-2">
                         <Checkbox
                           checked={activeFilter.show_unpublished}
