@@ -113,13 +113,17 @@ export async function sendShiftEmail(shift: Shift){
     const subject = `New shift assigned — ${when}`;
     const html = `
       <p>Hi ${employee.full_name ?? "there"},</p>
-      <p>You’ve been assigned a new shift.</p>
+      <p>You’ve been assigned a new shift that requires your confirmation. 
+      \n Please log in to the rostering website and <br>accept or decline the shift<br> as soon as possible.</p>
       <ul>
         <li><b>When:</b> ${when}</li>
         ${address ? `<li><b>Address:</b> ${address}</li>` : ""}
         ${notes ? `<li><b>Notes:</b> ${notes}</li>` : ""}
       </ul>
       <p>Please check the portal for full details at https://www.rostering-system.2bentrods.com.au/</p>
+      <p>If you’re unable to accept, please decline it promptly so we can allocate the shift to another team member.</p>
+
+
     `;
 
     // --- Direct SMTP send (kept) ---
