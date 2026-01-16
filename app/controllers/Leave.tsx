@@ -1,7 +1,7 @@
 import getStatusColor, { Status, stringToStatus } from "../components/utils/getStatusColor";
 import { EventInput } from "@fullcalendar/core/index.js";
 import { getAuthorizationHeader } from "../lib/auth";
-import { fetchShift } from "./Shifts";
+import { fetchApi } from "../lib/api";
 import { LeaveExtendedProps } from "../components/Modal";
 
 export type Leave = {
@@ -21,7 +21,7 @@ export async function fetchLeaves(user_id: number, month='') {
   const authHeader = getAuthorizationHeader();
   if (!authHeader) throw new Error('No auth token found');
 
-  const res = await fetch(month?`/api/leaves/${user_id}/${month}`:`/api/leaves/${user_id}`,{
+  const res = await fetchApi(month?`/leaves/${user_id}/${month}`:`/leaves/${user_id}`,{
     headers: authHeader
   });
 
@@ -37,7 +37,7 @@ export async function checkAvailability(user_id: number, date: string, start_tim
   const authHeader = getAuthorizationHeader();
   if (!authHeader) throw new Error('No auth token found');
 
-  const res = await fetch(`/api/leaves/${user_id}/check`,{
+  const res = await fetchApi(`/leaves/${user_id}/check`,{
     method: "POST",
     headers: { ...authHeader, 'Content-Type': 'application/json' },
     body: JSON.stringify({ date, start_time, end_time })
@@ -105,7 +105,7 @@ export async function fetchLeave(id: string) {
   const authHeader = getAuthorizationHeader();
   if (!authHeader) throw new Error('No auth token found');
 
-  const res = await fetch(`/api/leaves/${id}/leave`, {
+  const res = await fetchApi(`/leaves/${id}/leave`, {
     method: "GET",
     headers: authHeader
   });
@@ -145,7 +145,7 @@ export async function createLeave(unavail: Leave) {
   const authHeader = getAuthorizationHeader();
   if (!authHeader) throw new Error('No auth token found');
 
-  const res = await fetch(`/api/leaves`, {
+  const res = await fetchApi(`/leaves`, {
     method: 'POST',
     headers: { ...authHeader, 'Content-Type': 'application/json' },
     body: JSON.stringify(unavail),
@@ -163,7 +163,7 @@ export async function updateLeaveStatus(leave_id: string, user_id: string, is_ac
     const authHeader = getAuthorizationHeader();
     if (!authHeader) throw new Error('No auth token found');
 
-    const res = await fetch(`/api/leaves/${leave_id}/status`, {
+    const res = await fetchApi(`/leaves/${leave_id}/status`, {
       method: 'PATCH',
       headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({ user_id, is_accepted, decided_by}),
@@ -181,7 +181,7 @@ export async function deleteLeave(shift_id: string) {
     const authHeader = getAuthorizationHeader();
     if (!authHeader) throw new Error('No auth token found');
 
-    const res = await fetch(`/api/shifts/shift/${shift_id}`, {
+    const res = await fetchApi(`/shifts/shift/${shift_id}`, {
       method: 'DELETE',
       headers: authHeader
     });

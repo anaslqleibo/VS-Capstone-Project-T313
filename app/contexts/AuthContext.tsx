@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../controllers/User';
-
+import { fetchApi } from '../lib/api';
 
 interface AuthContextType {
   user: User | null;
@@ -29,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Verify token with backend
-      const response = await fetch('/api/auth/verify', {
+      const response = await fetchApi('/auth/verify', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

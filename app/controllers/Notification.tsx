@@ -5,6 +5,7 @@ import Tooltip from "../components/Tootltip";
 import dayjs from "dayjs";
 import { ShiftStatus } from "./Shifts";
 import { getAuthorizationHeader } from "../lib/auth";
+import { fetchApi } from "../lib/api";
 
 
 export type NotificationType = 'Assigned' | 'Unassigned' | 'Open' | 'Accepted' | 'Declined' | 'Request' | 'Leave Request' | 'Leave Accepted' | 'Leave Declined' | 'None';
@@ -49,7 +50,7 @@ export async function checkNewNotification(user_id?: string) {
     const authHeader = getAuthorizationHeader();
     if (!authHeader) throw new Error('No auth token found');
 
-    const res = await fetch(`/api/notifications/${user_id}`,{
+    const res = await fetchApi(`/notifications/${user_id}`,{
         method: "POST",
         headers: authHeader
     });
@@ -65,7 +66,7 @@ export async function fetchNotifications(user_id?: string) {
     const authHeader = getAuthorizationHeader();
     if (!authHeader) throw new Error('No auth token found');
 
-    const res = await fetch(`/api/notifications/${user_id}`,{
+    const res = await fetchApi(`/notifications/${user_id}`,{
         headers: authHeader
     });
     
@@ -81,7 +82,7 @@ export async function notificationMarkAsRead(id: string, user_id:string) {
         const authHeader = getAuthorizationHeader();
     if (!authHeader) throw new Error('No auth token found');
 
-        const res = await fetch(`/api/notifications/${id}`, {
+        const res = await fetchApi(`/notifications/${id}`, {
         method: 'PATCH',
         headers: { ...authHeader, 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id }),
@@ -308,7 +309,7 @@ export async function notifyManually(via_web:boolean, via_email:boolean, shift_i
         const authHeader = getAuthorizationHeader();
         if (!authHeader) throw new Error('No auth token found');
 
-        const res = await fetch('/api/notifications/notify', {
+        const res = await fetchApi('/notifications/notify', {
             method: 'POST',
             headers: { ...authHeader, 'Content-Type': 'application/json' },
             body: JSON.stringify({ via_web, via_email, shift_id, assignee_id, status, subject, html}),
@@ -316,7 +317,7 @@ export async function notifyManually(via_web:boolean, via_email:boolean, shift_i
 
         return res.ok;
     }
-    catch(err){
+    catch{
         return false;
     }
 }

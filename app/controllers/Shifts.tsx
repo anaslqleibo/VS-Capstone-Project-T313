@@ -1,8 +1,8 @@
 import { EventInput } from '@fullcalendar/core';
 import getStatusColor, { Status, stringToStatus } from '../components/utils/getStatusColor';
 import { ShiftExtendedProps } from '../components/Modal';
-import { headers } from 'next/headers';
 import { getAuthorizationHeader } from '../lib/auth';
+import { fetchApi } from '../lib/api';
 
 export type ShiftStatus =
   | 'Pending'
@@ -42,7 +42,7 @@ export async function fetchShift(id: string) {
   const authHeader = getAuthorizationHeader();
   if (!authHeader) throw new Error('No auth token found');
 
-  const res = await fetch(`/api/shifts/shift/${id}`, {
+  const res = await fetchApi(`/shifts/shift/${id}`, {
     method: "GET",
     headers: authHeader
   });
@@ -61,7 +61,7 @@ export async function fetchShifts(user_id: number, month='') {
   const authHeader = getAuthorizationHeader();
   if (!authHeader) throw new Error('No auth token found');
 
-  const res = await fetch(month?`/api/shifts/${user_id}/${month}`:`/api/shifts/${user_id}`, {
+  const res = await fetchApi(month?`/shifts/${user_id}/${month}`:`/shifts/${user_id}`, {
       method: "GET",
       headers: authHeader
     }
@@ -78,7 +78,7 @@ export async function createShift(shift: Shift) {
   const authHeader = getAuthorizationHeader();
   if (!authHeader) throw new Error('No auth token found');
 
-  const res = await fetch('/api/shifts', {
+  const res = await fetchApi('/shifts', {
     method: 'POST',
     headers: {...authHeader, 'Content-Type': 'application/json' },
     body: JSON.stringify(shift),
@@ -96,7 +96,7 @@ export async function updateShift(shift: Shift | ShiftAssignee, assignee_changed
     const authHeader = getAuthorizationHeader();
     if (!authHeader) throw new Error('No auth token found');
 
-    const res = await fetch(`/api/shifts/${assignee_changed ? '1' : '0'}`, {
+    const res = await fetchApi(`/shifts/${assignee_changed ? '1' : '0'}`, {
       method: 'PUT',
       headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify(shift),
@@ -114,7 +114,7 @@ export async function updateShiftStatus(shift_id: string, status: ShiftStatus, a
     const authHeader = getAuthorizationHeader();
     if (!authHeader) throw new Error('No auth token found');
 
-    const res = await fetch(`/api/shifts/shift/${shift_id}/status`, {
+    const res = await fetchApi(`/shifts/shift/${shift_id}/status`, {
       method: 'PATCH',
       headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({ status, assignee_id }),
@@ -140,7 +140,7 @@ export async function publishShift(shift_id: string) {
     const authHeader = getAuthorizationHeader();
     if (!authHeader) throw new Error('No auth token found');
 
-    const res = await fetch(`/api/shifts/shift/${shift_id}/publish`, {
+    const res = await fetchApi(`/shifts/shift/${shift_id}/publish`, {
       method: 'PATCH',
       headers: { ...authHeader, 'Content-Type': 'application/json' },
     });
@@ -157,7 +157,7 @@ export async function publishBulkShift(month?: string, year?: string) {
     const authHeader = getAuthorizationHeader();
     if (!authHeader) throw new Error('No auth token found');
 
-    const res = await fetch(`/api/shifts/`, {
+    const res = await fetchApi(`/shifts/`, {
       method: 'PATCH',
       headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({ month, year }),
@@ -175,7 +175,7 @@ export async function deleteShift(shift_id: string) {
     const authHeader = getAuthorizationHeader();
     if (!authHeader) throw new Error('No auth token found');
 
-    const res = await fetch(`/api/shifts/shift/${shift_id}`, {
+    const res = await fetchApi(`/shifts/shift/${shift_id}`, {
       method: 'DELETE',
       headers: authHeader
     });
@@ -189,7 +189,7 @@ export async function deleteShift(shift_id: string) {
 
 /**
  * 🔁 Duplicate a shift by ID.
- * Backend should be implemented at: POST /api/shifts/shift/:id/duplicate
+ * Backend should be implemented at: POST /shifts/shift/:id/duplicate
  * Returns { success: boolean, newShift?: Shift, err?: string }
  */
 export async function duplicateShift(shift_id: string): Promise<{ success: boolean; newShift?: Shift; err?: string }> {
@@ -197,7 +197,7 @@ export async function duplicateShift(shift_id: string): Promise<{ success: boole
     const authHeader = getAuthorizationHeader();
     if (!authHeader) throw new Error('No auth token found');
 
-    const res = await fetch(`/api/shifts/shift/${shift_id}/duplicate`, {
+    const res = await fetchApi(`/shifts/shift/${shift_id}/duplicate`, {
       method: 'POST',
       headers: { ...authHeader, 'Content-Type': 'application/json' },
       credentials: 'include',

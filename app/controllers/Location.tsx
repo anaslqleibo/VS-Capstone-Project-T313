@@ -1,4 +1,5 @@
 import { getAuthorizationHeader } from "../lib/auth";
+import { fetchApi } from "../lib/api";
 
 export type Location = {
   id: string;
@@ -12,7 +13,7 @@ export async function fetchLocations(): Promise<Location[]> {
   const authHeader = getAuthorizationHeader();
   if (!authHeader) throw new Error('No auth token found');
 
-  const res = await fetch('/api/locations',{
+  const res = await fetchApi('/locations',{
     headers: authHeader
   });
 
@@ -41,7 +42,7 @@ export async function insertLocation(location: Location) {
     const authHeader = getAuthorizationHeader();
     if (!authHeader) throw new Error('No auth token found');
 
-    const res = await fetch(`/api/locations`,  {
+    const res = await fetchApi(`/locations`,  {
       method: 'POST',
       headers: { ...authHeader, 'Content-Type': 'application/json'},
       body: JSON.stringify(location),
@@ -64,7 +65,7 @@ export async function deleteLocation(location_id: string) {
     const authHeader = getAuthorizationHeader();
     if (!authHeader) throw new Error('No auth token found');
 
-    const res = await fetch(`/api/locations`,  {
+    const res = await fetchApi(`/locations`,  {
       method: 'DELETE',
       headers: { ...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify({id: location_id}),
@@ -82,7 +83,7 @@ export async function updateLocation(location: Location) {
     const authHeader = getAuthorizationHeader();
     if (!authHeader) throw new Error('No auth token found');
 
-    const res = await fetch(`/api/locations`,  {
+    const res = await fetchApi(`/locations`,  {
       method: 'PATCH',
       headers: {...authHeader, 'Content-Type': 'application/json' },
       body: JSON.stringify(location),

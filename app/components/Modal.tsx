@@ -1327,7 +1327,7 @@ if (payload.published && payload.assignee_id) {
 
 
               // optimistic event for calendar
-              // after the POST /api/shifts (createShift) succeeds…
+              // after the POST /shifts (createShift) succeeds…
 const effectiveStatus = payload.published ? payload.status : Status.Pending;
 const visualStatus = payload.published ? effectiveStatus : 'Unpublished';
 

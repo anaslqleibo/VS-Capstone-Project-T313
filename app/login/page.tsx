@@ -7,8 +7,7 @@ import Form from '@/app/components/Form';
 import Image from "next/image";
 import logo from '@/public/LOGO.png';
 import { useAuth } from '@/app/contexts/AuthContext';
-import router from 'next/router';
-import { redirect } from 'next/navigation';
+import { fetchApi } from '../lib/api';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState<{email: string, password: string}>({email: '', password: ''})  
@@ -38,7 +37,7 @@ const LoginPage = () => {
 
     try {
       console.log('Attempting login...');
-      const response = await fetch("/api/auth/login", {
+      const response = await fetchApi("/auth/login", {
           method: "POST",
           headers: {
               "Content-Type": "application/json",
