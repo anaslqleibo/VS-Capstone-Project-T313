@@ -11,7 +11,7 @@ export default function ProtectedLayout({
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("authToken");
 
     if (!token) {
       router.replace("/login");
